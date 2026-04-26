@@ -490,7 +490,9 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="about-grid">
       <div class="about-box">
         <h4>📌 內容方向</h4>
-        <p>每日推薦、已結算賽事、聯賽分區瀏覽與當周戰績整理，重點放在一致的紀錄方式與清楚呈現。</p>
+        <p>每日推薦、已結算賽事、聯賽分區瀏覽與當周戰績整理，重點放在一致的紀錄方式與清楚呈現。
+          其中各聯賽除了SBL是0.5 Units之外，其他皆為1 Units。
+        </p>
       </div>
       <div class="about-box">
         <h4>🎯 推薦方式</h4>
@@ -904,7 +906,7 @@ function renderMatchCard(m) {
 }
 
 // ════════════════════════════════════════════
-// PREDICTION STATS（依聯賽：命中 / 未中；淨值 = 命中 − 未中）
+// PREDICTION STATS（依聯賽：命中 / 未中加總；淨值 = 命中 − 未中；SBL 每滿贏+0.5、每滿輸+0.5 計欄位）
 // ════════════════════════════════════════════
 const LEAGUE_STATS_LABEL = {
   BCL: '🌏 BCL',
@@ -927,6 +929,20 @@ const PRED_STATS_LEAGUE_ORDER = [
   '英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲',
 ];
 
+function applyResultToPredTally(m, r, acc) {
+  if (r === 'push' || r == null) return;
+  const sbl = m.league === 'SBL';
+  if (r === 'hit') {
+    acc.hit += sbl ? 0.5 : 1;
+  } else if (r === 'half_hit') {
+    acc.hit += sbl ? 0.25 : 1;
+  } else if (r === 'miss') {
+    acc.miss += sbl ? 0.5 : 1;
+  } else if (r === 'half_miss') {
+    acc.miss += sbl ? 0.25 : 1;
+  }
+}
+
 function tallyPredictionsByLeague(matches) {
   const byLeague = {};
   let totalHit = 0;
@@ -939,23 +955,29 @@ function tallyPredictionsByLeague(matches) {
 
     Object.values(m.prediction).forEach((p) => {
       const r = derivePredictionDisplayResult(m, p);
-      if (r === 'hit' || r === 'half_hit') {
-        byLeague[lg].hit += 1;
-        totalHit += 1;
-      } else if (r === 'miss' || r === 'half_miss') {
-        byLeague[lg].miss += 1;
-        totalMiss += 1;
-      }
+      const d = { hit: 0, miss: 0 };
+      applyResultToPredTally(m, r, d);
+      byLeague[lg].hit += d.hit;
+      byLeague[lg].miss += d.miss;
+      totalHit += d.hit;
+      totalMiss += d.miss;
     });
   });
 
   return { byLeague, totalHit, totalMiss };
 }
 
+function formatTallyDisplay(n) {
+  if (n == null || Math.abs(n) < 1e-9) return '0';
+  if (n % 1 === 0) return String(n);
+  return String(Math.round(n * 100) / 100);
+}
+
 function formatNet(hit, miss) {
   const n = hit - miss;
-  if (n > 0) return '+' + n;
-  return String(n);
+  if (Math.abs(n) < 1e-9) return '0';
+  if (n > 0) return '+' + formatTallyDisplay(n);
+  return formatTallyDisplay(n);
 }
 
 function netClass(hit, miss) {
@@ -1042,11 +1064,12 @@ function renderPredictionStats() {
     const label = LEAGUE_STATS_LABEL[lg] || lg;
     const net = formatNet(hit, miss);
     const nc = netClass(hit, miss);
+    const sblTitle = lg === 'SBL' ? 'SBL 結算：贏+0.5、輸+0.5 計欄位加總，半贏/半輸各±0.25' : '';
     return `<div class="pred-stat-row pred-stat-grid">
-      <span class="pred-stat-league pred-stat-col-league" title="${lg}">${label}</span>
-      <span class="pred-stat-col-hit ic-hit">${hit}</span>
+      <span class="pred-stat-league pred-stat-col-league" title="${(lg + (sblTitle ? ' — ' + sblTitle : '')).replace(/"/g, '&quot;')}">${label}</span>
+      <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(hit)}</span>
       <span class="pred-stat-sep">·</span>
-      <span class="pred-stat-col-miss ic-miss">${miss}</span>
+      <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(miss)}</span>
       <span class="pred-stat-net pred-stat-col-net ${nc}">${net}</span>
     </div>`;
   }).join('');
@@ -1055,14 +1078,14 @@ function renderPredictionStats() {
   const tNc = netClass(totalHit, totalMiss);
   totalEl.innerHTML = `
     <span class="lbl pred-stat-col-league">全部聯賽</span>
-    <span class="pred-stat-col-hit ic-hit">${totalHit}</span>
+    <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(totalHit)}</span>
     <span class="pred-stat-sep">·</span>
-    <span class="pred-stat-col-miss ic-miss">${totalMiss}</span>
+    <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(totalMiss)}</span>
     <span class="pred-stat-net pred-stat-col-net ${tNc}">${tNet}</span>
   `;
 }
 
-/** 當周區間內（含起訖日）已結算場次之 ✓／✗ 筆數；push 不計入欄位 */
+/** 當周區間內已結算；SBL 贏+0.5、輸+0.5 計入欄位；push 不計入 */
 function tallyHitsMissesInMatches(matches) {
   var hit = 0;
   var miss = 0;
@@ -1070,8 +1093,10 @@ function tallyHitsMissesInMatches(matches) {
     if (m.status !== 'final' || !m.prediction) return;
     Object.values(m.prediction).forEach(function (p) {
       var r = derivePredictionDisplayResult(m, p);
-      if (r === 'hit' || r === 'half_hit') hit += 1;
-      else if (r === 'miss' || r === 'half_miss') miss += 1;
+      var d = { hit: 0, miss: 0 };
+      applyResultToPredTally(m, r, d);
+      hit += d.hit;
+      miss += d.miss;
     });
   });
   return { hit: hit, miss: miss };
@@ -1115,9 +1140,9 @@ function renderWeekSummary() {
       return (
         '<div class="pred-stat-row pred-stat-grid">' +
           '<span class="lbl pred-stat-col-league">' + label + '</span>' +
-          '<span class="pred-stat-col-hit ic-hit">' + rec.hit + '</span>' +
+          '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(rec.hit) + '</span>' +
           '<span class="pred-stat-sep">·</span>' +
-          '<span class="pred-stat-col-miss ic-miss">' + rec.miss + '</span>' +
+          '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(rec.miss) + '</span>' +
           '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
         '</div>'
       );
@@ -1129,7 +1154,7 @@ function renderWeekSummary() {
           <h3 class="week-summary-head-title">
             <span class="week-summary-dates">${range.from.slice(5).replace('-','/')}－${range.to.slice(5).replace('-','/')}</span>
             <span class="week-summary-sep-dot" aria-hidden="true">·</span>
-            <span class="week-summary-total-net ${ncAll}" title="當周已結算：✓ ${recAll.hit} / ✗ ${recAll.miss}（不含和局），淨值＝命中−未中"> ${netAll}</span>
+            <span class="week-summary-total-net ${ncAll}" title="當周已結算：✓加總 / ✗加總；SBL 每場贏+0.5、輸+0.5 計欄；淨＝兩欄差（和局不計）"> ${netAll}</span>
           </h3>
           <span class="chevron">▼</span>
         </div>
