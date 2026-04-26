@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>運彩系統</title>
+
+<style>
+body {
+    font-family: Arial;
+    background:#0f172a;
+    color:white;
+    padding:16px;
+    margin:0;
+}
+
+h2 { text-align:center; }
+
+.card {
+    background:#1e293b;
+    padding:12px;
+    margin:10px 0;
+    border-radius:10px;
+}
+
+input, select {
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    font-size:16px;
+    border-radius:8px;
+    border:none;
+}
+
+button {
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    font-size:16px;
+    background:#38bdf8;
+    border:none;
+    border-radius:10px;
+    font-weight:bold;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+}
+
+td, th {
+    border:1px solid #334155;
+    padding:6px;
+    text-align:center;
+    font-size:13px;
+}
+
+.delBtn {
+    background:#ef4444;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+}
+
+.card-title {
+    font-size:16px;
+    font-weight:700;
+    margin-bottom:8px;
+}
+
+.hint {
+    color:#94a3b8;
+    font-size:13px;
+    margin-top:6px;
+}
+
+.action-row {
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+}
+
+.action-row button {
+    margin-top:0;
+}
+
+.smallBtn {
+    background:#475569;
+}
+
+.sport-switch {
+    display:flex;
+    gap:8px;
+    margin-bottom:8px;
+}
+
+.sport-switch button {
+    margin-top:0;
+    background:#334155;
+}
+
+.sport-switch button.active {
+    background:#0ea5e9;
+}
+
+#total {
+    text-align:center;
+    margin-top:15px;
+    font-size:18px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>運彩記帳系統 V5</h2>
+
+<div class="card">
+
+<div class="sport-switch">
+  <button id="sportBasketballBtn" type="button" onclick="setSportFilter('basketball')">籃球</button>
+  <button id="sportSoccerBtn" type="button" onclick="setSportFilter('soccer')">足球</button>
+</div>
+
+<!-- 聯賽 -->
+<select id="league" onchange="updateTeams()"></select>
+
+<!-- 主隊 -->
+<select id="home"></select>
+
+<!-- 客隊 -->
+<select id="away"></select>
+
+<!-- 盤口方向 -->
+<select id="lineSide">
+  <option value="home">主隊</option>
+  <option value="away">客隊</option>
+</select>
+
+<!-- 盤口 -->
+<select id="line"></select>
+
+<input id="odds" type="number" step="0.01" placeholder="賠率">
+<input id="stake" type="number" placeholder="投注金額" value="8100">
+
+<label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+  <input id="enableSecondBet" type="checkbox" onchange="toggleSecondBetFields()">
+  啟用第二組盤口（可選）
+</label>
+
+<div id="secondBetFields" style="display:none;">
+  <select id="lineSide2">
+    <option value="home">主隊</option>
+    <option value="away">客隊</option>
+  </select>
+  <select id="line2"></select>
+  <input id="odds2" type="number" step="0.01" placeholder="第二組賠率">
+  <input id="stake2" type="number" placeholder="第二組投注金額" value="8100">
+</div>
+<input id="matchDateTime" type="datetime-local">
+
+<input id="homeScore" type="number" placeholder="主隊比分">
+<input id="awayScore" type="number" placeholder="客隊比分">
+
+<button onclick="addRecommendation()">匯入到推薦網站</button>
+
+</div>
+
+<div class="card">
+<div class="card-title">已匯入推薦清單（雲端）</div>
+<div class="action-row">
+    <button class="smallBtn" onclick="loadCloudRecommendations()">重新整理清單</button>
+</div>
+<div class="hint" id="cloudStatus">尚未讀取</div>
+<table>
+    <thead>
+        <tr>
+            <th>日期</th>
+            <th>聯賽</th>
+            <th>比賽</th>
+            <th>盤口</th>
+            <th>刪除</th>
+        </tr>
+    </thead>
+    <tbody id="cloudList"></tbody>
+</table>
+</div>
+
+<div class="card">
+<div class="card-title">已結算清單（雲端）</div>
+<div class="action-row">
+    <button class="smallBtn" onclick="loadCloudSettledMatches()">重新整理結算清單</button>
+</div>
+<div class="hint" id="settledStatus">尚未讀取</div>
+<table>
+    <thead>
+        <tr>
+            <th>日期</th>
+            <th>聯賽</th>
+            <th>比賽</th>
+            <th>盤口</th>
+            <th>獲利</th>
+            <th>刪除</th>
+        </tr>
+    </thead>
+    <tbody id="settledList"></tbody>
+</table>
+</div>
+
+<script>
+
+const leagues = {
+  SBL: {
+    label: "SBL",
+    sport: "basketball",
+    teams: ["台灣啤酒", "裕隆納智捷", "台灣銀行", "彰化柏力力", "基隆黑鳶"]
+  },
+  TPBL: {
+    label: "TPBL",
+    sport: "basketball",
+    teams: ["臺北台新戰神", "新北中信特攻", "新北國王", "桃園台啤永豐雲豹", "新竹御嵿攻城獅", "福爾摩沙夢想家", "高雄全家海神"]
+  },
+  PLG: {
+    label: "PLG",
+    sport: "basketball",
+    teams: ["臺北富邦勇士", "桃園璞園領航猿", "洋基工程", "台鋼獵鷹"]
+  },
+  BCL: {
+    label: "BCL",
+    sport: "basketball",
+    teams: ["新北國王", "桃園璞園領航猿", "香港南華", "烏蘭巴托野馬"]
+  },
+  EPL: {
+    label: "英超",
+    sport: "soccer",
+    teams: ["阿仙奴", "阿士東維拉", "般尼茅夫", "賓福特", "白禮頓", "般尼", "車路士", "水晶宮", "愛華頓", "富咸", "列斯聯", "利物浦", "曼城", "曼聯", "紐卡素", "諾定咸森林", "新特蘭", "熱刺", "韋斯咸", "狼隊"]
+  },
+  LaLiga: {
+    label: "西甲",
+    sport: "soccer",
+    teams: ["艾拉維斯", "畢爾包", "馬德里體育會", "巴塞隆拿", "切爾達", "愛斯賓奴", "艾爾切", "赫塔費", "赫羅納", "利雲特", "馬略卡", "奧沙辛拿", "巴列卡諾", "皇家貝迪斯", "皇家馬德里", "皇家蘇斯達", "西維爾", "華倫西亞", "維拉利爾", "皇家奧維多"]
+  },
+  Bundesliga: {
+    label: "德甲",
+    sport: "soccer",
+    teams: ["奧格斯堡", "柏林聯", "聖保利", "RB萊比錫", "多蒙特", "法蘭克福", "弗賴堡", "海登咸", "賀芬咸", "科隆", "利華古遜", "緬恩斯", "慕遜加柏", "拜仁慕尼黑", "漢堡", "史特加", "雲達不萊梅", "沃夫斯堡"]
+  },
+  Ligue1: {
+    label: "法甲",
+    sport: "soccer",
+    teams: ["歐塞爾", "布雷斯特", "勒哈弗爾", "朗斯", "里爾", "洛里昂", "里昂", "馬賽", "摩納哥", "南特", "奈斯", "巴黎聖日門", "巴黎FC", "梅斯", "雷恩", "圖盧茲", "斯特拉斯堡", "昂熱"]
+  },
+  Bundesliga2: {
+    label: "德乙",
+    sport: "soccer",
+    teams: ["比勒費爾德", "波琴", "布倫瑞克", "達斯泰特", "德累斯頓", "杜塞爾多夫", "艾華斯堡", "格雷特霍夫", "漢諾威", "卡斯魯厄", "凱沙羅頓", "馬格德堡", "明斯特", "紐倫堡", "柏德博恩", "沙爾克04", "科隆", "哈化柏林"]
+  },
+  Aleague: {
+    label: "澳甲",
+    sport: "soccer",
+    teams: ["奧克蘭FC", "阿德萊德聯", "布里斯本獅吼", "中央海岸水手", "麥克阿瑟FC", "墨爾本城", "墨爾本勝利", "紐卡素噴射機", "珀斯光榮", "西悉尼流浪者", "威靈頓鳳凰", "悉尼FC"]
+  },
+  MLS: {
+    label: "美足",
+    sport: "soccer",
+    teams: ["亞特蘭大聯", "奧斯汀FC", "夏洛特FC", "芝加哥火燄", "辛辛那提", "科羅拉多急流", "哥倫布機員", "FC達拉斯", "華盛頓聯", "侯斯頓戴拿模", "國際邁阿密", "肯薩斯體育會", "洛杉磯FC", "洛杉磯銀河", "明尼蘇達聯", "CF蒙特利爾", "拿舒維爾SC", "新英倫革命", "紐約城", "紐約紅牛", "奧蘭多城", "費城聯", "波特蘭伐木者", "皇家鹽湖城", "聖何塞地震", "西雅圖海灣者", "聖路易城", "多倫多FC", "溫哥華白浪", "聖地牙哥FC"]
+  },
+  Eredivisie: {
+    label: "荷蘭甲",
+    sport: "soccer",
+    teams: ["阿積士", "AZ艾克馬亞", "精英隊", "飛燕諾", "福图納錫塔德", "前進之鷹", "海倫芬", "荷華高斯", "NAC布雷達", "奈梅亨", "鹿特丹斯巴達", "川迪", "烏德勒支", "禾寧丹", "PSV燕豪芬", "PEC施禾利", "威廉二世", "格羅寧根"]
+  }
+};
+let currentSport = "soccer";
+function buildBasketballLineOptions() {
+    const options = [{ value: "PK", label: "PK" }];
+    for (let i = 1; i <= 20; i++) {
+        options.push({ value: `+${i}.5`, label: `受讓+${i}.5` });
+    }
+    for (let i = 1; i <= 20; i++) {
+        options.push({ value: `-${i}.5`, label: `讓分-${i}.5` });
+    }
+    return options;
+}
+
+const LINE_OPTIONS = {
+    soccer: [
+        { value: "大2.5", label: "大2.5" },
+        { value: "大2.75", label: "大2.75" },
+        { value: "大3.25", label: "大3.25" },
+        { value: "大3.75", label: "大3.75" },
+        { value: "大3", label: "大3" },
+        { value: "大3.5", label: "大3.5" }
+    ],
+    basketball: buildBasketballLineOptions()
+};
+
+// ---------- 安全初始化 ----------
+let bets = [];
+let recommendations = [];
+let cloudRecommendations = [];
+let cloudSettledMatches = [];
+const SUPABASE_URL = "https://zcytivwjylkmnpqszvui.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA";
+const SUPABASE_TABLE = "recommendations";
+const SUPABASE_MATCHES_TABLE = "matches";
+const DEFAULT_LEAGUE_BY_SPORT = {
+    basketball: "TPBL",
+    soccer: "EPL"
+};
+
+try {
+    bets = JSON.parse(localStorage.getItem("bets")) || [];
+} catch (e) {
+    bets = [];
+}
+
+try {
+    recommendations = JSON.parse(localStorage.getItem("rs_recommendations")) || [];
+} catch (e) {
+    recommendations = [];
+}
+
+// ---------- 工具 ----------
+function toNum(v) {
+    const n = parseFloat(v);
+    return isNaN(n) ? null : n;
+}
+
+// ---------- 初始化球隊 ----------
+function renderLeagueOptions() {
+    const leagueSelect = document.getElementById("league");
+    const leagueKeys = Object.keys(leagues).filter((key) => leagues[key].sport === currentSport);
+    const preferredLeague = DEFAULT_LEAGUE_BY_SPORT[currentSport];
+
+    leagueSelect.innerHTML = "";
+    leagueKeys.forEach((key) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = leagues[key].label;
+        leagueSelect.appendChild(option);
+    });
+
+    if (preferredLeague && leagueKeys.includes(preferredLeague)) {
+        leagueSelect.value = preferredLeague;
+    }
+}
+
+function refreshSportButtons() {
+    const basketballBtn = document.getElementById("sportBasketballBtn");
+    const soccerBtn = document.getElementById("sportSoccerBtn");
+    basketballBtn.classList.toggle("active", currentSport === "basketball");
+    soccerBtn.classList.toggle("active", currentSport === "soccer");
+}
+
+function setSportFilter(sport) {
+    currentSport = sport;
+    refreshSportButtons();
+    renderLeagueOptions();
+    renderLineOptions();
+    updateTeams();
+}
+
+function renderLineOptions() {
+    const lineSelect = document.getElementById("line");
+    const lineSelect2 = document.getElementById("line2");
+    const lineSideSelect = document.getElementById("lineSide");
+    const lineSideSelect2 = document.getElementById("lineSide2");
+    const options = LINE_OPTIONS[currentSport] || [];
+    lineSelect.innerHTML = "";
+    lineSelect2.innerHTML = "";
+    options.forEach((opt) => {
+        lineSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+        lineSelect2.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
+    });
+    lineSideSelect.style.display = currentSport === "basketball" ? "block" : "none";
+    lineSideSelect2.style.display = currentSport === "basketball" ? "block" : "none";
+}
+
+function toggleSecondBetFields() {
+    const enabled = document.getElementById("enableSecondBet").checked;
+    document.getElementById("secondBetFields").style.display = enabled ? "block" : "none";
+}
+
+function updateTeams() {
+
+    const league = document.getElementById("league").value;
+
+    const home = document.getElementById("home");
+    const away = document.getElementById("away");
+
+    home.innerHTML = "";
+    away.innerHTML = "";
+
+    const teamList = (leagues[league] && leagues[league].teams) ? leagues[league].teams : [];
+    teamList.forEach(t => {
+        home.innerHTML += `<option value="${t}">${t}</option>`;
+        away.innerHTML += `<option value="${t}">${t}</option>`;
+    });
+}
+
+// ---------- 計算 ----------
+function calc(line, odds, stake, home, away) {
+    const lineSide = document.getElementById("lineSide").value;
+    const result = getPredictionResultByLine(line, home, away, lineSide);
+    if (result === "hit") return stake * odds - stake;
+    if (result === "half_hit") return (stake * odds - stake) / 2;
+    if (result === "miss") return -stake;
+    if (result === "push") return 0;
+    return 0;
+}
+
+// ---------- 儲存 ----------
+function save() {
+    localStorage.setItem("bets", JSON.stringify(bets));
+}
+
+function saveRecommendations() {
+    localStorage.setItem("rs_recommendations", JSON.stringify(recommendations));
+}
+
+function inferSportByLeague(league) {
+    return leagues[league] ? leagues[league].sport : "soccer";
+}
+
+function formatLeagueName(league) {
+    return leagues[league] ? leagues[league].label : league;
+}
+
+function parseDateTimeInput(dateTimeRaw) {
+    if (!dateTimeRaw) return null;
+    const parts = dateTimeRaw.split("T");
+    if (parts.length !== 2) return null;
+    const date = parts[0];
+    const time = parts[1].slice(0, 5);
+    if (!date || !time) return null;
+    return { date, time };
+}
+
+function buildMatchId(league, date, time, home, away) {
+    const raw = `${league}_${date}_${time}_${home}_${away}`.toLowerCase();
+    return raw
+        .replaceAll(" ", "_")
+        .replaceAll(":", "")
+        .replaceAll("/", "_")
+        .replaceAll(".", "_");
+}
+
+function getPredictionResultByLine(line, homeScore, awayScore, lineSide) {
+    let normalizedLine = String(line || "").trim().replace(/^O/i, "大").replace("大3.0", "大3");
+    if (normalizedLine === "全場大球") {
+        normalizedLine = "大3";
+    }
+    const total = homeScore + awayScore;
+    if (normalizedLine === "大2.75") {
+        if (total >= 4) return "hit";
+        if (total === 3) return "half_hit";
+        return "miss";
+    }
+    if (normalizedLine === "大3.25") {
+        if (total >= 4) return "hit";
+        if (total === 3) return "push";
+        return "miss";
+    }
+    if (normalizedLine === "大3.75") {
+        if (total >= 5) return "hit";
+        if (total === 4) return "half_hit";
+        return "miss";
+    }
+    if (normalizedLine === "大3" || normalizedLine === "大3.0") {
+        if (total > 3) return "hit";
+        if (total === 3) return "push";
+        return "miss";
+    }
+
+    const halfOver = normalizedLine.match(/^大(\d+)\.5$/);
+    if (halfOver) {
+        const thr = parseFloat(halfOver[1] + ".5");
+        return total > thr ? "hit" : "miss";
+    }
+
+    if (normalizedLine === "PK") {
+        if (lineSide === "away") {
+            if (awayScore > homeScore) return "hit";
+            if (awayScore < homeScore) return "miss";
+            return "push";
+        }
+        if (homeScore > awayScore) return "hit";
+        if (homeScore < awayScore) return "miss";
+        return "push";
+    }
+
+    const spread = parseFloat(normalizedLine);
+    if (!isNaN(spread)) {
+        const adjusted = lineSide === "away"
+            ? awayScore + spread - homeScore
+            : homeScore + spread - awayScore;
+        if (adjusted > 0) return "hit";
+        if (adjusted < 0) return "miss";
+        return "push";
+    }
+
+    return "pending";
+}
+
+function getProfitByResult(result, stake, odds) {
+    const s = toNum(stake) || 0;
+    const o = toNum(odds) || 0;
+    if (result === "hit") return s * o - s;
+    if (result === "half_hit") return (s * o - s) / 2;
+    if (result === "miss") return -s;
+    if (result === "half_miss") return -(s / 2);
+    if (result === "push") return 0;
+    return 0;
+}
+
+function parseStoredLine(rawLine, sport) {
+    const text = String(rawLine || "").trim().replace("大3.0", "大3");
+    if (sport !== "basketball") {
+        return { lineSide: "home", lineValue: text };
+    }
+    if (text.startsWith("主隊 ")) {
+        return { lineSide: "home", lineValue: text.replace("主隊 ", "").trim() };
+    }
+    if (text.startsWith("客隊 ")) {
+        return { lineSide: "away", lineValue: text.replace("客隊 ", "").trim() };
+    }
+    return { lineSide: "home", lineValue: text };
+}
+
+function formatLineText(line, lineSide, sport) {
+    const normalizedLine = String(line || "").trim().replace("大3.0", "大3");
+    if (sport === "basketball") {
+        return `${lineSide === "home" ? "主隊" : "客隊"} ${normalizedLine}`;
+    }
+    return normalizedLine;
+}
+
+function getMatchGroupKey(item) {
+    return [
+        String(item.league || ""),
+        String(item.date || ""),
+        String(item.time || ""),
+        String(item.home || ""),
+        String(item.away || "")
+    ].join("__");
+}
+
+function setCloudStatus(text) {
+    document.getElementById("cloudStatus").innerText = text;
+}
+
+function setSettledStatus(text) {
+    document.getElementById("settledStatus").innerText = text;
+}
+
+const GARBLED_FIX_BY_DATE_TIME = {
+    "2026-04-23 01:00": { league: "西甲", home: "艾爾切", away: "馬德里體育會", line: "全場大球", sport: "soccer" },
+    "2026-04-23 02:00": { league: "荷蘭甲", home: "泰斯達", away: "鹿特丹斯巴達", line: "全場大球", sport: "soccer" },
+    "2026-04-23 03:00": { league: "英超", home: "般尼茅夫", away: "列斯聯", line: "全場大球", sport: "soccer" },
+    "2026-04-23 03:30": { league: "西甲", home: "巴塞隆拿", away: "切爾達", line: "全場大球", sport: "soccer" },
+    "2026-04-23 07:30#1": { league: "美足", home: "哥倫布機員", away: "洛杉磯銀河", line: "全場大球", sport: "soccer" },
+    "2026-04-23 07:30#2": { league: "美足", home: "紐約城", away: "辛辛那提", line: "全場大球", sport: "soccer" },
+    "2026-04-23 08:30#1": { league: "美足", home: "侯斯頓戴拿模", away: "聖地牙哥FC", line: "全場大球", sport: "soccer" },
+    "2026-04-23 08:30#2": { league: "美足", home: "FC達拉斯", away: "明尼蘇達聯", line: "全場大球", sport: "soccer" },
+    "2026-04-23 09:30": { league: "美足", home: "皇家鹽湖城", away: "國際邁阿密", line: "全場大球", sport: "soccer" },
+    "2026-04-23 10:30": { league: "美足", home: "洛杉磯FC", away: "科羅拉多急流", line: "全場大球", sport: "soccer" }
+};
+
+function containsQuestionMark(v) {
+    return String(v || "").includes("?");
+}
+
+function fixGarbledRecommendations(list) {
+    const sameTimeCounter = {};
+    return (list || []).map((item) => {
+        const key = `${item.date} ${item.time}`;
+        sameTimeCounter[key] = (sameTimeCounter[key] || 0) + 1;
+        const keyedFix = GARBLED_FIX_BY_DATE_TIME[`${key}#${sameTimeCounter[key]}`] || GARBLED_FIX_BY_DATE_TIME[key];
+        if (!keyedFix) return item;
+        const shouldFix =
+            containsQuestionMark(item.league) ||
+            containsQuestionMark(item.home) ||
+            containsQuestionMark(item.away) ||
+            containsQuestionMark(item.line);
+        if (!shouldFix) return item;
+        return {
+            ...item,
+            league: keyedFix.league,
+            home: keyedFix.home,
+            away: keyedFix.away,
+            line: keyedFix.line,
+            sport: keyedFix.sport
+        };
+    });
+}
+
+async function loadCloudRecommendations() {
+    const supabaseReady =
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+
+    if (!supabaseReady) {
+        cloudRecommendations = [];
+        renderCloudRecommendations();
+        setCloudStatus("尚未設定 Supabase 連線");
+        return;
+    }
+
+    setCloudStatus("讀取雲端資料中...");
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?select=*&order=created_at.desc`,
+            {
+                method: "GET",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "讀取失敗");
+        }
+
+        cloudRecommendations = fixGarbledRecommendations(await response.json());
+        renderCloudRecommendations();
+        setCloudStatus(`目前共 ${cloudRecommendations.length} 筆`);
+    } catch (err) {
+        console.error(err);
+        setCloudStatus("讀取失敗，請檢查 Supabase 權限設定");
+    }
+}
+
+function renderCloudRecommendations() {
+    const cloudList = document.getElementById("cloudList");
+    cloudList.innerHTML = "";
+
+    if (!cloudRecommendations.length) {
+        cloudList.innerHTML = `
+        <tr>
+            <td colspan="5">目前沒有雲端資料</td>
+        </tr>`;
+        return;
+    }
+
+    const grouped = {};
+    cloudRecommendations.forEach((item) => {
+        const key = getMatchGroupKey(item);
+        if (!grouped[key]) {
+            grouped[key] = {
+                first: item,
+                items: [],
+                lines: []
+            };
+        }
+        grouped[key].items.push(item);
+        grouped[key].lines.push(String(item.line || "").replace("大3.0", "大3"));
+    });
+
+    Object.values(grouped).forEach((group) => {
+        const item = group.first;
+        const mergedLines = Array.from(new Set(group.lines)).join("/");
+        cloudList.innerHTML += `
+        <tr>
+            <td>${item.date} ${item.time}</td>
+            <td>${item.league}</td>
+            <td>${item.home} vs ${item.away}</td>
+            <td>${mergedLines}</td>
+            <td>
+              <div class="action-row">
+                <button class="smallBtn" onclick="settleCloudRecommendation('${item.id}')">結算</button>
+                <button class="delBtn" onclick="deleteCloudRecommendationGroup('${item.id}')">刪除</button>
+              </div>
+            </td>
+        </tr>`;
+    });
+}
+
+async function loadCloudSettledMatches() {
+    const supabaseReady =
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+
+    if (!supabaseReady) {
+        cloudSettledMatches = [];
+        renderCloudSettledMatches();
+        setSettledStatus("尚未設定 Supabase 連線");
+        return;
+    }
+
+    setSettledStatus("讀取已結算資料中...");
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?select=*&status=eq.final&order=date.desc,time.asc`,
+            {
+                method: "GET",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "讀取失敗");
+        }
+
+        cloudSettledMatches = await response.json();
+        renderCloudSettledMatches();
+        setSettledStatus(`目前共 ${cloudSettledMatches.length} 筆`);
+    } catch (err) {
+        console.error(err);
+        setSettledStatus("讀取失敗，請檢查 Supabase 權限設定");
+    }
+}
+
+function renderCloudSettledMatches() {
+    const settledList = document.getElementById("settledList");
+    settledList.innerHTML = "";
+
+    if (!cloudSettledMatches.length) {
+        settledList.innerHTML = `
+        <tr>
+            <td colspan="6">目前沒有已結算資料</td>
+        </tr>`;
+        return;
+    }
+
+    cloudSettledMatches.forEach((item) => {
+        const profit = toNum(item.profit) || 0;
+        settledList.innerHTML += `
+        <tr>
+            <td>${item.date} ${item.time}</td>
+            <td>${item.league}</td>
+            <td>${item.home_name} vs ${item.away_name}</td>
+            <td>${item.prediction_value || ""}</td>
+            <td>${profit.toFixed(2)}</td>
+            <td><button class="delBtn" onclick="deleteSettledMatch('${item.id}')">刪除</button></td>
+        </tr>`;
+    });
+}
+
+async function deleteSettledMatch(id) {
+    if (!id) return;
+    if (!confirm("確定要刪除這筆已結算資料嗎？")) return;
+
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?id=eq.${encodeURIComponent(id)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "刪除失敗");
+        }
+
+        setSettledStatus("刪除成功，重新整理中...");
+        await loadCloudSettledMatches();
+    } catch (err) {
+        console.error(err);
+        setSettledStatus("刪除失敗，請確認 matches 的 delete 權限");
+    }
+}
+
+async function settleCloudRecommendation(id) {
+    const item = cloudRecommendations.find((x) => String(x.id) === String(id));
+    if (!item) {
+        alert("找不到要結算的推薦資料");
+        return;
+    }
+
+    const homeScoreRaw = prompt(`請輸入主隊 ${item.home} 比分`, "0");
+    if (homeScoreRaw === null) return;
+    const awayScoreRaw = prompt(`請輸入客隊 ${item.away} 比分`, "0");
+    if (awayScoreRaw === null) return;
+
+    const homeScore = toNum(homeScoreRaw);
+    const awayScore = toNum(awayScoreRaw);
+    if (homeScore === null || awayScore === null) {
+        alert("賽果格式錯誤，請輸入數字");
+        return;
+    }
+
+    const groupKey = getMatchGroupKey(item);
+    const sameMatchItems = cloudRecommendations.filter((x) => getMatchGroupKey(x) === groupKey);
+    if (!sameMatchItems.length) {
+        alert("找不到同場推薦資料");
+        return;
+    }
+
+    const settledRows = sameMatchItems.map((entry) => {
+        const parsedLine = parseStoredLine(entry.line, entry.sport);
+        const result = getPredictionResultByLine(parsedLine.lineValue, homeScore, awayScore, parsedLine.lineSide);
+        const profit = getProfitByResult(result, entry.stake, entry.odds);
+        return {
+            line: String(entry.line || ""),
+            result,
+            profit,
+            stake: toNum(entry.stake) || 0
+        };
+    });
+
+    const totalProfit = settledRows.reduce((sum, row) => sum + row.profit, 0);
+    const totalStake = settledRows.reduce((sum, row) => sum + row.stake, 0);
+    const mergedLineText = settledRows.map((row) => row.line).join(" / ");
+    const mergedResult = totalProfit > 0 ? "hit" : (totalProfit < 0 ? "miss" : "push");
+
+    const row = {
+        id: buildMatchId(item.league, item.date, item.time, item.home, item.away),
+        date: item.date,
+        time: item.time,
+        league: item.league,
+        sport: item.sport,
+        status: "final",
+        home_name: item.home,
+        home_short: item.home,
+        home_logo: "",
+        home_score: homeScore,
+        away_name: item.away,
+        away_short: item.away,
+        away_logo: "",
+        away_score: awayScore,
+        prediction_value: mergedLineText,
+        prediction_result: mergedResult,
+        odds: null,
+        stake: totalStake,
+        profit: totalProfit,
+        summary: ""
+    };
+
+    try {
+        const settleResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
+            {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates,return=minimal"
+                },
+                body: JSON.stringify([row])
+            }
+        );
+        if (!settleResponse.ok) {
+            const msg = await settleResponse.text();
+            throw new Error(msg || "結算寫入失敗");
+        }
+
+        for (const entry of sameMatchItems) {
+            const deleteResponse = await fetch(
+                `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(entry.id)}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                }
+            );
+            if (!deleteResponse.ok) {
+                const msg = await deleteResponse.text();
+                throw new Error(msg || "已寫入戰績，但刪除推薦失敗");
+            }
+        }
+
+        alert(`已結算同場 ${sameMatchItems.length} 筆，合計獲利 ${totalProfit.toFixed(2)}`);
+        await loadCloudRecommendations();
+        await loadCloudSettledMatches();
+    } catch (err) {
+        console.error(err);
+        alert("結算失敗，請檢查 matches/recommendations 權限設定");
+    }
+}
+
+async function deleteCloudRecommendation(id) {
+    if (!id) return;
+    if (!confirm("確定要刪除這筆雲端推薦嗎？")) return;
+
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(id)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                }
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "刪除失敗");
+        }
+
+        setCloudStatus("刪除成功，重新整理中...");
+        await loadCloudRecommendations();
+    } catch (err) {
+        console.error(err);
+        setCloudStatus("刪除失敗，請確認 Supabase RLS 有開放 delete");
+    }
+}
+
+async function deleteCloudRecommendationGroup(id) {
+    const item = cloudRecommendations.find((x) => String(x.id) === String(id));
+    if (!item) return;
+    const groupKey = getMatchGroupKey(item);
+    const sameMatchItems = cloudRecommendations.filter((x) => getMatchGroupKey(x) === groupKey);
+    if (!sameMatchItems.length) return;
+    if (!confirm(`確定要刪除這場的 ${sameMatchItems.length} 筆推薦嗎？`)) return;
+
+    try {
+        for (const entry of sameMatchItems) {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(entry.id)}`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                const msg = await response.text();
+                throw new Error(msg || "刪除失敗");
+            }
+        }
+        setCloudStatus("同場推薦已刪除，重新整理中...");
+        await loadCloudRecommendations();
+    } catch (err) {
+        console.error(err);
+        setCloudStatus("刪除失敗，請確認 Supabase RLS 有開放 delete");
+    }
+}
+
+async function addRecommendation() {
+    const league = document.getElementById("league").value;
+    const home = document.getElementById("home").value;
+    const away = document.getElementById("away").value;
+    const line = document.getElementById("line").value;
+    const lineSide = document.getElementById("lineSide").value;
+    const enableSecondBet = document.getElementById("enableSecondBet").checked;
+    const line2 = document.getElementById("line2").value;
+    const lineSide2 = document.getElementById("lineSide2").value;
+    const dateTimeRaw = document.getElementById("matchDateTime").value;
+    const parsedDateTime = parseDateTimeInput(dateTimeRaw);
+    const odds = toNum(document.getElementById("odds").value);
+    const stake = toNum(document.getElementById("stake").value);
+    const odds2 = toNum(document.getElementById("odds2").value);
+    const stake2 = toNum(document.getElementById("stake2").value);
+
+    if (!parsedDateTime) {
+        alert("請先填寫日期時間");
+        return;
+    }
+
+    if (enableSecondBet && (odds2 === null || stake2 === null)) {
+        alert("請完整填寫第二組賠率與投注金額");
+        return;
+    }
+
+    const lineText = formatLineText(line, lineSide, currentSport);
+    const lineText2 = formatLineText(line2, lineSide2, currentSport);
+
+    const item = {
+        league: formatLeagueName(league),
+        sport: inferSportByLeague(league),
+        home: home,
+        away: away,
+        line: lineText,
+        odds: odds,
+        stake: stake,
+        date: parsedDateTime.date,
+        time: parsedDateTime.time,
+        status: "preview"
+    };
+
+    const itemsToInsert = [item];
+    if (enableSecondBet) {
+        itemsToInsert.push({
+            ...item,
+            line: lineText2,
+            odds: odds2,
+            stake: stake2
+        });
+    }
+
+    const supabaseReady =
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+
+    if (!supabaseReady) {
+        itemsToInsert.forEach((entry, idx) => {
+            recommendations.push({
+                id: "manual_" + Date.now() + "_" + idx,
+                ...entry
+            });
+        });
+        saveRecommendations();
+        alert("尚未設定 Supabase，已先儲存到本機。設定完成後即可同步雲端。");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+            {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify(itemsToInsert)
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "Supabase 寫入失敗");
+        }
+
+        alert("已成功匯入到雲端推薦資料");
+        await loadCloudRecommendations();
+    } catch (err) {
+        console.error(err);
+        recommendations.push({
+            id: "manual_" + Date.now(),
+            ...item
+        });
+        saveRecommendations();
+        alert("雲端寫入失敗，已改存本機備援。請檢查 Supabase 設定。");
+    }
+}
+
+async function settleMatchToCloud() {
+    const league = document.getElementById("league").value;
+    const home = document.getElementById("home").value;
+    const away = document.getElementById("away").value;
+    const line = document.getElementById("line").value;
+    const lineSide = document.getElementById("lineSide").value;
+    const dateTimeRaw = document.getElementById("matchDateTime").value;
+    const parsedDateTime = parseDateTimeInput(dateTimeRaw);
+
+    const odds = toNum(document.getElementById("odds").value);
+    const stake = toNum(document.getElementById("stake").value);
+    const homeScore = toNum(document.getElementById("homeScore").value);
+    const awayScore = toNum(document.getElementById("awayScore").value);
+
+    if (homeScore === null || awayScore === null) {
+        alert("還沒輸入賽果（主隊比分/客隊比分）");
+        return;
+    }
+
+    if (!parsedDateTime) {
+        alert("請先填寫日期時間");
+        return;
+    }
+
+    const supabaseReady =
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+    if (!supabaseReady) {
+        alert("尚未設定 Supabase，無法結算到雲端戰績");
+        return;
+    }
+
+    const lineText = currentSport === "basketball"
+        ? `${lineSide === "home" ? "主隊" : "客隊"} ${line}`
+        : line;
+
+    const row = {
+        id: buildMatchId(league, parsedDateTime.date, parsedDateTime.time, home, away),
+        date: parsedDateTime.date,
+        time: parsedDateTime.time,
+        league: formatLeagueName(league),
+        sport: inferSportByLeague(league),
+        status: "final",
+        home_name: home,
+        home_short: home,
+        home_logo: "",
+        home_score: homeScore,
+        away_name: away,
+        away_short: away,
+        away_logo: "",
+        away_score: awayScore,
+        prediction_value: lineText,
+        prediction_result: getPredictionResultByLine(line, homeScore, awayScore, lineSide),
+        odds: odds,
+        stake: stake,
+        profit: getProfitByResult(getPredictionResultByLine(line, homeScore, awayScore, lineSide), stake, odds),
+        summary: ""
+    };
+
+    try {
+        const response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
+            {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "resolution=merge-duplicates,return=minimal"
+                },
+                body: JSON.stringify([row])
+            }
+        );
+
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "結算寫入失敗");
+        }
+
+        alert("已結算並寫入雲端戰績");
+    } catch (err) {
+        console.error(err);
+        alert("結算失敗，請確認 matches 權限已開啟 insert");
+    }
+}
+
+// ---------- 渲染 ----------
+function render() {
+
+    const list = document.getElementById("list");
+    const totalEl = document.getElementById("total");
+    if (!list || !totalEl) return;
+    list.innerHTML = "";
+
+    let total = 0;
+
+    bets.forEach((b, i) => {
+
+        const profit = isNaN(b.profit) ? 0 : b.profit;
+        total += profit;
+
+        list.innerHTML += `
+        <tr>
+            <td>${b.league}</td>
+            <td>${b.home} vs ${b.away}</td>
+            <td>${b.line}</td>
+            <td>${b.stake}</td>
+            <td>${b.homeScore}:${b.awayScore}</td>
+            <td>${profit.toFixed(2)}</td>
+            <td><button class="delBtn" onclick="del(${i})">X</button></td>
+        </tr>`;
+    });
+
+    totalEl.innerText = "總盈虧：" + total.toFixed(2);
+}
+
+// ---------- 新增 ----------
+function addBet() {
+
+    const league = document.getElementById("league").value;
+    const home = document.getElementById("home").value;
+    const away = document.getElementById("away").value;
+    const line = document.getElementById("line").value;
+
+    const odds = toNum(document.getElementById("odds").value);
+    const stake = toNum(document.getElementById("stake").value);
+    const homeScore = toNum(document.getElementById("homeScore").value);
+    const awayScore = toNum(document.getElementById("awayScore").value);
+
+    if (!odds || !stake || homeScore === null || awayScore === null) {
+        alert("請完整填寫所有欄位");
+        return;
+    }
+
+    const profit = calc(line, odds, stake, homeScore, awayScore);
+
+    bets.push({
+        league,
+        home,
+        away,
+        line,
+        odds,
+        stake,
+        homeScore,
+        awayScore,
+        profit
+    });
+
+    save();
+    render();
+}
+
+// ---------- 刪除 ----------
+function del(i) {
+    bets.splice(i, 1);
+    save();
+    render();
+}
+
+// ---------- 初始化 ----------
+setSportFilter("basketball");
+render();
+loadCloudRecommendations();
+loadCloudSettledMatches();
+
+</script>
+
+</body>
+</html>
