@@ -317,6 +317,18 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .week-summary-card .pred-stat-row.pred-stat-grid{padding:8px 0;border-bottom:1px solid var(--border)}
 .week-summary-card .pred-stat-row:last-of-type{border-bottom:none}
 .week-summary-card .pred-stat-row .pred-stat-league{color:var(--text)}
+.week-summary-card .week-league-breakdown{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px}
+.week-summary-card .week-league-breakdown summary{
+  cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px;
+  font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.2px;
+}
+.week-summary-card .week-league-breakdown summary::-webkit-details-marker{display:none}
+.week-summary-card .week-league-breakdown summary::before{
+  content:'▸';color:var(--muted);font-size:.72rem;transform:translateY(-1px);transition:transform .2s;
+}
+.week-summary-card .week-league-breakdown[open] summary::before{transform:rotate(90deg) translateX(1px)}
+.week-summary-card .week-league-breakdown .week-league-rows{margin-top:8px}
+.week-summary-card .week-league-breakdown .empty{font-size:.74rem;color:var(--muted);padding:8px 0}
 .week-summary-card .pred-stat-net{font-weight:800;font-size:.82rem}
 .week-summary-card .pred-stat-net.pos{color:var(--green)}
 .week-summary-card .pred-stat-net.neg{color:var(--red)}
@@ -1148,6 +1160,34 @@ function renderWeekSummary() {
       );
     }
 
+    function buildLeagueRowsInWeek(list) {
+      var byLeague = tallyPredictionsByLeague(list).byLeague;
+      var ordered = PRED_STATS_LEAGUE_ORDER.filter(function (lg) {
+        var rec = byLeague[lg];
+        return rec && (Math.abs(rec.hit) > 1e-9 || Math.abs(rec.miss) > 1e-9);
+      });
+      if (!ordered.length) {
+        return '<div class="empty">本週尚無可統計的聯賽結算資料</div>';
+      }
+      return ordered.map(function (lg) {
+        var rec = byLeague[lg] || { hit: 0, miss: 0 };
+        var net = formatNet(rec.hit, rec.miss);
+        var nc = netClass(rec.hit, rec.miss);
+        var label = LEAGUE_STATS_LABEL[lg] || lg;
+        return (
+          '<div class="pred-stat-row pred-stat-grid">' +
+            '<span class="pred-stat-league pred-stat-col-league">' + label + '</span>' +
+            '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(rec.hit) + '</span>' +
+            '<span class="pred-stat-sep">·</span>' +
+            '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(rec.miss) + '</span>' +
+            '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
+          '</div>'
+        );
+      }).join('');
+    }
+
+    var leagueRowsHtml = buildLeagueRowsInWeek(inRange);
+
     allWeekItemsHtml += `
       <div class="week-summary-item">
         <div class="week-summary-head" onclick="this.parentElement.classList.toggle('open')">
@@ -1164,6 +1204,12 @@ function renderWeekSummary() {
             ${rowHtml('🏀 籃球', recBb, netBb, ncBb)}
             ${rowHtml('⚽ 足球', recSc, netSc, ncSc)}
           </div>
+          <details class="week-league-breakdown">
+            <summary>查看當周各聯賽狀況</summary>
+            <div class="week-league-rows">
+              ${leagueRowsHtml}
+            </div>
+          </details>
         </div>
       </div>
     `;
