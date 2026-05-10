@@ -260,7 +260,7 @@ const leagues = {
   Bundesliga2: {
     label: "德乙",
     sport: "soccer",
-    teams: ["比勒費爾德", "波琴", "布倫瑞克", "達斯泰特", "德累斯頓", "杜塞爾多夫", "艾華斯堡", "格雷特霍夫", "漢諾威", "卡斯魯厄", "凱沙羅頓", "馬格德堡", "明斯特", "紐倫堡", "柏德博恩", "沙爾克04", "科隆", "哈化柏林"]
+    teams: ["比勒費爾德", "波琴", "布倫瑞克", "達斯泰特", "德累斯頓", "杜塞爾多夫", "艾華斯堡", "格雷特霍夫", "漢諾威", "卡斯魯厄", "凱沙羅頓", "馬格德堡", "明斯特", "紐倫堡", "柏德博恩", "沙爾克04", "基爾", "哈化柏林"]
   },
   Aleague: {
     label: "澳甲",
@@ -275,7 +275,7 @@ const leagues = {
   Eredivisie: {
     label: "荷蘭甲",
     sport: "soccer",
-    teams: ["阿積士", "AZ艾克馬亞", "精英隊", "飛燕諾", "福图納錫塔德", "前進之鷹", "海倫芬", "荷華高斯", "NAC布雷達", "奈梅亨", "鹿特丹斯巴達", "川迪", "烏德勒支", "禾寧丹", "PSV燕豪芬", "PEC施禾利", "威廉二世", "格羅寧根"]
+    teams: ["阿積士", "AZ艾克馬亞", "精英隊", "飛燕諾", "福图納錫塔德", "前進之鷹", "海倫芬", "荷華高斯", "NAC布雷達", "奈梅亨", "鹿特丹斯巴達", "川迪", "烏德勒支", "禾寧丹", "PSV燕豪芬", "PEC施禾利", "泰斯達", "格羅寧根"]
   }
 };
 let currentSport = "soccer";
@@ -466,7 +466,7 @@ function getPredictionResultByLine(line, homeScore, awayScore, lineSide) {
     }
     if (normalizedLine === "大3.25") {
         if (total >= 4) return "hit";
-        if (total === 3) return "push";
+        if (total === 3) return "half_miss";
         return "miss";
     }
     if (normalizedLine === "大3.75") {

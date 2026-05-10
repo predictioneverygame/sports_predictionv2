@@ -89,7 +89,7 @@ function soccerOverUnderResultForToken(token, totalGoals) {
   }
   if (line === "大3.25") {
     if (totalGoals >= 4) return "hit";
-    if (totalGoals === 3) return "push";
+    if (totalGoals === 3) return "half_miss";
     return "miss";
   }
   if (line === "大3.75") {

@@ -457,24 +457,24 @@ footer a{color:var(--accent);text-decoration:none}
   <div id="section-basketball" class="leagues-section">
     <div class="section-title">🏀 籃球聯賽</div>
     <div class="league-grid">
-      <div class="league-card" onclick="showLeague('SBL')"><div class="lg-icon">🏀</div><div class="lg-name">SBL</div><div class="lg-sub">超級籃球聯賽</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('TPBL')"><div class="lg-icon">🏀</div><div class="lg-name">TPBL</div><div class="lg-sub">台灣職籃</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('PLG')"><div class="lg-icon">🏀</div><div class="lg-name">PLG</div><div class="lg-sub">P. LEAGUE+</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('BCL')"><div class="lg-icon">🌏</div><div class="lg-name">BCL</div><div class="lg-sub">Asia-East</div><span class="badge-b">亞洲</span></div>
+      <div class="league-card" onclick="showLeague('SBL')"><div class="lg-name">SBL</div><div class="lg-sub">超級籃球聯賽</div><span class="badge-b">台灣</span></div>
+      <div class="league-card" onclick="showLeague('TPBL')"><div class="lg-name">TPBL</div><div class="lg-sub">台灣職籃</div><span class="badge-b">台灣</span></div>
+      <div class="league-card" onclick="showLeague('PLG')"><div class="lg-name">PLG</div><div class="lg-sub">P. LEAGUE+</div><span class="badge-b">台灣</span></div>
+      <div class="league-card" onclick="showLeague('BCL')"><div class="lg-name">BCL</div><div class="lg-sub">Asia-East</div><span class="badge-b">亞洲</span></div>
     </div>
   </div>
   <!-- 足球 -->
   <div id="section-football" class="leagues-section">
     <div class="section-title">⚽ 足球聯賽</div>
     <div class="league-grid">
-      <div class="league-card football" onclick="showLeague('英超')"><div class="lg-icon">🏴</div><div class="lg-name">英超</div><div class="lg-sub">Premier League</div><span class="badge-f">英格蘭</span></div>
-      <div class="league-card football" onclick="showLeague('西甲')"><div class="lg-icon">🇪🇸</div><div class="lg-name">西甲</div><div class="lg-sub">LaLiga</div><span class="badge-f">西班牙</span></div>
-      <div class="league-card football" onclick="showLeague('德甲')"><div class="lg-icon">🇩🇪</div><div class="lg-name">德甲</div><div class="lg-sub">Bundesliga</div><span class="badge-f">德國</span></div>
-      <div class="league-card football" onclick="showLeague('法甲')"><div class="lg-icon">🇫🇷</div><div class="lg-name">法甲</div><div class="lg-sub">Ligue 1</div><span class="badge-f">法國</span></div>
-      <div class="league-card football" onclick="showLeague('德乙')"><div class="lg-icon">🇩🇪</div><div class="lg-name">德乙</div><div class="lg-sub">Bundesliga 2</div><span class="badge-f">德國</span></div>
-      <div class="league-card football" onclick="showLeague('澳甲')"><div class="lg-icon">🇦🇺</div><div class="lg-name">澳甲</div><div class="lg-sub">A-League</div><span class="badge-f">澳洲</span></div>
-      <div class="league-card football" onclick="showLeague('美足')"><div class="lg-icon">🇺🇸</div><div class="lg-name">美足 MLS</div><div class="lg-sub">Major League Soccer</div><span class="badge-f">美國</span></div>
-      <div class="league-card football" onclick="showLeague('荷蘭甲')"><div class="lg-icon">🇳🇱</div><div class="lg-name">荷蘭甲</div><div class="lg-sub">Eredivisie</div><span class="badge-f">荷蘭</span></div>
+      <div class="league-card football" onclick="showLeague('英超')"><div class="lg-name">英超</div><div class="lg-sub">Premier League</div><span class="badge-f">英格蘭</span></div>
+      <div class="league-card football" onclick="showLeague('西甲')"><div class="lg-name">西甲</div><div class="lg-sub">LaLiga</div><span class="badge-f">西班牙</span></div>
+      <div class="league-card football" onclick="showLeague('德甲')"><div class="lg-name">德甲</div><div class="lg-sub">Bundesliga</div><span class="badge-f">德國</span></div>
+      <div class="league-card football" onclick="showLeague('法甲')"><div class="lg-name">法甲</div><div class="lg-sub">Ligue 1</div><span class="badge-f">法國</span></div>
+      <div class="league-card football" onclick="showLeague('德乙')"><div class="lg-name">德乙</div><div class="lg-sub">Bundesliga 2</div><span class="badge-f">德國</span></div>
+      <div class="league-card football" onclick="showLeague('澳甲')"><div class="lg-name">澳甲</div><div class="lg-sub">A-League</div><span class="badge-f">澳洲</span></div>
+      <div class="league-card football" onclick="showLeague('美足')"><div class="lg-name">美足 MLS</div><div class="lg-sub">Major League Soccer</div><span class="badge-f">美國</span></div>
+      <div class="league-card football" onclick="showLeague('荷蘭甲')"><div class="lg-name">荷蘭甲</div><div class="lg-sub">Eredivisie</div><span class="badge-f">荷蘭</span></div>
     </div>
   </div>
       </div>
@@ -741,7 +741,7 @@ function soccerOverUnderResultForToken(token, totalGoals) {
   }
   if (line === '大3.25') {
     if (totalGoals >= 4) return 'hit';
-    if (totalGoals === 3) return 'push';
+    if (totalGoals === 3) return 'half_miss';
     return 'miss';
   }
   if (line === '大3.75') {
