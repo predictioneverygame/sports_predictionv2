@@ -109,6 +109,106 @@ td, th {
     background:#0ea5e9;
 }
 
+.wc-group-switch {
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:8px 0 12px;
+}
+
+.wc-group-switch button {
+    width:auto;
+    flex:1 1 calc(16.66% - 6px);
+    min-width:44px;
+    margin-top:0;
+    padding:8px 4px;
+    font-size:13px;
+    background:#334155;
+}
+
+.wc-group-switch button.active {
+    background:#059669;
+}
+
+.wc-fixtures-list {
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    margin-top:12px;
+}
+
+.wc-fixture-card {
+    background:#0f172a;
+    border:1px solid #334155;
+    border-radius:10px;
+    padding:12px;
+}
+
+.wc-fixture-head {
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+    padding-bottom:8px;
+    border-bottom:1px solid #334155;
+}
+
+.wc-fixture-round {
+    font-size:12px;
+    font-weight:700;
+    color:#059669;
+    background:rgba(5,150,105,.15);
+    padding:2px 8px;
+    border-radius:6px;
+}
+
+.wc-fixture-match {
+    font-size:15px;
+    font-weight:700;
+    flex:1;
+}
+
+.wc-fixture-time {
+    font-size:12px;
+    color:#94a3b8;
+}
+
+.wc-fixture-grid {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+}
+
+.wc-fixture-grid input {
+    margin:0;
+    font-size:14px;
+    padding:8px;
+}
+
+.wc-fixture-submit {
+    margin-top:10px;
+    background:#059669;
+    font-size:14px;
+    padding:10px;
+}
+
+.field-label {
+    color:#94a3b8;
+    font-size:13px;
+    font-weight:700;
+    margin:10px 0 4px;
+}
+
+input[type="text"] {
+    width:100%;
+    padding:10px;
+    margin:6px 0;
+    font-size:16px;
+    border-radius:8px;
+    border:none;
+}
+
 #total {
     text-align:center;
     margin-top:15px;
@@ -171,6 +271,14 @@ td, th {
 
 <button onclick="addRecommendation()">匯入到推薦網站</button>
 
+</div>
+
+<div class="card">
+<div class="card-title">世足專區預測</div>
+<div class="hint">選組別後顯示該組 6 場小組賽（時間為台灣 UTC+8），填寫波膽與初盤後個別匯入</div>
+
+<div class="wc-group-switch" id="wcGroupSwitch"></div>
+<div class="wc-fixtures-list" id="wcFixturesList"></div>
 </div>
 
 <div class="card">
@@ -314,6 +422,108 @@ const SUPABASE_MATCHES_TABLE = "matches";
 const DEFAULT_LEAGUE_BY_SPORT = {
     basketball: "TPBL",
     soccer: "EPL"
+};
+const WC_GROUPS = "ABCDEFGHIJKL".split("");
+let selectedWcGroup = "A";
+// 2026 世足小組賽 6 場對戰（來源：FIFA / Roadtrips 官方賽程，時間換算為台灣 UTC+8）
+// 格式：[主隊, 客隊, 日期, 時間, 輪次]
+const WC_GROUP_FIXTURES = {
+    A: [
+        ["墨西哥", "南非", "2026-06-12", "03:00", 1],
+        ["南韓", "捷克", "2026-06-12", "10:00", 1],
+        ["捷克", "南非", "2026-06-19", "00:00", 2],
+        ["墨西哥", "南韓", "2026-06-19", "09:00", 2],
+        ["捷克", "墨西哥", "2026-06-25", "09:00", 3],
+        ["南非", "南韓", "2026-06-25", "09:00", 3]
+    ],
+    B: [
+        ["加拿大", "波士尼亞", "2026-06-13", "03:00", 1],
+        ["卡達", "瑞士", "2026-06-14", "03:00", 1],
+        ["瑞士", "波士尼亞", "2026-06-19", "03:00", 2],
+        ["加拿大", "卡達", "2026-06-19", "06:00", 2],
+        ["瑞士", "加拿大", "2026-06-25", "03:00", 3],
+        ["波士尼亞", "卡達", "2026-06-25", "03:00", 3]
+    ],
+    C: [
+        ["巴西", "摩洛哥", "2026-06-14", "06:00", 1],
+        ["海地", "蘇格蘭", "2026-06-14", "09:00", 1],
+        ["蘇格蘭", "摩洛哥", "2026-06-20", "06:00", 2],
+        ["巴西", "海地", "2026-06-20", "09:00", 2],
+        ["蘇格蘭", "巴西", "2026-06-25", "06:00", 3],
+        ["摩洛哥", "海地", "2026-06-25", "06:00", 3]
+    ],
+    D: [
+        ["美國", "巴拉圭", "2026-06-13", "09:00", 1],
+        ["澳洲", "土耳其", "2026-06-13", "12:00", 1],
+        ["美國", "澳洲", "2026-06-20", "03:00", 2],
+        ["土耳其", "巴拉圭", "2026-06-20", "11:00", 2],
+        ["土耳其", "美國", "2026-06-26", "10:00", 3],
+        ["巴拉圭", "澳洲", "2026-06-26", "10:00", 3]
+    ],
+    E: [
+        ["德國", "古拉索", "2026-06-15", "01:00", 1],
+        ["象牙海岸", "厄瓜多", "2026-06-15", "07:00", 1],
+        ["德國", "象牙海岸", "2026-06-21", "04:00", 2],
+        ["厄瓜多", "古拉索", "2026-06-21", "08:00", 2],
+        ["古拉索", "象牙海岸", "2026-06-26", "04:00", 3],
+        ["厄瓜多", "德國", "2026-06-26", "04:00", 3]
+    ],
+    F: [
+        ["荷蘭", "日本", "2026-06-15", "04:00", 1],
+        ["瑞典", "突尼西亞", "2026-06-15", "10:00", 1],
+        ["荷蘭", "瑞典", "2026-06-21", "01:00", 2],
+        ["突尼西亞", "日本", "2026-06-20", "12:00", 2],
+        ["日本", "瑞典", "2026-06-26", "07:00", 3],
+        ["突尼西亞", "荷蘭", "2026-06-26", "07:00", 3]
+    ],
+    G: [
+        ["比利時", "埃及", "2026-06-16", "03:00", 1],
+        ["伊朗", "紐西蘭", "2026-06-16", "09:00", 1],
+        ["比利時", "伊朗", "2026-06-22", "03:00", 2],
+        ["紐西蘭", "埃及", "2026-06-22", "09:00", 2],
+        ["埃及", "伊朗", "2026-06-27", "11:00", 3],
+        ["紐西蘭", "比利時", "2026-06-27", "11:00", 3]
+    ],
+    H: [
+        ["西班牙", "維德角", "2026-06-16", "00:00", 1],
+        ["沙烏地阿拉伯", "烏拉圭", "2026-06-16", "06:00", 1],
+        ["西班牙", "沙烏地阿拉伯", "2026-06-22", "00:00", 2],
+        ["烏拉圭", "維德角", "2026-06-22", "06:00", 2],
+        ["維德角", "沙烏地阿拉伯", "2026-06-27", "08:00", 3],
+        ["烏拉圭", "西班牙", "2026-06-27", "08:00", 3]
+    ],
+    I: [
+        ["法國", "塞內加爾", "2026-06-17", "03:00", 1],
+        ["伊拉克", "挪威", "2026-06-17", "06:00", 1],
+        ["法國", "伊拉克", "2026-06-23", "05:00", 2],
+        ["挪威", "塞內加爾", "2026-06-23", "08:00", 2],
+        ["挪威", "法國", "2026-06-27", "03:00", 3],
+        ["塞內加爾", "伊拉克", "2026-06-27", "03:00", 3]
+    ],
+    J: [
+        ["奧地利", "約旦", "2026-06-16", "12:00", 1],
+        ["阿根廷", "阿爾及利亞", "2026-06-17", "09:00", 1],
+        ["阿根廷", "奧地利", "2026-06-23", "01:00", 2],
+        ["約旦", "阿爾及利亞", "2026-06-23", "11:00", 2],
+        ["阿爾及利亞", "奧地利", "2026-06-28", "10:00", 3],
+        ["約旦", "阿根廷", "2026-06-28", "10:00", 3]
+    ],
+    K: [
+        ["葡萄牙", "剛果民主共和國", "2026-06-18", "01:00", 1],
+        ["烏茲別克", "哥倫比亞", "2026-06-18", "10:00", 1],
+        ["葡萄牙", "烏茲別克", "2026-06-24", "01:00", 2],
+        ["哥倫比亞", "剛果民主共和國", "2026-06-24", "10:00", 2],
+        ["哥倫比亞", "葡萄牙", "2026-06-28", "07:30", 3],
+        ["剛果民主共和國", "烏茲別克", "2026-06-28", "07:30", 3]
+    ],
+    L: [
+        ["英格蘭", "克羅埃西亞", "2026-06-18", "04:00", 1],
+        ["迦納", "巴拿馬", "2026-06-18", "07:00", 1],
+        ["英格蘭", "迦納", "2026-06-24", "04:00", 2],
+        ["巴拿馬", "克羅埃西亞", "2026-06-24", "07:00", 2],
+        ["巴拿馬", "英格蘭", "2026-06-28", "05:00", 3],
+        ["克羅埃西亞", "迦納", "2026-06-28", "05:00", 3]
+    ]
 };
 
 try {
@@ -669,13 +879,16 @@ function renderCloudRecommendations() {
 
     Object.values(grouped).forEach((group) => {
         const item = group.first;
-        const mergedLines = Array.from(new Set(group.lines)).join("/");
+        var mergedLines = Array.from(new Set(group.lines)).join("/");
+        const displayLine = /^世足\s*[A-L]組/.test(String(item.league || ""))
+            ? (item.summary ? `初盤:${mergedLines}｜${item.summary}` : mergedLines)
+            : mergedLines;
         cloudList.innerHTML += `
         <tr>
             <td>${item.date} ${item.time}</td>
             <td>${item.league}</td>
             <td>${item.home} vs ${item.away}</td>
-            <td>${mergedLines}</td>
+            <td>${displayLine}</td>
             <td>
               <div class="action-row">
                 <button class="smallBtn" onclick="settleCloudRecommendation('${item.id}')">結算</button>
@@ -954,6 +1167,183 @@ async function deleteCloudRecommendationGroup(id) {
     }
 }
 
+function renderWcGroupSwitch() {
+    const container = document.getElementById("wcGroupSwitch");
+    if (!container) return;
+    container.innerHTML = WC_GROUPS.map((g) => {
+        const activeClass = g === selectedWcGroup ? " active" : "";
+        return `<button type="button" class="${activeClass.trim()}" onclick="setWcGroup('${g}')">${g}組</button>`;
+    }).join("");
+}
+
+function wcFixtureFieldId(group, idx, field) {
+    return `wc-${group}-${idx}-${field}`;
+}
+
+function formatWcDisplayDate(dateStr) {
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    return `${parts[1]}/${parts[2]}`;
+}
+
+function renderWcFixturesList() {
+    const container = document.getElementById("wcFixturesList");
+    if (!container) return;
+
+    const fixtures = WC_GROUP_FIXTURES[selectedWcGroup] || [];
+    if (!fixtures.length) {
+        container.innerHTML = `<div class="hint">此組別尚無賽程資料</div>`;
+        return;
+    }
+
+    container.innerHTML = fixtures.map((fx, idx) => {
+        const [home, away, date, time, round] = fx;
+        const id = (field) => wcFixtureFieldId(selectedWcGroup, idx, field);
+        return `
+        <div class="wc-fixture-card">
+            <div class="wc-fixture-head">
+                <span class="wc-fixture-round">第${round}輪</span>
+                <span class="wc-fixture-match">${home} vs ${away}</span>
+                <span class="wc-fixture-time">${formatWcDisplayDate(date)} ${time}</span>
+            </div>
+            <div class="field-label">波膽（4 組）</div>
+            <div class="wc-fixture-grid">
+                <input id="${id("s1")}" type="text" placeholder="波膽 1">
+                <input id="${id("s2")}" type="text" placeholder="波膽 2">
+                <input id="${id("s3")}" type="text" placeholder="波膽 3">
+                <input id="${id("s4")}" type="text" placeholder="波膽 4">
+            </div>
+            <div class="field-label">初盤</div>
+            <input id="${id("line")}" type="text" placeholder="初盤，例如 大2.5">
+            <button type="button" class="wc-fixture-submit" onclick="addWorldCupPredictionForFixture('${selectedWcGroup}', ${idx})">匯入此場</button>
+        </div>`;
+    }).join("");
+}
+
+function setWcGroup(group) {
+    selectedWcGroup = group;
+    renderWcGroupSwitch();
+    renderWcFixturesList();
+}
+
+async function postWorldCupItem(item) {
+    const supabaseReady =
+        SUPABASE_URL !== "YOUR_SUPABASE_URL" &&
+        SUPABASE_ANON_KEY !== "YOUR_SUPABASE_ANON_KEY";
+
+    if (!supabaseReady) {
+        recommendations.push({
+            id: "wc_manual_" + Date.now(),
+            ...item
+        });
+        saveRecommendations();
+        return { ok: true, local: true };
+    }
+
+    let response = await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+        {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_ANON_KEY,
+                "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            },
+            body: JSON.stringify([item])
+        }
+    );
+
+    if (!response.ok) {
+        const openingLine = item.line;
+        const scores = String(item.summary || "").split(" / ").filter(Boolean);
+        const fallbackItem = {
+            league: item.league,
+            sport: item.sport,
+            home: item.home,
+            away: item.away,
+            line: `初盤:${openingLine}｜波膽:${scores.join("/")}`,
+            odds: null,
+            stake: null,
+            date: item.date,
+            time: item.time,
+            status: item.status
+        };
+        response = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}`,
+            {
+                method: "POST",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                    "Content-Type": "application/json",
+                    "Prefer": "return=minimal"
+                },
+                body: JSON.stringify([fallbackItem])
+            }
+        );
+        if (!response.ok) {
+            const msg = await response.text();
+            throw new Error(msg || "Supabase 寫入失敗");
+        }
+    }
+
+    return { ok: true, local: false };
+}
+
+async function addWorldCupPredictionForFixture(group, idx) {
+    const fixtures = WC_GROUP_FIXTURES[group];
+    if (!fixtures || !fixtures[idx]) return;
+
+    const [home, away, date, time] = fixtures[idx];
+    const field = (name) => document.getElementById(wcFixtureFieldId(group, idx, name));
+    const openingLine = (field("line").value || "").trim();
+    const scores = ["s1", "s2", "s3", "s4"]
+        .map((key) => (field(key).value || "").trim())
+        .filter(Boolean);
+
+    if (!openingLine) {
+        alert("請填寫初盤");
+        return;
+    }
+
+    if (scores.length === 0) {
+        alert("請至少填寫一組波膽");
+        return;
+    }
+
+    const item = {
+        league: `世足 ${group}組`,
+        sport: "soccer",
+        home,
+        away,
+        line: openingLine,
+        summary: scores.join(" / "),
+        odds: null,
+        stake: null,
+        date,
+        time,
+        status: "preview"
+    };
+
+    try {
+        const result = await postWorldCupItem(item);
+        alert(result.local ? "已儲存到本機（Supabase 未設定）" : `已匯入：${home} vs ${away}`);
+        ["s1", "s2", "s3", "s4", "line"].forEach((key) => {
+            field(key).value = "";
+        });
+        await loadCloudRecommendations();
+    } catch (err) {
+        console.error(err);
+        recommendations.push({
+            id: "wc_manual_" + Date.now(),
+            ...item
+        });
+        saveRecommendations();
+        alert("雲端寫入失敗，已改存本機備援。");
+    }
+}
+
 async function addRecommendation() {
     const league = document.getElementById("league").value;
     const home = document.getElementById("home").value;
@@ -1216,6 +1606,8 @@ function del(i) {
 
 // ---------- 初始化 ----------
 setSportFilter("basketball");
+renderWcGroupSwitch();
+renderWcFixturesList();
 render();
 loadCloudRecommendations();
 loadCloudSettledMatches();

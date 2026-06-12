@@ -282,6 +282,20 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .profit-card .profit-main.zero{color:var(--muted)}
 .profit-card .profit-sub{margin-top:6px;font-size:.76rem;color:var(--muted)}
 .mobile-only-profit{display:none;margin-bottom:14px}
+.wc-sidebar-btn{
+  display:block;width:100%;padding:14px 16px;border:none;border-radius:12px;
+  font-size:1rem;font-weight:800;cursor:pointer;text-align:center;color:#fff;
+  background:linear-gradient(135deg,#f59e0b 0%,#ea580c 45%,#dc2626 100%);
+  box-shadow:0 4px 18px rgba(234,88,12,.4);
+  transition:transform .2s,box-shadow .2s;
+  letter-spacing:.5px;
+}
+.wc-sidebar-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 24px rgba(234,88,12,.5);
+}
+.wc-sidebar-btn:active{transform:translateY(0)}
+.mobile-only-wc{display:none;margin-bottom:14px}
 /* 側欄：當周總累積（預測戰績與搜尋之間） */
 .week-summary-card{margin-top:18px}
 .week-summary-card .week-summary-item{
@@ -364,7 +378,39 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 footer{background:var(--bg2);border-top:1px solid var(--border);text-align:center;padding:24px;color:var(--muted);font-size:.8rem;margin-top:40px}
 footer a{color:var(--accent);text-decoration:none}
 .nav-links a.nav-mail{font-size:.76rem;word-break:break-all;line-height:1.25;max-width:min(240px,28vw)}
-@media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
+/* 世足專區 */
+.wc-page-head{text-align:center;margin-bottom:28px}
+.wc-page-head h1{font-size:1.65rem;font-weight:900;margin-bottom:8px;background:linear-gradient(135deg,#0f172a 30%,var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.wc-page-head p{color:var(--muted);font-size:.9rem}
+.wc-group-tabs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px;justify-content:center}
+.wc-group-btn{padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);font-size:.88rem;font-weight:700;cursor:pointer;transition:all .2s;min-width:52px}
+.wc-group-btn:hover{border-color:var(--accent3);color:var(--accent3)}
+.wc-group-btn.active{background:var(--accent3);border-color:var(--accent3);color:#fff;box-shadow:0 4px 14px rgba(5,150,105,.25)}
+.wc-group-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;min-height:120px}
+.wc-group-title{font-size:1.05rem;font-weight:800;color:var(--accent3);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.wc-group-title::before{content:'';width:4px;height:20px;background:linear-gradient(180deg,var(--accent3),var(--accent));border-radius:2px}
+.wc-round-pill{font-size:.72rem;font-weight:700;color:var(--accent3);background:rgba(5,150,105,.12);padding:2px 10px;border-radius:10px;border:1px solid rgba(5,150,105,.25)}
+.wc-no-pred{margin:0 18px 18px;padding:12px 14px;text-align:center;color:var(--muted);background:rgba(100,116,139,.08);border:1px dashed var(--border);border-radius:8px;font-size:.84rem}
+.wc-schedule-card .match-header{border-bottom-color:rgba(5,150,105,.2)}
+#wc-group-content{display:flex;flex-direction:column;gap:12px}
+#wc-group-content .match-card.wc-match-card{margin-bottom:0}
+#wc-group-content .wc-match-body{display:flex;flex-direction:row;align-items:stretch;border-top:1px solid var(--border)}
+#wc-group-content .wc-match-body .scoreboard{flex:0 0 min(240px,34%);padding:14px 12px;border-right:1px solid var(--border);margin:0}
+#wc-group-content .wc-match-body .scoreboard .team-name{font-size:.92rem}
+#wc-group-content .wc-match-body .scoreboard .team-score{font-size:2.1rem}
+#wc-group-content .wc-match-body .scoreboard .team-short{font-size:.7rem}
+#wc-group-content .wc-match-body .prediction-box{flex:1;margin:12px 14px 12px 12px;align-self:center}
+#wc-group-content .wc-match-body .pred-items{grid-template-columns:repeat(5,minmax(0,1fr));max-width:none;gap:8px}
+#wc-group-content .wc-match-body .pred-item{padding:8px 6px}
+#wc-group-content .wc-match-body .pred-label{font-size:.68rem}
+#wc-group-content .wc-match-body .pred-value{font-size:.86rem}
+#wc-group-content .wc-no-pred{margin:12px 14px;flex:1;display:flex;align-items:center;justify-content:center}
+@media(max-width:768px){
+  #wc-group-content .wc-match-body{flex-direction:column}
+  #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
+  #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
+}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}.mobile-only-wc{display:block}#profit-summary-card{display:none}}
 </style>
 </head>
 <body>
@@ -376,6 +422,7 @@ footer a{color:var(--accent);text-decoration:none}
     <li><a href="#" title="推薦頁面待補">每日推薦</a></li>
     <li><a onclick="showPage('basketball')">籃球</a></li>
     <li><a onclick="showPage('football')">足球</a></li>
+    <li><a onclick="showPage('worldcup')">世足專區</a></li>
     <li><a class="nav-mail" href="mailto:predictioneverygame@gmail.com" title="寄信給本站">predictioneverygame@gmail.com</a></li>
   </ul>
 </nav>
@@ -398,6 +445,9 @@ footer a{color:var(--accent);text-decoration:none}
   <!-- 每日推薦 + 側欄 -->
   <div class="layout">
     <div>
+      <div class="mobile-only-wc">
+        <button type="button" class="wc-sidebar-btn" onclick="showPage('worldcup')">⚽ 世足專區</button>
+      </div>
       <div class="sb-card stats-card profit-card mobile-only-profit" id="profit-summary-card-mobile">
         <div class="profit-title">獲利</div>
         <div class="profit-main zero" id="profit-main-value-mobile">0.00%</div>
@@ -409,6 +459,7 @@ footer a{color:var(--accent);text-decoration:none}
       <div class="date-list" id="date-list"></div>
     </div>
     <div class="sidebar">
+      <button type="button" class="wc-sidebar-btn" onclick="showPage('worldcup')">⚽ 世足專區</button>
       <div class="sb-card stats-card profit-card" id="profit-summary-card">
         <div class="profit-title">獲利</div>
         <div class="profit-main zero" id="profit-main-value">0.00%</div>
@@ -488,6 +539,21 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 </div>
 
+<div id="page-worldcup" class="page">
+<div class="container">
+  <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
+  <div class="wc-page-head">
+    <h1>⚽ 世足專區</h1>
+    <p>2026 世界盃小組賽 · 完整賽程與預測（台灣時間 UTC+8）</p>
+  </div>
+  <div class="wc-group-tabs" id="wc-group-tabs"></div>
+  <div class="wc-group-panel">
+    <div class="wc-group-title" id="wc-group-title">A 組</div>
+    <div id="wc-group-content"></div>
+  </div>
+</div>
+</div>
+
 <div id="page-about" class="page">
 <div class="container">
   <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
@@ -538,37 +604,213 @@ const SUPABASE_URL = 'https://zcytivwjylkmnpqszvui.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA';
 const SUPABASE_RECOMMEND_TABLE = 'recommendations';
 const SUPABASE_MATCHES_TABLE = 'matches';
+const WC_GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
+let selectedWorldCupGroup = 'A';
+// 2026 世足小組賽 6 場對戰（來源：FIFA 官方賽程，時間為台灣 UTC+8）
+const WC_GROUP_FIXTURES = {
+  A: [
+    ['墨西哥', '南非', '2026-06-12', '03:00', 1],
+    ['南韓', '捷克', '2026-06-12', '10:00', 1],
+    ['捷克', '南非', '2026-06-19', '00:00', 2],
+    ['墨西哥', '南韓', '2026-06-19', '09:00', 2],
+    ['捷克', '墨西哥', '2026-06-25', '09:00', 3],
+    ['南非', '南韓', '2026-06-25', '09:00', 3]
+  ],
+  B: [
+    ['加拿大', '波士尼亞', '2026-06-13', '03:00', 1],
+    ['卡達', '瑞士', '2026-06-14', '03:00', 1],
+    ['瑞士', '波士尼亞', '2026-06-19', '03:00', 2],
+    ['加拿大', '卡達', '2026-06-19', '06:00', 2],
+    ['瑞士', '加拿大', '2026-06-25', '03:00', 3],
+    ['波士尼亞', '卡達', '2026-06-25', '03:00', 3]
+  ],
+  C: [
+    ['巴西', '摩洛哥', '2026-06-14', '06:00', 1],
+    ['海地', '蘇格蘭', '2026-06-14', '09:00', 1],
+    ['蘇格蘭', '摩洛哥', '2026-06-20', '06:00', 2],
+    ['巴西', '海地', '2026-06-20', '09:00', 2],
+    ['蘇格蘭', '巴西', '2026-06-25', '06:00', 3],
+    ['摩洛哥', '海地', '2026-06-25', '06:00', 3]
+  ],
+  D: [
+    ['美國', '巴拉圭', '2026-06-13', '09:00', 1],
+    ['澳洲', '土耳其', '2026-06-13', '12:00', 1],
+    ['美國', '澳洲', '2026-06-20', '03:00', 2],
+    ['土耳其', '巴拉圭', '2026-06-20', '11:00', 2],
+    ['土耳其', '美國', '2026-06-26', '10:00', 3],
+    ['巴拉圭', '澳洲', '2026-06-26', '10:00', 3]
+  ],
+  E: [
+    ['德國', '古拉索', '2026-06-15', '01:00', 1],
+    ['象牙海岸', '厄瓜多', '2026-06-15', '07:00', 1],
+    ['德國', '象牙海岸', '2026-06-21', '04:00', 2],
+    ['厄瓜多', '古拉索', '2026-06-21', '08:00', 2],
+    ['古拉索', '象牙海岸', '2026-06-26', '04:00', 3],
+    ['厄瓜多', '德國', '2026-06-26', '04:00', 3]
+  ],
+  F: [
+    ['荷蘭', '日本', '2026-06-15', '04:00', 1],
+    ['瑞典', '突尼西亞', '2026-06-15', '10:00', 1],
+    ['荷蘭', '瑞典', '2026-06-21', '01:00', 2],
+    ['突尼西亞', '日本', '2026-06-20', '12:00', 2],
+    ['日本', '瑞典', '2026-06-26', '07:00', 3],
+    ['突尼西亞', '荷蘭', '2026-06-26', '07:00', 3]
+  ],
+  G: [
+    ['比利時', '埃及', '2026-06-16', '03:00', 1],
+    ['伊朗', '紐西蘭', '2026-06-16', '09:00', 1],
+    ['比利時', '伊朗', '2026-06-22', '03:00', 2],
+    ['紐西蘭', '埃及', '2026-06-22', '09:00', 2],
+    ['埃及', '伊朗', '2026-06-27', '11:00', 3],
+    ['紐西蘭', '比利時', '2026-06-27', '11:00', 3]
+  ],
+  H: [
+    ['西班牙', '維德角', '2026-06-16', '00:00', 1],
+    ['沙烏地阿拉伯', '烏拉圭', '2026-06-16', '06:00', 1],
+    ['西班牙', '沙烏地阿拉伯', '2026-06-22', '00:00', 2],
+    ['烏拉圭', '維德角', '2026-06-22', '06:00', 2],
+    ['維德角', '沙烏地阿拉伯', '2026-06-27', '08:00', 3],
+    ['烏拉圭', '西班牙', '2026-06-27', '08:00', 3]
+  ],
+  I: [
+    ['法國', '塞內加爾', '2026-06-17', '03:00', 1],
+    ['伊拉克', '挪威', '2026-06-17', '06:00', 1],
+    ['法國', '伊拉克', '2026-06-23', '05:00', 2],
+    ['挪威', '塞內加爾', '2026-06-23', '08:00', 2],
+    ['挪威', '法國', '2026-06-27', '03:00', 3],
+    ['塞內加爾', '伊拉克', '2026-06-27', '03:00', 3]
+  ],
+  J: [
+    ['奧地利', '約旦', '2026-06-16', '12:00', 1],
+    ['阿根廷', '阿爾及利亞', '2026-06-17', '09:00', 1],
+    ['阿根廷', '奧地利', '2026-06-23', '01:00', 2],
+    ['約旦', '阿爾及利亞', '2026-06-23', '11:00', 2],
+    ['阿爾及利亞', '奧地利', '2026-06-28', '10:00', 3],
+    ['約旦', '阿根廷', '2026-06-28', '10:00', 3]
+  ],
+  K: [
+    ['葡萄牙', '剛果民主共和國', '2026-06-18', '01:00', 1],
+    ['烏茲別克', '哥倫比亞', '2026-06-18', '10:00', 1],
+    ['葡萄牙', '烏茲別克', '2026-06-24', '01:00', 2],
+    ['哥倫比亞', '剛果民主共和國', '2026-06-24', '10:00', 2],
+    ['哥倫比亞', '葡萄牙', '2026-06-28', '07:30', 3],
+    ['剛果民主共和國', '烏茲別克', '2026-06-28', '07:30', 3]
+  ],
+  L: [
+    ['英格蘭', '克羅埃西亞', '2026-06-18', '04:00', 1],
+    ['迦納', '巴拿馬', '2026-06-18', '07:00', 1],
+    ['英格蘭', '迦納', '2026-06-24', '04:00', 2],
+    ['巴拿馬', '克羅埃西亞', '2026-06-24', '07:00', 2],
+    ['巴拿馬', '英格蘭', '2026-06-28', '05:00', 3],
+    ['克羅埃西亞', '迦納', '2026-06-28', '05:00', 3]
+  ]
+};
+
+// 已完賽小組賽賽果（FIFA 官方）
+const WC_MATCH_RESULTS = {
+  '2026-06-12|03:00|墨西哥|南非': { home: 2, away: 0 },
+  '2026-06-12|10:00|南韓|捷克': { home: 2, away: 1 }
+};
+
+function isWorldCupLeague(league) {
+  return /世足\s*[A-L]組/.test(String(league || ''));
+}
+
+function getWorldCupGroup(league) {
+  var m = String(league || '').match(/世足\s*([A-L])組/);
+  return m ? m[1] : null;
+}
+
+function isWorldCupMatch(m) {
+  return isWorldCupLeague(m && m.league);
+}
+
+function parseWorldCupPayload(line, summary) {
+  var opening = String(line || '').trim();
+  var scores = [];
+  if (summary) {
+    scores = String(summary).split(/[/／|｜]/).map(function (s) { return s.trim(); }).filter(Boolean);
+  }
+  if (!scores.length && opening.indexOf('｜波膽:') !== -1) {
+    var parts = opening.split('｜');
+    opening = parts[0].replace(/^初盤:/, '').trim();
+    var scorePart = parts[1] || '';
+    if (scorePart.indexOf('波膽:') === 0) {
+      scores = scorePart.slice(3).split('/').map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+  }
+  return { opening: opening, scores: scores };
+}
+
+function buildWorldCupPrediction(r) {
+  var parsed = parseWorldCupPayload(r.line, r.summary);
+  var prediction = {
+    opening: { label: '初盤', value: parsed.opening || '—', result: 'pending' }
+  };
+  for (var i = 0; i < 4; i++) {
+    prediction['score' + (i + 1)] = {
+      label: '波膽 ' + (i + 1),
+      value: parsed.scores[i] || '—',
+      result: 'pending'
+    };
+  }
+  return prediction;
+}
+
+function normalizeWorldCupRecommendation(r, idPrefix, idx) {
+  var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'soccer';
+  var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
+  var safeId = r.id || (idPrefix + '_wc_' + r.date + '_' + r.time + '_' + idx);
+  return {
+    id: String(safeId),
+    date: String(r.date),
+    league: String(r.league),
+    sport: sport,
+    time: String(r.time),
+    status: status,
+    home: { name: String(r.home), short: String(r.home), logo: '', score: 0 },
+    away: { name: String(r.away), short: String(r.away), logo: '', score: 0 },
+    prediction: buildWorldCupPrediction(r),
+    mvps: [],
+    summary: String(r.summary || '')
+  };
+}
 
 function normalizeRecommendations(list, idPrefix) {
   if (!Array.isArray(list)) return [];
-  var normalizedRows = list
-    .filter(function (r) {
-      return r && r.league && r.home && r.away && r.line && r.date && r.time;
-    })
-    .map(function (r, idx) {
-      var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
-      var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
-      var safeId = r.id || (idPrefix + '_' + r.date + '_' + r.time + '_' + idx);
+  var worldCupRows = [];
+  var regularRows = [];
 
-      return {
-        id: String(safeId),
-        date: String(r.date),
-        league: String(r.league),
-        sport: sport,
-        time: String(r.time),
-        status: status,
-        home: { name: String(r.home), short: String(r.home), logo: '', score: 0 },
-        away: { name: String(r.away), short: String(r.away), logo: '', score: 0 },
-        prediction: {
-          winner: { label: '盤口預測', value: String(r.line), result: 'pending' }
-        },
-        mvps: [],
-        summary: ''
-      };
+  list.forEach(function (r, idx) {
+    if (!r || !r.league || !r.home || !r.away || !r.date || !r.time) return;
+    if (isWorldCupLeague(r.league)) {
+      if (!r.line && !r.summary) return;
+      worldCupRows.push(normalizeWorldCupRecommendation(r, idPrefix, idx));
+      return;
+    }
+    if (!r.line) return;
+    var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
+    var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
+    var safeId = r.id || (idPrefix + '_' + r.date + '_' + r.time + '_' + idx);
+    regularRows.push({
+      id: String(safeId),
+      date: String(r.date),
+      league: String(r.league),
+      sport: sport,
+      time: String(r.time),
+      status: status,
+      home: { name: String(r.home), short: String(r.home), logo: '', score: 0 },
+      away: { name: String(r.away), short: String(r.away), logo: '', score: 0 },
+      prediction: {
+        winner: { label: '盤口預測', value: String(r.line), result: 'pending' }
+      },
+      mvps: [],
+      summary: ''
     });
+  });
 
   var grouped = {};
-  normalizedRows.forEach(function (m, idx) {
+  regularRows.forEach(function (m, idx) {
     var key = [m.date, m.time, m.league, m.sport, m.home.name, m.away.name].join('|');
     if (!grouped[key]) {
       grouped[key] = m;
@@ -579,12 +821,14 @@ function normalizeRecommendations(list, idPrefix) {
     grouped[key].__lines.push(String(m.prediction.winner.value || '').replace('大3.0', '大3'));
   });
 
-  return Object.values(grouped).map(function (m) {
+  var mergedRegular = Object.values(grouped).map(function (m) {
     var uniqLines = Array.from(new Set(m.__lines.filter(Boolean)));
     m.prediction.winner.value = uniqLines.join('/');
     delete m.__lines;
     return m;
   });
+
+  return worldCupRows.concat(mergedRegular);
 }
 
 async function loadSupabaseRecommendations() {
@@ -754,6 +998,9 @@ function soccerOverUnderResultForToken(token, totalGoals) {
     if (totalGoals === 3) return 'push';
     return 'miss';
   }
+  if (line === '全場進球數2-3' || line === '全場進球2-3') {
+    return (totalGoals >= 2 && totalGoals <= 3) ? 'hit' : 'miss';
+  }
   /* 大1.5、大2.5、大3.5、大4.5…：全為半盤，無和局，總進球須大於盤口（例：大3.5 要 >3.5 即至少 4 球才贏） */
   var halfLine = line.match(/^大(\d+)\.5$/);
   if (halfLine) {
@@ -848,6 +1095,118 @@ function predictionResultTagHtml(result) {
   return '';
 }
 
+function wcFixtureResultKey(date, time, home, away) {
+  return date + '|' + time + '|' + home + '|' + away;
+}
+
+function correctScoreResult(predicted, homeScore, awayScore) {
+  var parts = String(predicted || '').trim().split(/[-:：]/);
+  if (parts.length !== 2) return 'miss';
+  var ph = parseInt(parts[0], 10);
+  var pa = parseInt(parts[1], 10);
+  if (isNaN(ph) || isNaN(pa)) return 'miss';
+  return (ph === homeScore && pa === awayScore) ? 'hit' : 'miss';
+}
+
+function deriveWorldCupPredictionResult(m, p) {
+  if (!p || m.status !== 'final') return 'pending';
+  var label = String(p.label || '');
+  var value = String(p.value || '').trim();
+  if (!value || value === '—') return 'pending';
+
+  if (label.indexOf('波膽') === 0) {
+    return correctScoreResult(value, Number(m.home.score || 0), Number(m.away.score || 0));
+  }
+
+  if (label === '初盤') {
+    var total = Number(m.home.score || 0) + Number(m.away.score || 0);
+    var spreadMatch = value.match(/^(.*?)([+-]?\d+(?:\.\d+)?)$/);
+    if (spreadMatch && (value.indexOf('美國') === 0 || value.indexOf('波黑') === 0 || value.indexOf('主') === 0 || value.indexOf('客') === 0)) {
+      var sideName = spreadMatch[1];
+      var spread = parseFloat(spreadMatch[2]);
+      var adjusted = sideName.indexOf('波黑') === 0 || sideName.indexOf('客') === 0
+        ? Number(m.away.score || 0) + spread - Number(m.home.score || 0)
+        : Number(m.home.score || 0) + spread - Number(m.away.score || 0);
+      if (adjusted > 0) return 'hit';
+      if (adjusted < 0) return 'miss';
+      return 'push';
+    }
+    var ou = soccerOverUnderResultForToken(value, total);
+    return ou !== null ? ou : p.result;
+  }
+
+  return derivePredictionDisplayResult(m, p);
+}
+
+function applyWorldCupFinalResult(m, home, away, date, time) {
+  var key = wcFixtureResultKey(date, time, home, away);
+  var result = WC_MATCH_RESULTS[key];
+  if (!result) return m;
+  m.status = 'final';
+  m.home.score = result.home;
+  m.away.score = result.away;
+  return m;
+}
+
+function renderWorldCupMatchCard(m) {
+  var isHome = m.home.score > m.away.score;
+  var isDraw = m.home.score === m.away.score;
+  var statusMap = { final: '已結束', live: '進行中', preview: '即將開始' };
+  var statusClass = { final: 'match-status-fin', live: 'match-status-live', preview: 'match-status-pre' };
+  var sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
+  var sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
+
+  var predHTML = m.prediction ? Object.values(m.prediction).map(function (p) {
+    var displayResult = m.status === 'final' ? deriveWorldCupPredictionResult(m, p) : 'pending';
+    var valueClass = m.status === 'final' ? displayResult : 'pending';
+    return (
+      '<div class="pred-item">' +
+        '<div class="pred-label">' + p.label + '</div>' +
+        '<div class="pred-value ' + valueClass + '">' +
+          p.value +
+          (m.status === 'final' ? predictionResultTagHtml(displayResult) : '') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('') : '';
+
+  return (
+    '<div class="match-card wc-match-card">' +
+      '<div class="match-header">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          (m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : '') +
+          '<span class="match-league-badge ' + sportClass + '">' + sportLabel + '</span>' +
+          '<span class="match-date">📅 ' + m.date.slice(5).replace('-', '/') + '</span>' +
+          '<span class="match-time">🕖 ' + m.time + '</span>' +
+        '</div>' +
+        '<span class="' + statusClass[m.status] + '">' + statusMap[m.status] + '</span>' +
+      '</div>' +
+      '<div class="wc-match-body">' +
+        '<div class="scoreboard">' +
+          '<div class="team-block">' +
+            '<div class="team-name">' + m.home.name + '</div>' +
+            '<div class="team-short">主場</div>' +
+            '<div class="team-score ' + (m.status === 'preview' ? 'score-pre' : (isDraw ? 'score-draw' : (isHome ? 'score-win' : 'score-lose'))) + '">' +
+              (m.status === 'preview' ? '—' : m.home.score) +
+            '</div>' +
+          '</div>' +
+          '<div class="vs-block"><div class="vs-text">VS</div></div>' +
+          '<div class="team-block">' +
+            '<div class="team-name">' + m.away.name + '</div>' +
+            '<div class="team-short">客場</div>' +
+            '<div class="team-score ' + (m.status === 'preview' ? 'score-pre' : (isDraw ? 'score-draw' : (!isHome ? 'score-win' : 'score-lose'))) + '">' +
+              (m.status === 'preview' ? '—' : m.away.score) +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        (m.prediction
+          ? '<div class="prediction-box"><div class="pred-title">🎯 本場推薦預測</div><div class="pred-items">' + predHTML + '</div></div>'
+          : '<div class="wc-no-pred">📋 預測待更新</div>') +
+      '</div>' +
+    '</div>'
+  );
+}
+
 function renderMatchCard(m) {
   const isHome = m.home.score > m.away.score;
   const isDraw = m.home.score === m.away.score;
@@ -856,7 +1215,7 @@ function renderMatchCard(m) {
   const sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
   const sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
 
-  const predHTML = Object.values(m.prediction).map(p => {
+  const predHTML = m.prediction ? Object.values(m.prediction).map(p => {
     const displayResult = m.status === 'final' ? derivePredictionDisplayResult(m, p) : 'pending';
     const valueClass = m.status === 'final' ? displayResult : 'pending';
     return `
@@ -867,9 +1226,9 @@ function renderMatchCard(m) {
         ${m.status === 'final' ? predictionResultTagHtml(displayResult) : ''}
       </div>
     </div>`;
-  }).join('');
+  }).join('') : '';
 
-  const mvpHTML = m.mvps.map(mv => `
+  const mvpHTML = (m.mvps || []).map(mv => `
     <div class="mvp-card">
       <div class="mvp-icon">${mv.icon}</div>
       <div><div class="mvp-name">${mv.name}</div><div class="mvp-stat">${mv.stats}</div></div>
@@ -879,7 +1238,8 @@ function renderMatchCard(m) {
   return `
     <div class="match-card">
       <div class="match-header">
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          ${m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : ''}
           <span class="match-league-badge ${sportClass}">${sportLabel}</span>
                       <span class="match-date">📅 ${m.date.slice(5).replace('-','/')}</span>
           <span class="match-time">🕖 ${m.time}</span>
@@ -1326,8 +1686,8 @@ function formatDate(d) {
 }
 
 function renderDateList() {
-  const ongoing = MATCHES.filter(function (m) { return m.status !== 'final'; });
-  const finals = MATCHES.filter(function (m) { return m.status === 'final'; });
+  const ongoing = MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
+  const finals = MATCHES.filter(function (m) { return m.status === 'final' && !isWorldCupMatch(m); });
 
   const grouped = groupByDate(ongoing);
   const dates = Object.keys(grouped).sort(function (a, b) { return b.localeCompare(a); });
@@ -1419,7 +1779,7 @@ function sortMatchesForLeague(league) {
 }
 
 function showLeague(league) {
-  const matches = sortMatchesForLeague(league);
+  const matches = sortMatchesForLeague(league).filter(function (m) { return !isWorldCupMatch(m); });
   const leagueNames = {
     'BCL':'🌏 BCL Asia-East', 'SBL':'🏀 SBL 超級籃球聯賽',
     'TPBL':'🏀 TPBL', 'PLG':'🏀 PLG P.LEAGUE+',
@@ -1437,6 +1797,140 @@ function showLeague(league) {
 }
 
 // ════════════════════════════════════════════
+// 世足專區
+// ════════════════════════════════════════════
+function findWorldCupMatchForFixture(group, home, away, date, time) {
+  var previewRec = null;
+  var finalMatch = null;
+
+  MATCHES.forEach(function (m) {
+    if (getWorldCupGroup(m.league) !== group) return;
+    if (m.date !== date || m.time !== time) return;
+    var h = m.home.name;
+    var a = m.away.name;
+    if (!((h === home && a === away) || (h === away && a === home))) return;
+    if (m.status === 'final') finalMatch = m;
+    else if (m.prediction && isWorldCupLeague(m.league)) previewRec = m;
+  });
+
+  var base = previewRec || finalMatch;
+  if (!base) return null;
+
+  var merged = {
+    id: base.id,
+    date: base.date,
+    time: base.time,
+    league: base.league,
+    sport: base.sport,
+    status: base.status,
+    home: {
+      name: home,
+      short: home,
+      logo: base.home.logo || '',
+      score: base.home.score || 0
+    },
+    away: {
+      name: away,
+      short: away,
+      logo: base.away.logo || '',
+      score: base.away.score || 0
+    },
+    prediction: base.prediction ? JSON.parse(JSON.stringify(base.prediction)) : null,
+    mvps: base.mvps || [],
+    summary: base.summary || ''
+  };
+
+  if (finalMatch) {
+    merged.status = 'final';
+    merged.home.score = finalMatch.home.name === home ? finalMatch.home.score : finalMatch.away.score;
+    merged.away.score = finalMatch.away.name === away ? finalMatch.away.score : finalMatch.home.score;
+  }
+
+  return applyWorldCupFinalResult(merged, home, away, date, time);
+}
+
+function renderWorldCupScheduleCard(group, fx) {
+  var home = fx[0];
+  var away = fx[1];
+  var date = fx[2];
+  var time = fx[3];
+  var round = fx[4];
+  var displayDate = date.slice(5).replace('-', '/');
+  return (
+    '<div class="match-card wc-match-card wc-schedule-card">' +
+      '<div class="match-header">' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+          '<span class="wc-round-pill">第' + round + '輪</span>' +
+          '<span class="match-league-badge mb-f">⚽ 世足 ' + group + '組</span>' +
+          '<span class="match-date">📅 ' + displayDate + '</span>' +
+          '<span class="match-time">🕖 ' + time + '</span>' +
+        '</div>' +
+        '<span class="match-status-pre">即將開始</span>' +
+      '</div>' +
+      '<div class="wc-match-body">' +
+        '<div class="scoreboard">' +
+          '<div class="team-block">' +
+            '<div class="team-name">' + home + '</div>' +
+            '<div class="team-short">主場</div>' +
+            '<div class="team-score score-pre">—</div>' +
+          '</div>' +
+          '<div class="vs-block"><div class="vs-text">VS</div></div>' +
+          '<div class="team-block">' +
+            '<div class="team-name">' + away + '</div>' +
+            '<div class="team-short">客場</div>' +
+            '<div class="team-score score-pre">—</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="wc-no-pred">📋 預測待更新</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function renderWorldCupFixtureCard(group, fx) {
+  var home = fx[0];
+  var away = fx[1];
+  var date = fx[2];
+  var time = fx[3];
+  var round = fx[4];
+  var existing = findWorldCupMatchForFixture(group, home, away, date, time);
+  if (existing) {
+    existing.wcRound = round;
+    return renderWorldCupMatchCard(existing);
+  }
+  return renderWorldCupScheduleCard(group, fx);
+}
+
+function selectWorldCupGroup(group) {
+  selectedWorldCupGroup = group;
+  renderWorldCupPage();
+}
+
+function renderWorldCupPage() {
+  var tabsEl = document.getElementById('wc-group-tabs');
+  var titleEl = document.getElementById('wc-group-title');
+  var contentEl = document.getElementById('wc-group-content');
+  if (!tabsEl || !titleEl || !contentEl) return;
+
+  tabsEl.innerHTML = WC_GROUPS.map(function (g) {
+    var active = g === selectedWorldCupGroup ? ' active' : '';
+    return '<button type="button" class="wc-group-btn' + active + '" onclick="selectWorldCupGroup(\'' + g + '\')">' + g + ' 組</button>';
+  }).join('');
+
+  titleEl.textContent = selectedWorldCupGroup + ' 組 · 小組賽 6 場';
+
+  var fixtures = WC_GROUP_FIXTURES[selectedWorldCupGroup] || [];
+  if (!fixtures.length) {
+    contentEl.innerHTML = '<div class="empty-state"><div class="big">⚽</div><p>此組別尚無賽程資料</p></div>';
+    return;
+  }
+
+  contentEl.innerHTML = fixtures.map(function (fx) {
+    return renderWorldCupFixtureCard(selectedWorldCupGroup, fx);
+  }).join('');
+}
+
+// ════════════════════════════════════════════
 // PAGE NAV
 // ════════════════════════════════════════════
 function showPage(name) {
@@ -1447,6 +1941,7 @@ function showPage(name) {
   if (pageEl) {
     pageEl.classList.add('active');
     window.scrollTo(0, 0);
+    if (name === 'worldcup') renderWorldCupPage();
     return;
   }
   if (name === 'basketball') {
@@ -1508,6 +2003,7 @@ async function initApp() {
   renderPredictionStats();
   renderWeekSummary();
   updateHeroRecCount();
+  renderWorldCupPage();
 }
 
 initApp();
