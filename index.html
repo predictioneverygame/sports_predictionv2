@@ -789,8 +789,8 @@ function mergeManualResults(id, baseResults) {
     scores: baseResults.scores || null
   };
   var stored = getStoredMatchManualResults(id);
-  if (stored.opening) merged.opening = stored.opening;
-  if (stored.scores) merged.scores = stored.scores;
+  if (!merged.opening && stored.opening) merged.opening = stored.opening;
+  if (!merged.scores && stored.scores) merged.scores = stored.scores;
   return merged;
 }
 

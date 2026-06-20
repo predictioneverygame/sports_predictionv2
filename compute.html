@@ -801,6 +801,52 @@ function setSettledStatus(text) {
     document.getElementById("settledStatus").innerText = text;
 }
 
+function supabaseHeaders(prefer) {
+    const headers = {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    };
+    if (prefer) headers.Prefer = prefer;
+    return headers;
+}
+
+function normalizeMatchRowForCloud(row) {
+    const next = { ...row };
+    delete next.created_at;
+    return next;
+}
+
+/** Supabase matches 表僅允許 insert/delete，更新需先刪除再寫入 */
+async function saveMatchRowToCloud(row) {
+    const payload = normalizeMatchRowForCloud(row);
+    if (!payload.id) throw new Error("缺少 match id");
+
+    await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?id=eq.${encodeURIComponent(payload.id)}`,
+        {
+            method: "DELETE",
+            headers: supabaseHeaders("return=minimal")
+        }
+    );
+
+    const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}`,
+        {
+            method: "POST",
+            headers: {
+                ...supabaseHeaders("return=minimal"),
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify([payload])
+        }
+    );
+
+    if (!response.ok) {
+        const msg = await response.text();
+        throw new Error(msg || "寫入 matches 失敗");
+    }
+}
+
 const GARBLED_FIX_BY_DATE_TIME = {
     "2026-04-23 01:00": { league: "西甲", home: "艾爾切", away: "馬德里體育會", line: "全場大球", sport: "soccer" },
     "2026-04-23 02:00": { league: "荷蘭甲", home: "泰斯達", away: "鹿特丹斯巴達", line: "全場大球", sport: "soccer" },
@@ -977,40 +1023,26 @@ async function updatePredictionResult(table, encodedId, field, value) {
         const item = cloudSettledMatches.find((x) => String(x.id) === String(id));
         if (!item) return;
         const parsed = parsePredictionResultsFromLine(item.prediction_value || "");
-        const next = { ...parsed.results, ...getStoredMatchManualResults(id) };
-        next[field] = resultValue;
+        const stored = getStoredMatchManualResults(id);
+        const next = {
+            opening: field === "opening" ? resultValue : (stored.opening || parsed.results.opening),
+            scores: field === "scores" ? resultValue : (stored.scores || parsed.results.scores)
+        };
         const nextValue = encodeLineWithResults(parsed.display, next.opening, next.scores);
         const nextRow = { ...item, prediction_value: nextValue };
-        delete nextRow.created_at;
 
         try {
-            const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
-                {
-                    method: "POST",
-                    headers: {
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                        "Content-Type": "application/json",
-                        "Prefer": "resolution=merge-duplicates,return=minimal"
-                    },
-                    body: JSON.stringify([nextRow])
-                }
-            );
-            if (response.ok) {
-                item.prediction_value = nextValue;
-                setStoredMatchManualResults(id, null, null);
-                renderCloudSettledMatches();
-                setSettledStatus("已更新初盤/波膽結果");
-                return;
-            }
+            await saveMatchRowToCloud(nextRow);
+            item.prediction_value = nextValue;
+            setStoredMatchManualResults(id, null, null);
+            renderCloudSettledMatches();
+            setSettledStatus("已更新初盤/波膽結果（已同步雲端，重新整理首頁即可看到）");
         } catch (err) {
             console.error(err);
+            setStoredMatchManualResults(id, next.opening, next.scores);
+            renderCloudSettledMatches();
+            setSettledStatus("雲端同步失敗，已存本機：" + (err.message || "未知錯誤"));
         }
-
-        setStoredMatchManualResults(id, next.opening, next.scores);
-        renderCloudSettledMatches();
-        setSettledStatus("已存本機（雲端無更新權限，首頁同瀏覽器可見）");
         return;
     }
 }
@@ -1253,11 +1285,12 @@ async function settleCloudRecommendation(id) {
     }
 
     const settledRows = sameMatchItems.map((entry) => {
-        const parsedLine = parseStoredLine(entry.line, entry.sport);
+        const displayLine = parsePredictionResultsFromLine(entry.line).display;
+        const parsedLine = parseStoredLine(displayLine, entry.sport);
         const result = getPredictionResultByLine(parsedLine.lineValue, homeScore, awayScore, parsedLine.lineSide);
         const profit = getProfitByResult(result, entry.stake, entry.odds);
         return {
-            line: String(entry.line || ""),
+            line: displayLine,
             result,
             profit,
             stake: toNum(entry.stake) || 0
@@ -1269,6 +1302,7 @@ async function settleCloudRecommendation(id) {
     const mergedLineText = settledRows.map((row) => row.line).join(" / ");
     const mergedResult = totalProfit > 0 ? "hit" : (totalProfit < 0 ? "miss" : "push");
     const lineMeta = parsePredictionResultsFromLine(item.line || mergedLineText);
+    const displayMerged = parsePredictionResultsFromLine(mergedLineText).display;
 
     const row = {
         id: buildMatchId(item.league, item.date, item.time, item.home, item.away),
@@ -1285,7 +1319,7 @@ async function settleCloudRecommendation(id) {
         away_short: item.away,
         away_logo: "",
         away_score: awayScore,
-        prediction_value: encodeLineWithResults(lineMeta.display || mergedLineText, lineMeta.results.opening, lineMeta.results.scores),
+        prediction_value: encodeLineWithResults(displayMerged || lineMeta.display || mergedLineText, lineMeta.results.opening, lineMeta.results.scores),
         prediction_result: mergedResult,
         odds: null,
         stake: totalStake,
@@ -1294,23 +1328,7 @@ async function settleCloudRecommendation(id) {
     };
 
     try {
-        const settleResponse = await fetch(
-            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
-            {
-                method: "POST",
-                headers: {
-                    "apikey": SUPABASE_ANON_KEY,
-                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                    "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates,return=minimal"
-                },
-                body: JSON.stringify([row])
-            }
-        );
-        if (!settleResponse.ok) {
-            const msg = await settleResponse.text();
-            throw new Error(msg || "結算寫入失敗");
-        }
+        await saveMatchRowToCloud(row);
 
         for (const entry of sameMatchItems) {
             const deleteResponse = await fetch(
@@ -1334,7 +1352,7 @@ async function settleCloudRecommendation(id) {
         await loadCloudSettledMatches();
     } catch (err) {
         console.error(err);
-        alert("結算失敗，請檢查 matches/recommendations 權限設定");
+        alert("結算失敗：" + (err.message || "請檢查 matches/recommendations 權限設定"));
     }
 }
 
@@ -1739,29 +1757,11 @@ async function settleMatchToCloud() {
     };
 
     try {
-        const response = await fetch(
-            `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
-            {
-                method: "POST",
-                headers: {
-                    "apikey": SUPABASE_ANON_KEY,
-                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-                    "Content-Type": "application/json",
-                    "Prefer": "resolution=merge-duplicates,return=minimal"
-                },
-                body: JSON.stringify([row])
-            }
-        );
-
-        if (!response.ok) {
-            const msg = await response.text();
-            throw new Error(msg || "結算寫入失敗");
-        }
-
+        await saveMatchRowToCloud(row);
         alert("已結算並寫入雲端戰績");
     } catch (err) {
         console.error(err);
-        alert("結算失敗，請確認 matches 權限已開啟 insert");
+        alert("結算失敗：" + (err.message || "請確認 matches 權限已開啟 insert/delete"));
     }
 }
 
