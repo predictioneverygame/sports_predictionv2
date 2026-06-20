@@ -155,6 +155,14 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .tag-hit{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
 .tag-miss{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
 .tag-push{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.35)}
+.pred-item-combined{grid-column:1/-1;max-width:none}
+.pred-combined-rows{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.pred-combined-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pred-combined-text{font-size:.95rem;font-weight:700;color:var(--text);flex:1;min-width:0;word-break:break-word}
+.pred-combined-text.hit,.pred-combined-text.half_hit{color:var(--green)}
+.pred-combined-text.miss,.pred-combined-text.half_miss{color:var(--red)}
+.pred-combined-text.push{color:#94a3b8}
+.pred-combined-text.pending{color:var(--gold)}
 /* MVP BOX */
 .mvp-row{display:flex;gap:10px;margin:0 18px 18px;flex-wrap:wrap}
 .mvp-card{flex:1;min-width:140px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:10px;padding:10px 14px;display:flex;gap:10px;align-items:center}
@@ -604,6 +612,7 @@ const SUPABASE_URL = 'https://zcytivwjylkmnpqszvui.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA';
 const SUPABASE_RECOMMEND_TABLE = 'recommendations';
 const SUPABASE_MATCHES_TABLE = 'matches';
+const MATCH_MANUAL_RESULTS_KEY = 'rs_match_manual_results';
 const WC_GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
 let selectedWorldCupGroup = 'A';
 // 2026 世足小組賽 6 場對戰（來源：FIFA 官方賽程，時間為台灣 UTC+8）
@@ -725,18 +734,85 @@ function isWorldCupMatch(m) {
   return isWorldCupLeague(m && m.league);
 }
 
+var PRED_RESULTS_LINE_SUFFIX = /[|｜]__r:[os=hmpx?,]+$/i;
+
+function resultCodeToValue(code) {
+  var c = String(code || '').toLowerCase();
+  if (c === 'h') return 'hit';
+  if (c === 'm' || c === 'x') return 'miss';
+  if (c === 'p') return 'push';
+  return null;
+}
+
+function valueToResultCode(value) {
+  if (value === 'hit') return 'h';
+  if (value === 'miss') return 'm';
+  if (value === 'push') return 'p';
+  return '';
+}
+
+function parsePredictionResultsFromLine(text) {
+  var raw = String(text || '');
+  var results = { opening: null, scores: null };
+  var display = raw;
+  var suffix = raw.match(PRED_RESULTS_LINE_SUFFIX);
+  if (suffix) {
+    display = raw.replace(PRED_RESULTS_LINE_SUFFIX, '').trim();
+    var body = String(suffix[0]).replace(/^.*__r:/i, '');
+    body.split(',').forEach(function (part) {
+      var kv = part.match(/^([os])=([hmxp?])$/i);
+      if (!kv) return;
+      var val = resultCodeToValue(kv[2]);
+      if (kv[1].toLowerCase() === 'o') results.opening = val;
+      if (kv[1].toLowerCase() === 's') results.scores = val;
+    });
+  }
+  return { display: display, results: results };
+}
+
+function loadMatchManualResultsStore() {
+  try {
+    return JSON.parse(localStorage.getItem(MATCH_MANUAL_RESULTS_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function getStoredMatchManualResults(id) {
+  var store = loadMatchManualResultsStore();
+  return store[String(id)] || { opening: null, scores: null };
+}
+
+function mergeManualResults(id, baseResults) {
+  var merged = {
+    opening: baseResults.opening || null,
+    scores: baseResults.scores || null
+  };
+  var stored = getStoredMatchManualResults(id);
+  if (stored.opening) merged.opening = stored.opening;
+  if (stored.scores) merged.scores = stored.scores;
+  return merged;
+}
+
+function isCombinedOpeningScoreText(text) {
+  var display = parsePredictionResultsFromLine(text).display;
+  return /初盤\s*:/.test(display) && /波膽\s*:/.test(display);
+}
+
 function parseWorldCupPayload(line, summary) {
-  var opening = String(line || '').trim();
+  var parsedLine = parsePredictionResultsFromLine(line);
+  var opening = parsedLine.display.trim();
   var scores = [];
   if (summary) {
     scores = String(summary).split(/[/／|｜]/).map(function (s) { return s.trim(); }).filter(Boolean);
   }
-  if (!scores.length && opening.indexOf('｜波膽:') !== -1) {
-    var parts = opening.split('｜');
-    opening = parts[0].replace(/^初盤:/, '').trim();
-    var scorePart = parts[1] || '';
-    if (scorePart.indexOf('波膽:') === 0) {
-      scores = scorePart.slice(3).split('/').map(function (s) { return s.trim(); }).filter(Boolean);
+  if (!scores.length && /[|｜]\s*波膽:/.test(opening)) {
+    var parts = opening.split(/[|｜]/);
+    opening = parts[0].replace(/^初盤:/, '').replace(/\|\s*$/, '').trim();
+    var scorePart = parts.slice(1).join('｜') || '';
+    var scoreMatch = scorePart.match(/波膽:\s*(.+)/);
+    if (scoreMatch) {
+      scores = scoreMatch[1].split('/').map(function (s) { return s.trim(); }).filter(Boolean);
     }
   }
   return { opening: opening, scores: scores };
@@ -761,6 +837,7 @@ function normalizeWorldCupRecommendation(r, idPrefix, idx) {
   var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'soccer';
   var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
   var safeId = r.id || (idPrefix + '_wc_' + r.date + '_' + r.time + '_' + idx);
+  var manualResults = parsePredictionResultsFromLine(r.line).results;
   return {
     id: String(safeId),
     date: String(r.date),
@@ -772,7 +849,8 @@ function normalizeWorldCupRecommendation(r, idPrefix, idx) {
     away: { name: String(r.away), short: String(r.away), logo: '', score: 0 },
     prediction: buildWorldCupPrediction(r),
     mvps: [],
-    summary: String(r.summary || '')
+    summary: String(r.summary || ''),
+    manualResults: manualResults
   };
 }
 
@@ -792,6 +870,7 @@ function normalizeRecommendations(list, idPrefix) {
     var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
     var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
     var safeId = r.id || (idPrefix + '_' + r.date + '_' + r.time + '_' + idx);
+    var lineMeta = parsePredictionResultsFromLine(r.line);
     regularRows.push({
       id: String(safeId),
       date: String(r.date),
@@ -802,10 +881,11 @@ function normalizeRecommendations(list, idPrefix) {
       home: { name: String(r.home), short: String(r.home), logo: '', score: 0 },
       away: { name: String(r.away), short: String(r.away), logo: '', score: 0 },
       prediction: {
-        winner: { label: '盤口預測', value: String(r.line), result: 'pending' }
+        winner: { label: '盤口預測', value: lineMeta.display, result: 'pending' }
       },
       mvps: [],
-      summary: ''
+      summary: '',
+      manualResults: lineMeta.results
     });
   });
 
@@ -857,7 +937,21 @@ async function loadSupabaseRecommendations() {
 }
 
 function appendRecommendationsToMatches(list) {
-  MATCHES.push.apply(MATCHES, list);
+  list.forEach(function (rec) {
+    if (!isWorldCupMatch(rec)) {
+      MATCHES.push(rec);
+      return;
+    }
+    var dupFinal = MATCHES.some(function (m) {
+      return m.status === 'final' &&
+        m.date === rec.date &&
+        m.time === rec.time &&
+        m.league === rec.league &&
+        ((m.home.name === rec.home.name && m.away.name === rec.away.name) ||
+          (m.home.name === rec.away.name && m.away.name === rec.home.name));
+    });
+    if (!dupFinal) MATCHES.push(rec);
+  });
 }
 
 function normalizeCloudMatches(list) {
@@ -869,8 +963,10 @@ function normalizeCloudMatches(list) {
     .map(function (r) {
       var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
       var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
-      var predictionValue = r.prediction_value || '';
+      var lineMeta = parsePredictionResultsFromLine(r.prediction_value || '');
+      var predictionValue = lineMeta.display;
       var predictionResult = r.prediction_result || 'pending';
+      var manualResults = mergeManualResults(r.id, lineMeta.results);
       return {
         id: String(r.id),
         date: String(r.date),
@@ -897,7 +993,8 @@ function normalizeCloudMatches(list) {
         stake: Number(r.stake || 0),
         profit: Number(r.profit || 0),
         mvps: [],
-        summary: String(r.summary || '')
+        summary: String(r.summary || ''),
+        manualResults: manualResults
       };
     });
 }
@@ -1095,6 +1192,135 @@ function predictionResultTagHtml(result) {
   return '';
 }
 
+function isCombinedOpeningScoreValue(raw) {
+  return isCombinedOpeningScoreText(raw);
+}
+
+function getMatchOpeningAndScores(m) {
+  if (!m || !m.prediction) return null;
+  if (m.prediction.opening) {
+    var opening = String(m.prediction.opening.value || '').trim();
+    var scores = [];
+    for (var i = 1; i <= 4; i++) {
+      var sc = m.prediction['score' + i];
+      if (sc && sc.value && sc.value !== '—') scores.push(String(sc.value).trim());
+    }
+    if (!scores.length && m.summary) {
+      scores = String(m.summary).split(/[/／|｜]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+    return { opening: opening, scores: scores };
+  }
+  var winner = m.prediction.winner;
+  if (winner && isCombinedOpeningScoreValue(winner.value)) {
+    return parseWorldCupPayload(winner.value, m.summary || '');
+  }
+  return null;
+}
+
+function deriveOpeningLineResult(m, openingValue) {
+  if (!m || m.status !== 'final') return 'pending';
+  var value = String(openingValue || '').trim();
+  if (!value || value === '—') return 'pending';
+  var total = Number(m.home.score || 0) + Number(m.away.score || 0);
+  var spreadMatch = value.match(/^(.*?)([+-]?\d+(?:\.\d+)?)$/);
+  if (spreadMatch) {
+    var sideName = spreadMatch[1].trim();
+    var spread = parseFloat(spreadMatch[2]);
+    var homeName = String(m.home.name || '');
+    var awayName = String(m.away.name || '');
+    var isAwaySide = sideName === awayName ||
+      sideName.indexOf('客') === 0 ||
+      sideName.indexOf('波黑') === 0;
+    var isHomeSide = sideName === homeName ||
+      sideName.indexOf('主') === 0 ||
+      sideName.indexOf('美國') === 0;
+    if (isHomeSide || isAwaySide) {
+      var adjusted = isAwaySide
+        ? Number(m.away.score || 0) + spread - Number(m.home.score || 0)
+        : Number(m.home.score || 0) + spread - Number(m.away.score || 0);
+      if (adjusted > 0) return 'hit';
+      if (adjusted < 0) return 'miss';
+      return 'push';
+    }
+  }
+  var ou = soccerOverUnderResultForToken(value, total);
+  return ou !== null ? ou : 'pending';
+}
+
+function deriveCorrectScoresBundleResult(m, scores) {
+  if (!m || m.status !== 'final') return 'pending';
+  var list = (scores || []).filter(function (s) { return s && s !== '—'; });
+  if (!list.length) return 'pending';
+  var home = Number(m.home.score || 0);
+  var away = Number(m.away.score || 0);
+  for (var i = 0; i < list.length; i++) {
+    if (correctScoreResult(list[i], home, away) === 'hit') return 'hit';
+  }
+  return 'miss';
+}
+
+function resolveOpeningScoreResults(m, opening, scores) {
+  var manual = mergeManualResults(m.id, m.manualResults || {});
+  var isFinal = m.status === 'final';
+  var openingResult = manual.opening
+    ? manual.opening
+    : (isFinal ? deriveOpeningLineResult(m, opening) : 'pending');
+  var scoresResult = manual.scores
+    ? manual.scores
+    : (isFinal ? deriveCorrectScoresBundleResult(m, scores) : 'pending');
+  return { openingResult: openingResult, scoresResult: scoresResult, isFinal: isFinal };
+}
+
+function renderOpeningScorePredictionHtml(m, opening, scores) {
+  var resolved = resolveOpeningScoreResults(m, opening, scores);
+  var isFinal = resolved.isFinal;
+  var openingResult = resolved.openingResult;
+  var scoresResult = resolved.scoresResult;
+  var manualForTags = mergeManualResults(m.id, m.manualResults || {});
+  var showTags = isFinal || manualForTags.opening || manualForTags.scores;
+  var openingDisplay = opening || '—';
+  var scoresDisplay = scores.length ? scores.join('/') : '—';
+
+  function rowHtml(label, value, result) {
+    var valueClass = result !== 'pending' ? result : 'pending';
+    return (
+      '<div class="pred-combined-row">' +
+        '<span class="pred-combined-text ' + valueClass + '">' + label + ':' + value + '</span>' +
+        (showTags && result !== 'pending' ? predictionResultTagHtml(result) : '') +
+      '</div>'
+    );
+  }
+
+  return (
+    '<div class="pred-item pred-item-combined">' +
+      '<div class="pred-label">盤口預測</div>' +
+      '<div class="pred-combined-rows">' +
+        rowHtml('初盤', openingDisplay, openingResult) +
+        rowHtml('波膽', scoresDisplay, scoresResult) +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function buildMatchPredictionItemsHtml(m) {
+  var os = getMatchOpeningAndScores(m);
+  if (os) return renderOpeningScorePredictionHtml(m, os.opening, os.scores);
+  if (!m.prediction) return '';
+  return Object.values(m.prediction).map(function (p) {
+    var displayResult = m.status === 'final' ? derivePredictionDisplayResult(m, p) : 'pending';
+    var valueClass = m.status === 'final' ? displayResult : 'pending';
+    return (
+      '<div class="pred-item">' +
+        '<div class="pred-label">' + p.label + '</div>' +
+        '<div class="pred-value ' + valueClass + '">' +
+          p.value +
+          (m.status === 'final' ? predictionResultTagHtml(displayResult) : '') +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+}
+
 function wcFixtureResultKey(date, time, home, away) {
   return date + '|' + time + '|' + home + '|' + away;
 }
@@ -1156,19 +1382,7 @@ function renderWorldCupMatchCard(m) {
   var sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
   var sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
 
-  var predHTML = m.prediction ? Object.values(m.prediction).map(function (p) {
-    var displayResult = m.status === 'final' ? deriveWorldCupPredictionResult(m, p) : 'pending';
-    var valueClass = m.status === 'final' ? displayResult : 'pending';
-    return (
-      '<div class="pred-item">' +
-        '<div class="pred-label">' + p.label + '</div>' +
-        '<div class="pred-value ' + valueClass + '">' +
-          p.value +
-          (m.status === 'final' ? predictionResultTagHtml(displayResult) : '') +
-        '</div>' +
-      '</div>'
-    );
-  }).join('') : '';
+  var predHTML = m.prediction ? buildMatchPredictionItemsHtml(m) : '';
 
   return (
     '<div class="match-card wc-match-card">' +
@@ -1215,18 +1429,7 @@ function renderMatchCard(m) {
   const sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
   const sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
 
-  const predHTML = m.prediction ? Object.values(m.prediction).map(p => {
-    const displayResult = m.status === 'final' ? derivePredictionDisplayResult(m, p) : 'pending';
-    const valueClass = m.status === 'final' ? displayResult : 'pending';
-    return `
-    <div class="pred-item">
-      <div class="pred-label">${p.label}</div>
-      <div class="pred-value ${valueClass}">
-        ${p.value}
-        ${m.status === 'final' ? predictionResultTagHtml(displayResult) : ''}
-      </div>
-    </div>`;
-  }).join('') : '';
+  const predHTML = m.prediction ? buildMatchPredictionItemsHtml(m) : '';
 
   const mvpHTML = (m.mvps || []).map(mv => `
     <div class="mvp-card">
@@ -1272,7 +1475,7 @@ function renderMatchCard(m) {
         <div class="pred-items">${predHTML}</div>
       </div>` : ''}
       ${m.mvps && m.status==='final' ? `<div class="mvp-row">${mvpHTML}</div>` : ''}
-      ${m.summary ? `<div class="analysis-box"><p>${m.summary}</p></div>` : ''}
+      ${m.summary && !String(m.summary).trim().startsWith('{') ? `<div class="analysis-box"><p>${m.summary}</p></div>` : ''}
     </div>
   `;
 }
@@ -1813,11 +2016,23 @@ function findWorldCupMatchForFixture(group, home, away, date, time) {
     else if (m.prediction && isWorldCupLeague(m.league)) previewRec = m;
   });
 
-  var base = previewRec || finalMatch;
+  var base = finalMatch || previewRec;
   if (!base) return null;
 
+  var manualBase = finalMatch || previewRec || base;
+  var manualResults = mergeManualResults(manualBase.id, manualBase.manualResults || {});
+
+  var prediction = null;
+  if (previewRec && previewRec.prediction && previewRec.prediction.opening) {
+    prediction = JSON.parse(JSON.stringify(previewRec.prediction));
+  } else if (base.prediction) {
+    prediction = JSON.parse(JSON.stringify(base.prediction));
+  } else if (finalMatch && finalMatch.prediction) {
+    prediction = JSON.parse(JSON.stringify(finalMatch.prediction));
+  }
+
   var merged = {
-    id: base.id,
+    id: finalMatch ? finalMatch.id : base.id,
     date: base.date,
     time: base.time,
     league: base.league,
@@ -1835,9 +2050,10 @@ function findWorldCupMatchForFixture(group, home, away, date, time) {
       logo: base.away.logo || '',
       score: base.away.score || 0
     },
-    prediction: base.prediction ? JSON.parse(JSON.stringify(base.prediction)) : null,
+    prediction: prediction,
     mvps: base.mvps || [],
-    summary: base.summary || ''
+    summary: base.summary || '',
+    manualResults: manualResults
   };
 
   if (finalMatch) {

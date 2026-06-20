@@ -94,6 +94,32 @@ td, th {
     background:#475569;
 }
 
+.resultSelect {
+    width: auto;
+    min-width: 72px;
+    padding: 4px 6px;
+    margin: 0;
+    font-size: 12px;
+    border-radius: 6px;
+    background: #0f172a;
+    color: #fff;
+}
+
+.resultSelect.hit { border: 1px solid #22c55e; }
+.resultSelect.miss { border: 1px solid #ef4444; }
+
+.result-cells {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.result-cells label {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
 .sport-switch {
     display:flex;
     gap:8px;
@@ -294,6 +320,8 @@ input[type="text"] {
             <th>聯賽</th>
             <th>比賽</th>
             <th>盤口</th>
+            <th>初盤</th>
+            <th>波膽</th>
             <th>刪除</th>
         </tr>
     </thead>
@@ -314,6 +342,8 @@ input[type="text"] {
             <th>聯賽</th>
             <th>比賽</th>
             <th>盤口</th>
+            <th>初盤</th>
+            <th>波膽</th>
             <th>獲利</th>
             <th>刪除</th>
         </tr>
@@ -788,6 +818,203 @@ function containsQuestionMark(v) {
     return String(v || "").includes("?");
 }
 
+const PRED_RESULTS_LINE_SUFFIX = /[|｜]__r:[os=hmpx?,]+$/i;
+
+function resultCodeToValue(code) {
+    const c = String(code || "").toLowerCase();
+    if (c === "h") return "hit";
+    if (c === "m" || c === "x") return "miss";
+    if (c === "p") return "push";
+    return null;
+}
+
+function valueToResultCode(value) {
+    if (value === "hit") return "h";
+    if (value === "miss") return "m";
+    if (value === "push") return "p";
+    return "";
+}
+
+function parsePredictionResultsFromLine(text) {
+    const raw = String(text || "");
+    const results = { opening: null, scores: null };
+    let display = raw;
+    const suffix = raw.match(PRED_RESULTS_LINE_SUFFIX);
+    if (suffix) {
+        display = raw.replace(PRED_RESULTS_LINE_SUFFIX, "").trim();
+        const body = String(suffix[0]).replace(/^.*__r:/i, "");
+        body.split(",").forEach((part) => {
+            const kv = part.match(/^([os])=([hmxp?])$/i);
+            if (!kv) return;
+            const val = resultCodeToValue(kv[2]);
+            if (kv[1].toLowerCase() === "o") results.opening = val;
+            if (kv[1].toLowerCase() === "s") results.scores = val;
+        });
+    }
+    return { display, results };
+}
+
+const MATCH_MANUAL_RESULTS_KEY = "rs_match_manual_results";
+
+function loadMatchManualResultsStore() {
+    try {
+        return JSON.parse(localStorage.getItem(MATCH_MANUAL_RESULTS_KEY) || "{}");
+    } catch (err) {
+        return {};
+    }
+}
+
+function saveMatchManualResultsStore(store) {
+    localStorage.setItem(MATCH_MANUAL_RESULTS_KEY, JSON.stringify(store));
+}
+
+function getStoredMatchManualResults(id) {
+    const store = loadMatchManualResultsStore();
+    return store[String(id)] || { opening: null, scores: null };
+}
+
+function setStoredMatchManualResults(id, opening, scores) {
+    const store = loadMatchManualResultsStore();
+    const current = store[String(id)] || { opening: null, scores: null };
+    const next = {
+        opening: opening !== undefined ? opening : current.opening,
+        scores: scores !== undefined ? scores : current.scores
+    };
+    if (!next.opening && !next.scores) {
+        delete store[String(id)];
+    } else {
+        store[String(id)] = next;
+    }
+    saveMatchManualResultsStore(store);
+}
+
+function encodeLineWithResults(baseLine, openingResult, scoresResult) {
+    const base = parsePredictionResultsFromLine(baseLine).display;
+    const parts = [];
+    if (openingResult) parts.push(`o=${valueToResultCode(openingResult)}`);
+    if (scoresResult) parts.push(`s=${valueToResultCode(scoresResult)}`);
+    if (!parts.length) return base;
+    return `${base}｜__r:${parts.join(",")}`;
+}
+
+function isCombinedOpeningScoreText(text) {
+    const display = parsePredictionResultsFromLine(text).display;
+    return /初盤\s*:/.test(display) && /波膽\s*:/.test(display);
+}
+
+function resultSelectHtml(table, id, field, current) {
+    const options = [
+        ["", "自動"],
+        ["hit", "✓ 過"],
+        ["miss", "✗ 不過"]
+    ];
+    const cls = current === "hit" ? " hit" : (current === "miss" ? " miss" : "");
+    const opts = options.map(([value, label]) =>
+        `<option value="${value}"${current === value ? " selected" : ""}>${label}</option>`
+    ).join("");
+    return `<select class="resultSelect${cls}" onchange="updatePredictionResult('${table}','${encodeURIComponent(id)}','${field}',this.value)">${opts}</select>`;
+}
+
+function openingScoreResultCells(table, id, item, isMatchRow) {
+    const raw = isMatchRow ? (item.prediction_value || "") : (item.line || "");
+    const lineMeta = parsePredictionResultsFromLine(raw);
+    let results = { ...lineMeta.results };
+    if (isMatchRow) {
+        const stored = getStoredMatchManualResults(id);
+        if (stored.opening) results.opening = stored.opening;
+        if (stored.scores) results.scores = stored.scores;
+    }
+    const hasCombined = isCombinedOpeningScoreText(raw) || results.opening || results.scores;
+    if (!hasCombined) {
+        return "<td>—</td><td>—</td>";
+    }
+    return (
+        `<td><div class="result-cells"><label>初盤</label>${resultSelectHtml(table, id, "opening", results.opening || "")}</div></td>` +
+        `<td><div class="result-cells"><label>波膽</label>${resultSelectHtml(table, id, "scores", results.scores || "")}</div></td>`
+    );
+}
+
+async function updatePredictionResult(table, encodedId, field, value) {
+    const id = decodeURIComponent(encodedId);
+    const resultValue = value || null;
+
+    if (table === "recommendations") {
+        const item = cloudRecommendations.find((x) => String(x.id) === String(id));
+        if (!item) return;
+        const parsed = parsePredictionResultsFromLine(item.line);
+        const next = { ...parsed.results };
+        next[field] = resultValue;
+        const nextLine = encodeLineWithResults(parsed.display, next.opening, next.scores);
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(id)}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "return=minimal"
+                    },
+                    body: JSON.stringify({ line: nextLine })
+                }
+            );
+            if (!response.ok) {
+                const msg = await response.text();
+                throw new Error(msg || "更新失敗");
+            }
+            item.line = nextLine;
+            renderCloudRecommendations();
+            setCloudStatus("已更新初盤/波膽結果");
+        } catch (err) {
+            console.error(err);
+            alert("更新失敗，請確認 recommendations 的 update 權限");
+        }
+        return;
+    }
+
+    if (table === "matches") {
+        const item = cloudSettledMatches.find((x) => String(x.id) === String(id));
+        if (!item) return;
+        const parsed = parsePredictionResultsFromLine(item.prediction_value || "");
+        const next = { ...parsed.results, ...getStoredMatchManualResults(id) };
+        next[field] = resultValue;
+        const nextValue = encodeLineWithResults(parsed.display, next.opening, next.scores);
+        const nextRow = { ...item, prediction_value: nextValue };
+        delete nextRow.created_at;
+
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/${SUPABASE_MATCHES_TABLE}?on_conflict=id`,
+                {
+                    method: "POST",
+                    headers: {
+                        "apikey": SUPABASE_ANON_KEY,
+                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+                        "Content-Type": "application/json",
+                        "Prefer": "resolution=merge-duplicates,return=minimal"
+                    },
+                    body: JSON.stringify([nextRow])
+                }
+            );
+            if (response.ok) {
+                item.prediction_value = nextValue;
+                setStoredMatchManualResults(id, null, null);
+                renderCloudSettledMatches();
+                setSettledStatus("已更新初盤/波膽結果");
+                return;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        setStoredMatchManualResults(id, next.opening, next.scores);
+        renderCloudSettledMatches();
+        setSettledStatus("已存本機（雲端無更新權限，首頁同瀏覽器可見）");
+        return;
+    }
+}
+
 function fixGarbledRecommendations(list) {
     const sameTimeCounter = {};
     return (list || []).map((item) => {
@@ -858,7 +1085,7 @@ function renderCloudRecommendations() {
     if (!cloudRecommendations.length) {
         cloudList.innerHTML = `
         <tr>
-            <td colspan="5">目前沒有雲端資料</td>
+            <td colspan="7">目前沒有雲端資料</td>
         </tr>`;
         return;
     }
@@ -880,15 +1107,19 @@ function renderCloudRecommendations() {
     Object.values(grouped).forEach((group) => {
         const item = group.first;
         var mergedLines = Array.from(new Set(group.lines)).join("/");
-        const displayLine = /^世足\s*[A-L]組/.test(String(item.league || ""))
+        const rawLine = /^世足\s*[A-L]組/.test(String(item.league || ""))
             ? (item.summary ? `初盤:${mergedLines}｜${item.summary}` : mergedLines)
             : mergedLines;
+        const displayLine = parsePredictionResultsFromLine(
+            isCombinedOpeningScoreText(item.line || "") ? item.line : rawLine
+        ).display;
         cloudList.innerHTML += `
         <tr>
             <td>${item.date} ${item.time}</td>
             <td>${item.league}</td>
             <td>${item.home} vs ${item.away}</td>
             <td>${displayLine}</td>
+            ${openingScoreResultCells("recommendations", item.id, item, false)}
             <td>
               <div class="action-row">
                 <button class="smallBtn" onclick="settleCloudRecommendation('${item.id}')">結算</button>
@@ -945,19 +1176,21 @@ function renderCloudSettledMatches() {
     if (!cloudSettledMatches.length) {
         settledList.innerHTML = `
         <tr>
-            <td colspan="6">目前沒有已結算資料</td>
+            <td colspan="8">目前沒有已結算資料</td>
         </tr>`;
         return;
     }
 
     cloudSettledMatches.forEach((item) => {
         const profit = toNum(item.profit) || 0;
+        const displayLine = parsePredictionResultsFromLine(item.prediction_value || "").display;
         settledList.innerHTML += `
         <tr>
             <td>${item.date} ${item.time}</td>
             <td>${item.league}</td>
             <td>${item.home_name} vs ${item.away_name}</td>
-            <td>${item.prediction_value || ""}</td>
+            <td>${displayLine}</td>
+            ${openingScoreResultCells("matches", item.id, item, true)}
             <td>${profit.toFixed(2)}</td>
             <td><button class="delBtn" onclick="deleteSettledMatch('${item.id}')">刪除</button></td>
         </tr>`;
@@ -1035,6 +1268,7 @@ async function settleCloudRecommendation(id) {
     const totalStake = settledRows.reduce((sum, row) => sum + row.stake, 0);
     const mergedLineText = settledRows.map((row) => row.line).join(" / ");
     const mergedResult = totalProfit > 0 ? "hit" : (totalProfit < 0 ? "miss" : "push");
+    const lineMeta = parsePredictionResultsFromLine(item.line || mergedLineText);
 
     const row = {
         id: buildMatchId(item.league, item.date, item.time, item.home, item.away),
@@ -1051,7 +1285,7 @@ async function settleCloudRecommendation(id) {
         away_short: item.away,
         away_logo: "",
         away_score: awayScore,
-        prediction_value: mergedLineText,
+        prediction_value: encodeLineWithResults(lineMeta.display || mergedLineText, lineMeta.results.opening, lineMeta.results.scores),
         prediction_result: mergedResult,
         odds: null,
         stake: totalStake,
