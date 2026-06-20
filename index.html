@@ -395,6 +395,23 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-group-btn:hover{border-color:var(--accent3);color:var(--accent3)}
 .wc-group-btn.active{background:var(--accent3);border-color:var(--accent3);color:#fff;box-shadow:0 4px 14px rgba(5,150,105,.25)}
 .wc-group-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;min-height:120px}
+.wc-group-layout{display:flex;gap:20px;align-items:flex-start}
+.wc-group-main{flex:1;min-width:0}
+.wc-group-stats{flex:0 0 240px;position:sticky;top:16px;background:linear-gradient(165deg,rgba(5,150,105,.06),rgba(124,58,237,.05));border:1px solid rgba(5,150,105,.22);border-radius:12px;padding:16px 14px}
+.wc-group-stats-title{font-size:.78rem;font-weight:800;color:var(--accent3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.wc-group-stats-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border)}
+.wc-group-stats-block:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.wc-group-stats-label{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:8px}
+.wc-group-stats-row{display:flex;align-items:center;justify-content:space-between;font-size:.88rem;margin-bottom:6px}
+.wc-group-stats-row .lbl{color:var(--muted);font-size:.78rem}
+.wc-group-stats-row .nums{font-weight:800;display:flex;align-items:center;gap:8px}
+.wc-group-stats-row .ic-hit{color:var(--green)}
+.wc-group-stats-row .ic-miss{color:var(--red)}
+.wc-group-stats-net{font-size:.92rem;font-weight:800;text-align:right;margin-top:4px}
+.wc-group-stats-net.pos{color:var(--green)}
+.wc-group-stats-net.neg{color:var(--red)}
+.wc-group-stats-net.zero{color:var(--muted)}
+.wc-group-stats-hint{font-size:.72rem;color:var(--muted);line-height:1.5;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
 .wc-group-title{font-size:1.05rem;font-weight:800;color:var(--accent3);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .wc-group-title::before{content:'';width:4px;height:20px;background:linear-gradient(180deg,var(--accent3),var(--accent));border-radius:2px}
 .wc-round-pill{font-size:.72rem;font-weight:700;color:var(--accent3);background:rgba(5,150,105,.12);padding:2px 10px;border-radius:10px;border:1px solid rgba(5,150,105,.25)}
@@ -414,6 +431,8 @@ footer a{color:var(--accent);text-decoration:none}
 #wc-group-content .wc-match-body .pred-value{font-size:.86rem}
 #wc-group-content .wc-no-pred{margin:12px 14px;flex:1;display:flex;align-items:center;justify-content:center}
 @media(max-width:768px){
+  .wc-group-layout{flex-direction:column}
+  .wc-group-stats{flex:none;width:100%;position:static}
   #wc-group-content .wc-match-body{flex-direction:column}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
   #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
@@ -557,7 +576,12 @@ footer a{color:var(--accent);text-decoration:none}
   <div class="wc-group-tabs" id="wc-group-tabs"></div>
   <div class="wc-group-panel">
     <div class="wc-group-title" id="wc-group-title">A 組</div>
-    <div id="wc-group-content"></div>
+    <div class="wc-group-layout">
+      <div class="wc-group-main">
+        <div id="wc-group-content"></div>
+      </div>
+      <aside id="wc-group-stats" class="wc-group-stats"></aside>
+    </div>
   </div>
 </div>
 </div>
@@ -2122,10 +2146,79 @@ function selectWorldCupGroup(group) {
   renderWorldCupPage();
 }
 
+function countOpeningScoreResult(result, tally) {
+  if (result === 'hit' || result === 'half_hit') {
+    tally.hit += 1;
+  } else if (result === 'miss' || result === 'half_miss') {
+    tally.miss += 1;
+  }
+}
+
+function tallyAllWorldCupStats() {
+  var opening = { hit: 0, miss: 0 };
+  var scores = { hit: 0, miss: 0 };
+  var settled = 0;
+
+  WC_GROUPS.forEach(function (group) {
+    var fixtures = WC_GROUP_FIXTURES[group] || [];
+    fixtures.forEach(function (fx) {
+      var m = findWorldCupMatchForFixture(group, fx[0], fx[1], fx[2], fx[3]);
+      if (!m) return;
+      var os = getMatchOpeningAndScores(m);
+      if (!os) return;
+      var r = resolveOpeningScoreResults(m, os.opening, os.scores);
+      var hasOpening = r.openingResult && r.openingResult !== 'pending';
+      var hasScores = r.scoresResult && r.scoresResult !== 'pending';
+      if (!hasOpening && !hasScores) return;
+      settled += 1;
+      if (hasOpening) countOpeningScoreResult(r.openingResult, opening);
+      if (hasScores) countOpeningScoreResult(r.scoresResult, scores);
+    });
+  });
+
+  return { opening: opening, scores: scores, settled: settled };
+}
+
+function formatOpeningWinRate(hit, miss) {
+  var total = hit + miss;
+  if (total <= 0) return '—';
+  return String(Math.round((hit / total) * 1000) / 10) + '%';
+}
+
+function renderWorldCupGroupStatsHtml() {
+  var stats = tallyAllWorldCupStats();
+  var openNet = stats.opening.hit - stats.opening.miss;
+  var openNetClass = openNet > 0 ? 'pos' : (openNet < 0 ? 'neg' : 'zero');
+  var openNetText = openNet > 0 ? ('+' + openNet) : String(openNet);
+  var openWinRate = formatOpeningWinRate(stats.opening.hit, stats.opening.miss);
+  var openSummaryText = openNetText + ' 勝率 ' + openWinRate;
+
+  function blockHtml(label, tally, summaryText, summaryClass, showSummary) {
+    return (
+      '<div class="wc-group-stats-block">' +
+        '<div class="wc-group-stats-label">' + label + '</div>' +
+        '<div class="wc-group-stats-row">' +
+          '<span class="lbl">命中</span>' +
+          '<span class="nums"><span class="ic-hit">✓ ' + tally.hit + '</span><span class="ic-miss">✗ ' + tally.miss + '</span></span>' +
+        '</div>' +
+        (showSummary ? '<div class="wc-group-stats-net ' + summaryClass + '">' + summaryText + '</div>' : '') +
+      '</div>'
+    );
+  }
+
+  return (
+    '<div class="wc-group-stats-title">📊 全部預測戰績</div>' +
+    blockHtml('初盤', stats.opening, openSummaryText, openNetClass, true) +
+    blockHtml('波膽', stats.scores, '', '', false) +
+    '<div class="wc-group-stats-hint">A–L 組已結算 ' + stats.settled + ' 場有預測資料</div>'
+  );
+}
+
 function renderWorldCupPage() {
   var tabsEl = document.getElementById('wc-group-tabs');
   var titleEl = document.getElementById('wc-group-title');
   var contentEl = document.getElementById('wc-group-content');
+  var statsEl = document.getElementById('wc-group-stats');
   if (!tabsEl || !titleEl || !contentEl) return;
 
   tabsEl.innerHTML = WC_GROUPS.map(function (g) {
@@ -2134,6 +2227,10 @@ function renderWorldCupPage() {
   }).join('');
 
   titleEl.textContent = selectedWorldCupGroup + ' 組 · 小組賽 6 場';
+
+  if (statsEl) {
+    statsEl.innerHTML = renderWorldCupGroupStatsHtml();
+  }
 
   var fixtures = WC_GROUP_FIXTURES[selectedWorldCupGroup] || [];
   if (!fixtures.length) {
