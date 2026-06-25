@@ -149,19 +149,18 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .pred-value{font-size:.95rem;font-weight:700;color:var(--text)}
 .pred-value.hit,.pred-value.half_hit{color:var(--green)}
 .pred-value.miss,.pred-value.half_miss{color:var(--red)}
-.pred-value.push{color:#94a3b8}
+.pred-value.push,.pred-combined-text.push{color:#38bdf8}
 .pred-value.pending{color:var(--gold)}
 .pred-result-tag{display:inline-flex;align-items:center;justify-content:center;min-width:1.35em;font-size:.95rem;font-weight:800;padding:2px 6px;border-radius:10px;margin-left:8px;line-height:1}
 .tag-hit{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
 .tag-miss{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
-.tag-push{background:rgba(148,163,184,.12);color:#cbd5e1;border:1px solid rgba(148,163,184,.35)}
+.tag-push{background:rgba(56,189,248,.15);color:#38bdf8;border:1px solid rgba(56,189,248,.35)}
 .pred-item-combined{grid-column:1/-1;max-width:none}
 .pred-combined-rows{display:flex;flex-direction:column;gap:8px;margin-top:2px}
 .pred-combined-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .pred-combined-text{font-size:.95rem;font-weight:700;color:var(--text);flex:1;min-width:0;word-break:break-word}
 .pred-combined-text.hit,.pred-combined-text.half_hit{color:var(--green)}
 .pred-combined-text.miss,.pred-combined-text.half_miss{color:var(--red)}
-.pred-combined-text.push{color:#94a3b8}
 .pred-combined-text.pending{color:var(--gold)}
 /* MVP BOX */
 .mvp-row{display:flex;gap:10px;margin:0 18px 18px;flex-wrap:wrap}
@@ -365,7 +364,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .analyst-legend-sym{min-width:1.15em;text-align:center;font-weight:800;font-size:.9rem;flex-shrink:0}
 .analyst-legend-sym.sym-hit{color:var(--green)}
 .analyst-legend-sym.sym-miss{color:var(--red)}
-.analyst-legend-sym.sym-push{color:#94a3b8}
+.analyst-legend-sym.sym-push{color:#38bdf8}
 .analyst-sub{font-size:.76rem;color:var(--muted);margin-bottom:10px}
 .analyst-tag{display:inline-block;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.4);color:#a78bfa;font-size:.72rem;padding:2px 10px;border-radius:20px;margin:2px}
 /* ABOUT PAGE */
@@ -407,6 +406,7 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-group-stats-row .nums{font-weight:800;display:flex;align-items:center;gap:8px}
 .wc-group-stats-row .ic-hit{color:var(--green)}
 .wc-group-stats-row .ic-miss{color:var(--red)}
+.wc-group-stats-row .ic-push{color:#38bdf8}
 .wc-group-stats-net{font-size:.92rem;font-weight:800;text-align:right;margin-top:4px}
 .wc-group-stats-net.pos{color:var(--green)}
 .wc-group-stats-net.neg{color:var(--red)}
@@ -513,7 +513,7 @@ footer a{color:var(--accent);text-decoration:none}
         <div class="analyst-legend" aria-label="預測結果符號說明">
           <div class="analyst-legend-row"><span class="analyst-legend-sym sym-hit">✓</span><span>贏</span></div>
           <div class="analyst-legend-row"><span class="analyst-legend-sym sym-miss">✗</span><span>輸</span></div>
-          <div class="analyst-legend-row"><span class="analyst-legend-sym sym-push">○</span><span>和局</span></div>
+          <div class="analyst-legend-row"><span class="analyst-legend-sym sym-push">💧</span><span>喝水</span></div>
         </div>
       </div>
       <!-- <div class="sb-card">
@@ -1211,7 +1211,7 @@ function predictionResultTagHtml(result) {
     return '<span class="pred-result-tag tag-miss" title="輸半">✗</span>';
   }
   if (result === 'push') {
-    return '<span class="pred-result-tag tag-push" title="和局">○</span>';
+    return '<span class="pred-result-tag tag-push" title="喝水">💧</span>';
   }
   return '';
 }
@@ -2151,12 +2151,14 @@ function countOpeningScoreResult(result, tally) {
     tally.hit += 1;
   } else if (result === 'miss' || result === 'half_miss') {
     tally.miss += 1;
+  } else if (result === 'push') {
+    tally.push += 1;
   }
 }
 
 function tallyAllWorldCupStats() {
-  var opening = { hit: 0, miss: 0 };
-  var scores = { hit: 0, miss: 0 };
+  var opening = { hit: 0, miss: 0, push: 0 };
+  var scores = { hit: 0, miss: 0, push: 0 };
   var settled = 0;
 
   WC_GROUPS.forEach(function (group) {
@@ -2193,13 +2195,22 @@ function renderWorldCupGroupStatsHtml() {
   var openWinRate = formatOpeningWinRate(stats.opening.hit, stats.opening.miss);
   var openSummaryText = openNetText + ' 勝率 ' + openWinRate;
 
-  function blockHtml(label, tally, summaryText, summaryClass, showSummary) {
+  function blockHtml(label, tally, summaryText, summaryClass, showSummary, showPush) {
+    var pushHtml = showPush
+      ? (tally.push > 0
+        ? '<span class="ic-push">💧 ' + tally.push + '</span>'
+        : '<span class="ic-push">💧 0</span>')
+      : '';
     return (
       '<div class="wc-group-stats-block">' +
         '<div class="wc-group-stats-label">' + label + '</div>' +
         '<div class="wc-group-stats-row">' +
           '<span class="lbl">命中</span>' +
-          '<span class="nums"><span class="ic-hit">✓ ' + tally.hit + '</span><span class="ic-miss">✗ ' + tally.miss + '</span></span>' +
+          '<span class="nums">' +
+            '<span class="ic-hit">✓ ' + tally.hit + '</span>' +
+            '<span class="ic-miss">✗ ' + tally.miss + '</span>' +
+            pushHtml +
+          '</span>' +
         '</div>' +
         (showSummary ? '<div class="wc-group-stats-net ' + summaryClass + '">' + summaryText + '</div>' : '') +
       '</div>'
@@ -2208,8 +2219,8 @@ function renderWorldCupGroupStatsHtml() {
 
   return (
     '<div class="wc-group-stats-title">📊 全部預測戰績</div>' +
-    blockHtml('初盤', stats.opening, openSummaryText, openNetClass, true) +
-    blockHtml('波膽', stats.scores, '', '', false) +
+    blockHtml('初盤', stats.opening, openSummaryText, openNetClass, true, true) +
+    blockHtml('波膽', stats.scores, '', '', false, false) +
     '<div class="wc-group-stats-hint">A–L 組已結算 ' + stats.settled + ' 場有預測資料</div>'
   );
 }

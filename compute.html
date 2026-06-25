@@ -107,6 +107,7 @@ td, th {
 
 .resultSelect.hit { border: 1px solid #22c55e; }
 .resultSelect.miss { border: 1px solid #ef4444; }
+.resultSelect.push { border: 1px solid #38bdf8; }
 
 .result-cells {
     display: flex;
@@ -954,9 +955,13 @@ function resultSelectHtml(table, id, field, current) {
         ["hit", "✓ 過"],
         ["miss", "✗ 不過"]
     ];
-    const cls = current === "hit" ? " hit" : (current === "miss" ? " miss" : "");
+    if (field === "opening") {
+        options.push(["push", "💧 喝水"]);
+    }
+    const cls = current === "hit" ? " hit" : (current === "miss" ? " miss" : (current === "push" ? " push" : ""));
+    const selected = field === "scores" && current === "push" ? "" : current;
     const opts = options.map(([value, label]) =>
-        `<option value="${value}"${current === value ? " selected" : ""}>${label}</option>`
+        `<option value="${value}"${selected === value ? " selected" : ""}>${label}</option>`
     ).join("");
     return `<select class="resultSelect${cls}" onchange="updatePredictionResult('${table}','${encodeURIComponent(id)}','${field}',this.value)">${opts}</select>`;
 }
