@@ -302,10 +302,19 @@ input[type="text"] {
 
 <div class="card">
 <div class="card-title">世足專區預測</div>
-<div class="hint">選組別後顯示該組 6 場小組賽（時間為台灣 UTC+8），填寫波膽與初盤後個別匯入</div>
+<div class="hint">小組賽選組別；32 強選對 <strong>世足 32強</strong> 對戰後匯入（時間為台灣 UTC+8）</div>
 
-<div class="wc-group-switch" id="wcGroupSwitch"></div>
-<div class="wc-fixtures-list" id="wcFixturesList"></div>
+<div class="wc-group-switch" id="wcPhaseSwitch">
+  <button type="button" class="active" id="wcPhaseBtnGroups" onclick="setWcPhase('groups')">小組賽</button>
+  <button type="button" id="wcPhaseBtnKnockout" onclick="setWcPhase('knockout')">32 強淘汰賽</button>
+</div>
+<div id="wcGroupsPanel">
+  <div class="wc-group-switch" id="wcGroupSwitch"></div>
+  <div class="wc-fixtures-list" id="wcFixturesList"></div>
+</div>
+<div id="wcKnockoutPanel" style="display:none">
+  <div class="wc-fixtures-list" id="wcKnockoutList"></div>
+</div>
 </div>
 
 <div class="card">
@@ -456,6 +465,7 @@ const DEFAULT_LEAGUE_BY_SPORT = {
 };
 const WC_GROUPS = "ABCDEFGHIJKL".split("");
 let selectedWcGroup = "A";
+let selectedWcPhase = "groups";
 // 2026 世足小組賽 6 場對戰（來源：FIFA / Roadtrips 官方賽程，時間換算為台灣 UTC+8）
 // 格式：[主隊, 客隊, 日期, 時間, 輪次]
 const WC_GROUP_FIXTURES = {
@@ -556,6 +566,25 @@ const WC_GROUP_FIXTURES = {
         ["克羅埃西亞", "迦納", "2026-06-28", "05:00", 3]
     ]
 };
+
+const WC_KNOCKOUT_R32 = [
+    { id: "r32-l1", home: "德國", away: "巴拉圭", date: "2026-06-29", time: "03:00" },
+    { id: "r32-l2", home: "法國", away: "瑞典", date: "2026-06-29", time: "06:00" },
+    { id: "r32-l3", home: "南非", away: "加拿大", date: "2026-06-29", time: "09:00" },
+    { id: "r32-l4", home: "荷蘭", away: "摩洛哥", date: "2026-06-30", time: "03:00" },
+    { id: "r32-l5", home: "葡萄牙", away: "克羅埃西亞", date: "2026-06-30", time: "06:00" },
+    { id: "r32-l6", home: "西班牙", away: "奧地利", date: "2026-06-30", time: "09:00" },
+    { id: "r32-l7", home: "美國", away: "波士尼亞", date: "2026-07-01", time: "03:00" },
+    { id: "r32-l8", home: "比利時", away: "塞內加爾", date: "2026-07-01", time: "06:00" },
+    { id: "r32-r1", home: "巴西", away: "日本", date: "2026-06-29", time: "12:00" },
+    { id: "r32-r2", home: "象牙海岸", away: "挪威", date: "2026-06-29", time: "15:00" },
+    { id: "r32-r3", home: "墨西哥", away: "厄瓜多", date: "2026-06-30", time: "12:00" },
+    { id: "r32-r4", home: "英格蘭", away: "剛果民主共和國", date: "2026-06-30", time: "15:00" },
+    { id: "r32-r5", home: "阿根廷", away: "維德角", date: "2026-07-01", time: "12:00" },
+    { id: "r32-r6", home: "澳洲", away: "埃及", date: "2026-07-01", time: "15:00" },
+    { id: "r32-r7", home: "瑞士", away: "阿爾及利亞", date: "2026-07-02", time: "03:00" },
+    { id: "r32-r8", home: "哥倫比亞", away: "迦納", date: "2026-07-02", time: "06:00" }
+];
 
 try {
     bets = JSON.parse(localStorage.getItem("bets")) || [];
@@ -1144,7 +1173,7 @@ function renderCloudRecommendations() {
     Object.values(grouped).forEach((group) => {
         const item = group.first;
         var mergedLines = Array.from(new Set(group.lines)).join("/");
-        const rawLine = /^世足\s*[A-L]組/.test(String(item.league || ""))
+        const rawLine = /^世足\s*(?:[A-L]組|32強|16強|8強|4強|決賽|季軍)/.test(String(item.league || ""))
             ? (item.summary ? `初盤:${mergedLines}｜${item.summary}` : mergedLines)
             : mergedLines;
         const displayLine = parsePredictionResultsFromLine(
@@ -1421,6 +1450,103 @@ async function deleteCloudRecommendationGroup(id) {
     } catch (err) {
         console.error(err);
         setCloudStatus("刪除失敗，請確認 Supabase RLS 有開放 delete");
+    }
+}
+
+function setWcPhase(phase) {
+    selectedWcPhase = phase;
+    const groupsPanel = document.getElementById("wcGroupsPanel");
+    const knockoutPanel = document.getElementById("wcKnockoutPanel");
+    const btnGroups = document.getElementById("wcPhaseBtnGroups");
+    const btnKnockout = document.getElementById("wcPhaseBtnKnockout");
+    if (groupsPanel) groupsPanel.style.display = phase === "groups" ? "" : "none";
+    if (knockoutPanel) knockoutPanel.style.display = phase === "knockout" ? "" : "none";
+    if (btnGroups) btnGroups.classList.toggle("active", phase === "groups");
+    if (btnKnockout) btnKnockout.classList.toggle("active", phase === "knockout");
+    if (phase === "knockout") renderWcKnockoutList();
+}
+
+function wcKnockoutFieldId(id, field) {
+    return `wck-${id}-${field}`;
+}
+
+function renderWcKnockoutList() {
+    const container = document.getElementById("wcKnockoutList");
+    if (!container) return;
+
+    container.innerHTML = WC_KNOCKOUT_R32.map((fx) => {
+        const { id, home, away, date, time } = fx;
+        const field = (name) => wcKnockoutFieldId(id, name);
+        return `
+        <div class="wc-fixture-card">
+            <div class="wc-fixture-head">
+                <span class="wc-fixture-round">32 強</span>
+                <span class="wc-fixture-match">${home} vs ${away}</span>
+                <span class="wc-fixture-time">${formatWcDisplayDate(date)} ${time}</span>
+            </div>
+            <div class="field-label">波膽（4 組）</div>
+            <div class="wc-fixture-grid">
+                <input id="${field("s1")}" type="text" placeholder="波膽 1">
+                <input id="${field("s2")}" type="text" placeholder="波膽 2">
+                <input id="${field("s3")}" type="text" placeholder="波膽 3">
+                <input id="${field("s4")}" type="text" placeholder="波膽 4">
+            </div>
+            <div class="field-label">初盤</div>
+            <input id="${field("line")}" type="text" placeholder="初盤，例如 大2.5">
+            <button type="button" class="wc-fixture-submit" onclick="addWorldCupKnockoutPrediction('${id}')">匯入此場</button>
+        </div>`;
+    }).join("");
+}
+
+async function addWorldCupKnockoutPrediction(id) {
+    const fx = WC_KNOCKOUT_R32.find((row) => row.id === id);
+    if (!fx) return;
+
+    const { home, away, date, time } = fx;
+    const field = (name) => document.getElementById(wcKnockoutFieldId(id, name));
+    const openingLine = (field("line").value || "").trim();
+    const scores = ["s1", "s2", "s3", "s4"]
+        .map((key) => (field(key).value || "").trim())
+        .filter(Boolean);
+
+    if (!openingLine) {
+        alert("請填寫初盤");
+        return;
+    }
+    if (scores.length === 0) {
+        alert("請至少填寫一組波膽");
+        return;
+    }
+
+    const item = {
+        league: "世足 32強",
+        sport: "soccer",
+        home,
+        away,
+        line: openingLine,
+        summary: scores.join(" / "),
+        odds: null,
+        stake: null,
+        date,
+        time,
+        status: "preview"
+    };
+
+    try {
+        const result = await postWorldCupItem(item);
+        alert(result.local ? "已儲存到本機（Supabase 未設定）" : `已匯入：${home} vs ${away}`);
+        ["s1", "s2", "s3", "s4", "line"].forEach((key) => {
+            field(key).value = "";
+        });
+        await loadCloudRecommendations();
+    } catch (err) {
+        console.error(err);
+        recommendations.push({
+            id: "wc_ko_" + Date.now(),
+            ...item
+        });
+        saveRecommendations();
+        alert("雲端寫入失敗，已改存本機備援。");
     }
 }
 
