@@ -408,11 +408,13 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-group-layout{display:flex;gap:20px;align-items:flex-start}
 .wc-group-layout.knockout-mode{display:block}
 .wc-group-layout.knockout-mode .wc-group-main{width:100%;max-width:100%}
+.wc-page-head{text-align:center;margin-bottom:28px}
+#page-worldcup.knockout-active .wc-page-head{margin-bottom:14px}
+.wc-phase-bar{display:flex;justify-content:center;margin-bottom:20px}
+.wc-phase-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:0}
+#page-worldcup.knockout-active .wc-phase-bar{margin-bottom:12px}
 .wc-group-main{flex:1;min-width:0}
 .wc-group-stats{flex:0 0 240px;position:sticky;top:16px;background:linear-gradient(165deg,rgba(5,150,105,.06),rgba(124,58,237,.05));border:1px solid rgba(5,150,105,.22);border-radius:12px;padding:16px 14px}
-@media(min-width:901px){
-  .wc-group-layout.knockout-mode .wc-group-stats{position:fixed;right:16px;top:68px;width:220px;z-index:40;flex:none}
-}
 .wc-group-stats-title{font-size:.78rem;font-weight:800;color:var(--accent3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 .wc-group-stats-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border)}
 .wc-group-stats-block:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
@@ -446,15 +448,15 @@ footer a{color:var(--accent);text-decoration:none}
 #wc-group-content .wc-match-body .pred-label{font-size:.68rem}
 #wc-group-content .wc-match-body .pred-value{font-size:.86rem}
 #wc-group-content .wc-no-pred{margin:12px 14px;flex:1;display:flex;align-items:center;justify-content:center}
+@media(max-width:900px){
+  .wc-phase-bar{margin-bottom:16px}
+}
 @media(max-width:768px){
-  .wc-group-layout{flex-direction:column}
-  .wc-group-layout.knockout-mode .wc-group-stats{position:static;width:100%}
   .wc-group-stats{flex:none;width:100%;position:static}
   #wc-group-content .wc-match-body{flex-direction:column}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
   #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
 }
-.wc-phase-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
 .wc-phase-btn{padding:10px 20px;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--muted);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
 .wc-phase-btn:hover{border-color:var(--accent3);color:var(--accent3)}
 .wc-phase-btn.active{background:linear-gradient(135deg,#0f172a,#059669);border-color:#059669;color:#fff;box-shadow:0 4px 14px rgba(5,150,105,.25)}
@@ -470,7 +472,10 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-bracket{display:flex;align-items:stretch;gap:10px;width:100%;min-width:0;padding:8px 4px;box-sizing:border-box}
 .wc-bracket-side{display:flex;gap:8px;flex:1;min-width:0}
 .wc-bracket-side.right{flex-direction:row-reverse}
-.wc-bracket-col{display:flex;flex-direction:column;justify-content:space-around;flex:1;min-width:0;min-height:600px;position:relative}
+.wc-bracket-col{display:flex;flex-direction:column;flex:1;min-width:0;min-height:560px;position:relative}
+.wc-bracket-col-grid{flex:1;display:grid;grid-template-rows:repeat(8,1fr);min-height:0}
+.wc-brkt-cell{display:flex;align-items:center;justify-content:center;min-height:0;padding:2px 0}
+.wc-brkt-cell .wc-brkt-match{width:100%}
 .wc-bracket-col-label{font-size:.58rem;font-weight:800;color:#64748b;text-align:center;letter-spacing:.06em;margin-bottom:4px}
 .wc-brkt-match{display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.04);width:100%;min-width:0;cursor:pointer;transition:border-color .18s,box-shadow .18s,background .18s,transform .18s;text-align:left;padding:0;overflow:hidden}
 .wc-brkt-match:hover{border-color:#38bdf8;background:rgba(56,189,248,.08);transform:translateY(-1px)}
@@ -482,6 +487,20 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-brkt-match.pred-miss:hover{border-color:#f87171;background:rgba(248,113,113,.08)}
 .wc-brkt-match.is-tbd{cursor:default;opacity:.55}
 .wc-brkt-match.is-tbd:hover{transform:none;border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+.wc-brkt-datetime{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+  flex-wrap:wrap;
+  padding:4px 6px;
+  font-size:.54rem;
+  font-weight:600;
+  color:#94a3b8;
+  background:rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  line-height:1.2;
+}
 .wc-brkt-team{padding:6px 8px;font-size:.68rem;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;min-width:0}
 .wc-brkt-team + .wc-brkt-team{border-top:1px solid rgba(255,255,255,.1)}
 .wc-brkt-team.tbd{color:#64748b;font-weight:600}
@@ -540,12 +559,14 @@ footer a{color:var(--accent);text-decoration:none}
     flex-shrink:0;
     min-height:520px;
   }
+  .wc-bracket-scroll .wc-bracket-col-grid{min-height:480px}
   .wc-bracket-scroll .wc-bracket-col-label{font-size:.68rem;margin-bottom:6px}
   .wc-bracket-scroll .wc-brkt-match{
     min-width:104px;
     width:104px;
     flex-shrink:0;
   }
+  .wc-bracket-scroll .wc-brkt-datetime{font-size:.58rem;padding:5px 6px;gap:4px}
   .wc-bracket-scroll .wc-brkt-team{
     font-size:.78rem;
     padding:7px 8px;
@@ -710,9 +731,11 @@ footer a{color:var(--accent);text-decoration:none}
     <h1>⚽ 世足專區</h1>
     <p id="wc-page-subtitle">2026 世界盃 · 小組賽與淘汰賽賽程與預測（台灣時間 UTC+8）</p>
   </div>
-  <div class="wc-phase-tabs">
-    <button type="button" class="wc-phase-btn active" id="wc-phase-btn-groups" onclick="selectWorldCupPhase('groups')">小組賽</button>
-    <button type="button" class="wc-phase-btn" id="wc-phase-btn-knockout" onclick="selectWorldCupPhase('knockout')">淘汰賽</button>
+  <div class="wc-phase-bar" id="wc-phase-bar">
+    <div class="wc-phase-tabs">
+      <button type="button" class="wc-phase-btn active" id="wc-phase-btn-groups" onclick="selectWorldCupPhase('groups')">小組賽</button>
+      <button type="button" class="wc-phase-btn" id="wc-phase-btn-knockout" onclick="selectWorldCupPhase('knockout')">淘汰賽</button>
+    </div>
   </div>
   <div class="wc-group-layout" id="wc-group-layout">
     <div class="wc-group-main">
@@ -864,6 +887,42 @@ const WC_KNOCKOUT_ROUND_LABELS = {
   sf: '4 強',
   final: '決賽',
   bronze: '季軍戰'
+};
+
+// 淘汰賽開球時間（台灣 UTC+8，依 FIFA 2026 各場地當地時間換算）
+const WC_KNOCKOUT_SLOT_SCHEDULE = {
+  'r32-l1': { date: '2026-06-30', time: '04:30' },
+  'r32-l2': { date: '2026-07-01', time: '05:00' },
+  'r32-l3': { date: '2026-06-29', time: '03:00' },
+  'r32-l4': { date: '2026-06-30', time: '09:00' },
+  'r32-l5': { date: '2026-07-03', time: '07:00' },
+  'r32-l6': { date: '2026-07-03', time: '03:00' },
+  'r32-l7': { date: '2026-07-02', time: '08:00' },
+  'r32-l8': { date: '2026-07-02', time: '04:00' },
+  'r32-r1': { date: '2026-06-30', time: '01:00' },
+  'r32-r2': { date: '2026-07-01', time: '01:00' },
+  'r32-r3': { date: '2026-07-01', time: '09:00' },
+  'r32-r4': { date: '2026-07-02', time: '00:00' },
+  'r32-r5': { date: '2026-07-04', time: '06:00' },
+  'r32-r6': { date: '2026-07-04', time: '02:00' },
+  'r32-r7': { date: '2026-07-03', time: '11:00' },
+  'r32-r8': { date: '2026-07-04', time: '09:30' },
+  'r16-l1': { date: '2026-07-05', time: '05:00' },
+  'r16-l2': { date: '2026-07-05', time: '01:00' },
+  'r16-l3': { date: '2026-07-07', time: '03:00' },
+  'r16-l4': { date: '2026-07-07', time: '08:00' },
+  'r16-r1': { date: '2026-07-06', time: '04:00' },
+  'r16-r2': { date: '2026-07-06', time: '08:00' },
+  'r16-r3': { date: '2026-07-08', time: '00:00' },
+  'r16-r4': { date: '2026-07-08', time: '04:00' },
+  'qf-l1': { date: '2026-07-10', time: '04:00' },
+  'qf-l2': { date: '2026-07-11', time: '03:00' },
+  'qf-r1': { date: '2026-07-12', time: '05:00' },
+  'qf-r2': { date: '2026-07-12', time: '09:00' },
+  'sf-l1': { date: '2026-07-15', time: '03:00' },
+  'sf-r1': { date: '2026-07-16', time: '03:00' },
+  bronze: { date: '2026-07-19', time: '05:00' },
+  final: { date: '2026-07-20', time: '03:00' }
 };
 
 const WC_TEAM_FLAG_CODES = {
@@ -2489,9 +2548,34 @@ function getKnockoutSlotLoser(slotId) {
   return winner === slot.home ? slot.away : slot.home;
 }
 
+function getKnockoutSlotSchedule(slotId) {
+  return WC_KNOCKOUT_SLOT_SCHEDULE[slotId] || null;
+}
+
+function formatKnockoutScheduleHtml(date, time) {
+  if (!date || !time) return '';
+  var displayDate = date.slice(5).replace('-', '/');
+  return (
+    '<span class="wc-brkt-datetime">' +
+      '<span class="wc-brkt-date">📅 ' + displayDate + '</span>' +
+      '<span class="wc-brkt-time">🕖 ' + time + '</span>' +
+    '</span>'
+  );
+}
+
 function resolveKnockoutSlotTeams(slotId) {
   var r32 = getKnockoutR32SlotById(slotId);
-  if (r32) return { id: slotId, round: 'r32', home: r32.home, away: r32.away };
+  var sched = getKnockoutSlotSchedule(slotId);
+  if (r32) {
+    return {
+      id: slotId,
+      round: 'r32',
+      home: r32.home,
+      away: r32.away,
+      date: sched ? sched.date : '',
+      time: sched ? sched.time : ''
+    };
+  }
 
   var adv = WC_KNOCKOUT_ADVANCE[slotId];
   if (!adv) return null;
@@ -2503,7 +2587,9 @@ function resolveKnockoutSlotTeams(slotId) {
     id: slotId,
     round: adv.round,
     home: home || '待定',
-    away: away || '待定'
+    away: away || '待定',
+    date: sched ? sched.date : '',
+    time: sched ? sched.time : ''
   };
 }
 
@@ -2585,6 +2671,18 @@ function getKnockoutBracketMatchState(match) {
   return 'pred';
 }
 
+const WC_BRACKET_ROW_SPAN = { r32: 1, r16: 2, qf: 4, sf: 8 };
+
+function renderKnockoutColGrid(roundKey, matchHtmlList) {
+  var span = WC_BRACKET_ROW_SPAN[roundKey] || 1;
+  var cells = matchHtmlList.map(function (html, idx) {
+    var start = idx * span + 1;
+    var end = start + span;
+    return '<div class="wc-brkt-cell" style="grid-row:' + start + '/' + end + '">' + html + '</div>';
+  }).join('');
+  return '<div class="wc-bracket-col-grid">' + cells + '</div>';
+}
+
 function renderKnockoutMatchBtn(slot, roundKey) {
   var home = slot.home || '待定';
   var away = slot.away || '待定';
@@ -2597,8 +2695,10 @@ function renderKnockoutMatchBtn(slot, roundKey) {
     (state === 'miss' ? ' pred-miss' : '') +
     (isTbd ? ' is-tbd' : '');
   var onclick = isTbd ? '' : (' onclick="openWcKnockoutModal(\'' + slot.id + '\')"');
+  var schedHtml = formatKnockoutScheduleHtml(slot.date, slot.time);
   return (
     '<button type="button" class="' + cls + '"' + onclick + '>' +
+      schedHtml +
       '<span class="wc-brkt-team' + (home === '待定' ? ' tbd' : '') + '">' + renderWorldCupTeamLabel(home, 16) + '</span>' +
       '<span class="wc-brkt-team' + (away === '待定' ? ' tbd' : '') + '">' + renderWorldCupTeamLabel(away, 16) + '</span>' +
     '</button>'
@@ -2607,24 +2707,25 @@ function renderKnockoutMatchBtn(slot, roundKey) {
 
 function renderKnockoutRoundCol(label, roundKey, side) {
   var ids = WC_KNOCKOUT_SLOT_IDS[roundKey][side];
+  var btns = ids.map(function (id) {
+    return renderKnockoutMatchBtn(resolveKnockoutSlot(id), roundKey);
+  });
   return (
-    '<div class="wc-bracket-col">' +
+    '<div class="wc-bracket-col wc-bracket-col-' + roundKey + '">' +
       '<div class="wc-bracket-col-label">' + label + '</div>' +
-      ids.map(function (id) {
-        var slot = resolveKnockoutSlot(id);
-        return renderKnockoutMatchBtn(slot, roundKey);
-      }).join('') +
+      renderKnockoutColGrid(roundKey, btns) +
     '</div>'
   );
 }
 
 function renderKnockoutR32Col(label, list) {
+  var btns = list.map(function (slot) {
+    return renderKnockoutMatchBtn(resolveKnockoutSlot(slot.id), 'r32');
+  });
   return (
-    '<div class="wc-bracket-col">' +
+    '<div class="wc-bracket-col wc-bracket-col-r32">' +
       '<div class="wc-bracket-col-label">' + label + '</div>' +
-      list.map(function (slot) {
-        return renderKnockoutMatchBtn(resolveKnockoutSlot(slot.id), 'r32');
-      }).join('') +
+      renderKnockoutColGrid('r32', btns) +
     '</div>'
   );
 }
@@ -2676,6 +2777,11 @@ function openWcKnockoutModal(slotId) {
   var statusText = match && match.status === 'final'
     ? (match.home.score + ' : ' + match.away.score + ' · 已結束')
     : (match && match.status === 'live' ? '進行中' : '即將開始');
+  var displayDate = (match && match.date) || slot.date || '';
+  var displayTime = (match && match.time) || slot.time || '';
+  var schedText = displayDate && displayTime
+    ? ('📅 ' + displayDate.slice(5).replace('-', '/') + ' · 🕖 ' + displayTime + ' · ')
+    : '';
 
   body.innerHTML =
     '<h3 class="wc-modal-title wc-modal-matchup">' +
@@ -2683,7 +2789,7 @@ function openWcKnockoutModal(slotId) {
       '<span class="wc-modal-vs">vs</span>' +
       renderWorldCupTeamLabel(slot.away, 22) +
     '</h3>' +
-    '<div class="wc-modal-sub">世足 ' + roundLabel + ' · ' + statusText + '</div>' +
+    '<div class="wc-modal-sub">' + schedText + '世足 ' + roundLabel + ' · ' + statusText + '</div>' +
     predHtml;
 
   modal.style.display = 'flex';
@@ -2834,28 +2940,25 @@ function tallyAllWorldCupStats() {
   var opening = { hit: 0, miss: 0, push: 0 };
   var scores = { hit: 0, miss: 0, push: 0 };
   var settled = 0;
+  var counted = {};
+
+  function tallyOne(m) {
+    if (!m || !m.id || counted[m.id]) return;
+    if (tallyMatchOpeningScoreStats(m, opening, scores)) {
+      counted[m.id] = true;
+      settled += 1;
+    }
+  }
 
   WC_GROUPS.forEach(function (group) {
     var fixtures = WC_GROUP_FIXTURES[group] || [];
     fixtures.forEach(function (fx) {
-      var m = findWorldCupMatchForFixture(group, fx[0], fx[1], fx[2], fx[3]);
-      if (!m) return;
-      if (tallyMatchOpeningScoreStats(m, opening, scores)) settled += 1;
+      tallyOne(findWorldCupMatchForFixture(group, fx[0], fx[1], fx[2], fx[3]));
     });
   });
 
-  return { opening: opening, scores: scores, settled: settled };
-}
-
-function tallyKnockoutWorldCupStats() {
-  var opening = { hit: 0, miss: 0, push: 0 };
-  var scores = { hit: 0, miss: 0, push: 0 };
-  var settled = 0;
-
   getKnockoutMatchupList().forEach(function (pair) {
-    var m = findKnockoutMatchForStats(pair.home, pair.away);
-    if (!m) return;
-    if (tallyMatchOpeningScoreStats(m, opening, scores)) settled += 1;
+    tallyOne(findKnockoutMatchForStats(pair.home, pair.away));
   });
 
   return { opening: opening, scores: scores, settled: settled };
@@ -2909,16 +3012,7 @@ function renderWorldCupGroupStatsHtml() {
   return buildWorldCupStatsBlocksHtml(
     stats,
     '📊 全部預測戰績',
-    'A–L 組已結算 ' + stats.settled + ' 場有預測資料'
-  );
-}
-
-function renderWorldCupKnockoutStatsHtml() {
-  var stats = tallyKnockoutWorldCupStats();
-  return buildWorldCupStatsBlocksHtml(
-    stats,
-    '📊 淘汰賽戰績',
-    '淘汰賽已結算 ' + stats.settled + ' 場有預測資料'
+    '小組賽＋淘汰賽已結算 ' + stats.settled + ' 場有預測資料'
   );
 }
 
@@ -2927,9 +3021,13 @@ function renderWorldCupPage() {
   var knockoutView = document.getElementById('wc-knockout-view');
   var statsEl = document.getElementById('wc-group-stats');
   var layoutEl = document.getElementById('wc-group-layout');
+  var pageEl = document.getElementById('page-worldcup');
   var phaseBtnGroups = document.getElementById('wc-phase-btn-groups');
   var phaseBtnKnockout = document.getElementById('wc-phase-btn-knockout');
 
+  if (pageEl) {
+    pageEl.classList.toggle('knockout-active', selectedWorldCupPhase === 'knockout');
+  }
   if (layoutEl) {
     layoutEl.classList.toggle('knockout-mode', selectedWorldCupPhase === 'knockout');
   }
@@ -2942,11 +3040,14 @@ function renderWorldCupPage() {
   if (knockoutView) knockoutView.style.display = selectedWorldCupPhase === 'knockout' ? '' : 'none';
 
   if (statsEl) {
-    statsEl.style.display = '';
     if (selectedWorldCupPhase === 'knockout') {
-      statsEl.innerHTML = renderWorldCupKnockoutStatsHtml();
+      statsEl.style.display = 'none';
     } else {
+      statsEl.style.display = '';
       statsEl.innerHTML = renderWorldCupGroupStatsHtml();
+      if (layoutEl && statsEl.parentElement !== layoutEl) {
+        layoutEl.appendChild(statsEl);
+      }
     }
   }
 
