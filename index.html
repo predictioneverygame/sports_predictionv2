@@ -452,7 +452,9 @@ footer a{color:var(--accent);text-decoration:none}
   .wc-phase-bar{margin-bottom:16px}
 }
 @media(max-width:768px){
-  .wc-group-stats{flex:none;width:100%;position:static}
+  .wc-group-layout{flex-direction:column}
+  .wc-group-stats{flex:none;width:100%;position:static;order:2}
+  .wc-group-main{order:1;width:100%}
   #wc-group-content .wc-match-body{flex-direction:column}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
   #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
@@ -2777,8 +2779,8 @@ function openWcKnockoutModal(slotId) {
   var statusText = match && match.status === 'final'
     ? (match.home.score + ' : ' + match.away.score + ' · 已結束')
     : (match && match.status === 'live' ? '進行中' : '即將開始');
-  var displayDate = (match && match.date) || slot.date || '';
-  var displayTime = (match && match.time) || slot.time || '';
+  var displayDate = slot.date || (match && match.date) || '';
+  var displayTime = slot.time || (match && match.time) || '';
   var schedText = displayDate && displayTime
     ? ('📅 ' + displayDate.slice(5).replace('-', '/') + ' · 🕖 ' + displayTime + ' · ')
     : '';
