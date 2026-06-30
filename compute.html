@@ -302,18 +302,22 @@ input[type="text"] {
 
 <div class="card">
 <div class="card-title">世足專區預測</div>
-<div class="hint">小組賽選組別；32 強選對 <strong>世足 32強</strong> 對戰後匯入（時間為台灣 UTC+8）</div>
+<div class="hint">小組賽選組別；淘汰賽選輪次後匯入（聯賽名：世足 32強、世足 16強…）</div>
 
 <div class="wc-group-switch" id="wcPhaseSwitch">
   <button type="button" class="active" id="wcPhaseBtnGroups" onclick="setWcPhase('groups')">小組賽</button>
-  <button type="button" id="wcPhaseBtnKnockout" onclick="setWcPhase('knockout')">32 強淘汰賽</button>
+  <button type="button" id="wcPhaseBtnKnockout" onclick="setWcPhase('knockout')">淘汰賽</button>
 </div>
 <div id="wcGroupsPanel">
   <div class="wc-group-switch" id="wcGroupSwitch"></div>
   <div class="wc-fixtures-list" id="wcFixturesList"></div>
 </div>
 <div id="wcKnockoutPanel" style="display:none">
+  <div class="wc-group-switch" id="wcKnockoutRoundSwitch"></div>
   <div class="wc-fixtures-list" id="wcKnockoutList"></div>
+  <div class="card-title" style="margin-top:18px">淘汰賽晉級（手動覆寫）</div>
+  <div class="hint">比分平手或點球大戰時，請手動選晉級隊；選「自動」則依已結算比分判定勝者</div>
+  <div class="wc-fixtures-list" id="wcKnockoutWinnerPanel"></div>
 </div>
 </div>
 
@@ -466,6 +470,15 @@ const DEFAULT_LEAGUE_BY_SPORT = {
 const WC_GROUPS = "ABCDEFGHIJKL".split("");
 let selectedWcGroup = "A";
 let selectedWcPhase = "groups";
+let selectedWcKnockoutRound = "r32";
+const WC_KNOCKOUT_ROUND_META = {
+    r32: { label: "32 強", league: "世足 32強" },
+    r16: { label: "16 強", league: "世足 16強" },
+    qf: { label: "8 強", league: "世足 8強" },
+    sf: { label: "4 強", league: "世足 4強" },
+    final: { label: "決賽", league: "世足 決賽" },
+    bronze: { label: "季軍戰", league: "世足 季軍" }
+};
 // 2026 世足小組賽 6 場對戰（來源：FIFA / Roadtrips 官方賽程，時間換算為台灣 UTC+8）
 // 格式：[主隊, 客隊, 日期, 時間, 輪次]
 const WC_GROUP_FIXTURES = {
@@ -567,24 +580,90 @@ const WC_GROUP_FIXTURES = {
     ]
 };
 
-const WC_KNOCKOUT_R32 = [
-    { id: "r32-l1", home: "德國", away: "巴拉圭", date: "2026-06-29", time: "03:00" },
-    { id: "r32-l2", home: "法國", away: "瑞典", date: "2026-06-29", time: "06:00" },
-    { id: "r32-l3", home: "南非", away: "加拿大", date: "2026-06-29", time: "09:00" },
-    { id: "r32-l4", home: "荷蘭", away: "摩洛哥", date: "2026-06-30", time: "03:00" },
-    { id: "r32-l5", home: "葡萄牙", away: "克羅埃西亞", date: "2026-06-30", time: "06:00" },
-    { id: "r32-l6", home: "西班牙", away: "奧地利", date: "2026-06-30", time: "09:00" },
-    { id: "r32-l7", home: "美國", away: "波士尼亞", date: "2026-07-01", time: "03:00" },
-    { id: "r32-l8", home: "比利時", away: "塞內加爾", date: "2026-07-01", time: "06:00" },
-    { id: "r32-r1", home: "巴西", away: "日本", date: "2026-06-29", time: "12:00" },
-    { id: "r32-r2", home: "象牙海岸", away: "挪威", date: "2026-06-29", time: "15:00" },
-    { id: "r32-r3", home: "墨西哥", away: "厄瓜多", date: "2026-06-30", time: "12:00" },
-    { id: "r32-r4", home: "英格蘭", away: "剛果民主共和國", date: "2026-06-30", time: "15:00" },
-    { id: "r32-r5", home: "阿根廷", away: "維德角", date: "2026-07-01", time: "12:00" },
-    { id: "r32-r6", home: "澳洲", away: "埃及", date: "2026-07-01", time: "15:00" },
-    { id: "r32-r7", home: "瑞士", away: "阿爾及利亞", date: "2026-07-02", time: "03:00" },
-    { id: "r32-r8", home: "哥倫比亞", away: "迦納", date: "2026-07-02", time: "06:00" }
-];
+const WC_KNOCKOUT_WINNERS_KEY = "rs_knockout_winners";
+
+const WC_KNOCKOUT_R32 = {
+    left: [
+        { id: "r32-l1", home: "德國", away: "巴拉圭" },
+        { id: "r32-l2", home: "法國", away: "瑞典" },
+        { id: "r32-l3", home: "南非", away: "加拿大" },
+        { id: "r32-l4", home: "荷蘭", away: "摩洛哥" },
+        { id: "r32-l5", home: "葡萄牙", away: "克羅埃西亞" },
+        { id: "r32-l6", home: "西班牙", away: "奧地利" },
+        { id: "r32-l7", home: "美國", away: "波士尼亞" },
+        { id: "r32-l8", home: "比利時", away: "塞內加爾" }
+    ],
+    right: [
+        { id: "r32-r1", home: "巴西", away: "日本" },
+        { id: "r32-r2", home: "象牙海岸", away: "挪威" },
+        { id: "r32-r3", home: "墨西哥", away: "厄瓜多" },
+        { id: "r32-r4", home: "英格蘭", away: "剛果民主共和國" },
+        { id: "r32-r5", home: "阿根廷", away: "維德角" },
+        { id: "r32-r6", home: "澳洲", away: "埃及" },
+        { id: "r32-r7", home: "瑞士", away: "阿爾及利亞" },
+        { id: "r32-r8", home: "哥倫比亞", away: "迦納" }
+    ]
+};
+
+const WC_KNOCKOUT_SLOT_IDS = {
+    r16: { left: ["r16-l1", "r16-l2", "r16-l3", "r16-l4"], right: ["r16-r1", "r16-r2", "r16-r3", "r16-r4"] },
+    qf: { left: ["qf-l1", "qf-l2"], right: ["qf-r1", "qf-r2"] },
+    sf: { left: ["sf-l1"], right: ["sf-r1"] }
+};
+
+const WC_KNOCKOUT_ADVANCE = {
+    "r16-l1": { round: "r16", feeders: ["r32-l1", "r32-l2"] },
+    "r16-l2": { round: "r16", feeders: ["r32-l3", "r32-l4"] },
+    "r16-l3": { round: "r16", feeders: ["r32-l5", "r32-l6"] },
+    "r16-l4": { round: "r16", feeders: ["r32-l7", "r32-l8"] },
+    "r16-r1": { round: "r16", feeders: ["r32-r1", "r32-r2"] },
+    "r16-r2": { round: "r16", feeders: ["r32-r3", "r32-r4"] },
+    "r16-r3": { round: "r16", feeders: ["r32-r5", "r32-r6"] },
+    "r16-r4": { round: "r16", feeders: ["r32-r7", "r32-r8"] },
+    "qf-l1": { round: "qf", feeders: ["r16-l1", "r16-l2"] },
+    "qf-l2": { round: "qf", feeders: ["r16-l3", "r16-l4"] },
+    "qf-r1": { round: "qf", feeders: ["r16-r1", "r16-r2"] },
+    "qf-r2": { round: "qf", feeders: ["r16-r3", "r16-r4"] },
+    "sf-l1": { round: "sf", feeders: ["qf-l1", "qf-l2"] },
+    "sf-r1": { round: "sf", feeders: ["qf-r1", "qf-r2"] },
+    final: { round: "final", feeders: ["sf-l1", "sf-r1"] },
+    bronze: { round: "bronze", feeders: ["sf-l1", "sf-r1"], useLosers: true }
+};
+
+const WC_KNOCKOUT_SLOT_SCHEDULE = {
+    "r32-l1": { date: "2026-06-29", time: "03:00" },
+    "r32-l2": { date: "2026-06-29", time: "06:00" },
+    "r32-l3": { date: "2026-06-29", time: "09:00" },
+    "r32-l4": { date: "2026-06-30", time: "03:00" },
+    "r32-l5": { date: "2026-06-30", time: "06:00" },
+    "r32-l6": { date: "2026-06-30", time: "09:00" },
+    "r32-l7": { date: "2026-07-01", time: "03:00" },
+    "r32-l8": { date: "2026-07-01", time: "06:00" },
+    "r32-r1": { date: "2026-06-29", time: "12:00" },
+    "r32-r2": { date: "2026-06-29", time: "15:00" },
+    "r32-r3": { date: "2026-06-30", time: "12:00" },
+    "r32-r4": { date: "2026-06-30", time: "15:00" },
+    "r32-r5": { date: "2026-07-01", time: "12:00" },
+    "r32-r6": { date: "2026-07-01", time: "15:00" },
+    "r32-r7": { date: "2026-07-02", time: "03:00" },
+    "r32-r8": { date: "2026-07-02", time: "06:00" },
+    "r16-l1": { date: "2026-07-05", time: "03:00" },
+    "r16-l2": { date: "2026-07-05", time: "09:00" },
+    "r16-l3": { date: "2026-07-06", time: "03:00" },
+    "r16-l4": { date: "2026-07-06", time: "09:00" },
+    "r16-r1": { date: "2026-07-05", time: "12:00" },
+    "r16-r2": { date: "2026-07-05", time: "15:00" },
+    "r16-r3": { date: "2026-07-06", time: "12:00" },
+    "r16-r4": { date: "2026-07-06", time: "15:00" },
+    "qf-l1": { date: "2026-07-10", time: "03:00" },
+    "qf-l2": { date: "2026-07-10", time: "09:00" },
+    "qf-r1": { date: "2026-07-10", time: "12:00" },
+    "qf-r2": { date: "2026-07-10", time: "15:00" },
+    "sf-l1": { date: "2026-07-14", time: "03:00" },
+    "sf-r1": { date: "2026-07-14", time: "12:00" },
+    bronze: { date: "2026-07-18", time: "09:00" },
+    final: { date: "2026-07-19", time: "03:00" }
+};
 
 try {
     bets = JSON.parse(localStorage.getItem("bets")) || [];
@@ -1229,6 +1308,10 @@ async function loadCloudSettledMatches() {
         cloudSettledMatches = await response.json();
         renderCloudSettledMatches();
         setSettledStatus(`目前共 ${cloudSettledMatches.length} 筆`);
+        if (selectedWcPhase === "knockout") {
+            renderKnockoutWinnerPanel();
+            renderWcKnockoutList();
+        }
     } catch (err) {
         console.error(err);
         setSettledStatus("讀取失敗，請檢查 Supabase 權限設定");
@@ -1453,6 +1536,116 @@ async function deleteCloudRecommendationGroup(id) {
     }
 }
 
+function loadKnockoutWinnerOverrides() {
+    try {
+        return JSON.parse(localStorage.getItem(WC_KNOCKOUT_WINNERS_KEY) || "{}");
+    } catch (err) {
+        return {};
+    }
+}
+
+function saveKnockoutWinnerOverrides(store) {
+    localStorage.setItem(WC_KNOCKOUT_WINNERS_KEY, JSON.stringify(store));
+}
+
+function getKnockoutR32SlotById(slotId) {
+    const all = WC_KNOCKOUT_R32.left.concat(WC_KNOCKOUT_R32.right);
+    return all.find((s) => s.id === slotId) || null;
+}
+
+function findComputeKnockoutFinalMatch(home, away) {
+    const hit = cloudSettledMatches.find((item) => {
+        if (!/世足/.test(String(item.league || ""))) return false;
+        const h = item.home_name;
+        const a = item.away_name;
+        return (h === home && a === away) || (h === away && a === home);
+    });
+    if (!hit) return null;
+    const homeScore = toNum(hit.home_score);
+    const awayScore = toNum(hit.away_score);
+    if (homeScore === null || awayScore === null) return null;
+    const homeIsFirst = hit.home_name === home;
+    return {
+        home: { name: home, score: homeIsFirst ? homeScore : awayScore },
+        away: { name: away, score: homeIsFirst ? awayScore : homeScore },
+        status: "final"
+    };
+}
+
+function resolveKnockoutSlotTeams(slotId) {
+    const r32 = getKnockoutR32SlotById(slotId);
+    if (r32) return { id: slotId, round: "r32", home: r32.home, away: r32.away };
+
+    const adv = WC_KNOCKOUT_ADVANCE[slotId];
+    if (!adv) return null;
+
+    const pick = adv.useLosers ? getKnockoutSlotLoser : getKnockoutSlotWinner;
+    const home = pick(adv.feeders[0]);
+    const away = pick(adv.feeders[1]);
+    return {
+        id: slotId,
+        round: adv.round,
+        home: home || "待定",
+        away: away || "待定"
+    };
+}
+
+function resolveKnockoutSlot(slotId) {
+    return resolveKnockoutSlotTeams(slotId);
+}
+
+function getKnockoutAutoWinner(slotId) {
+    const slot = resolveKnockoutSlotTeams(slotId);
+    if (!slot || slot.home === "待定" || slot.away === "待定") return null;
+    const match = findComputeKnockoutFinalMatch(slot.home, slot.away);
+    if (!match || match.status !== "final") return null;
+    if (match.home.score > match.away.score) return match.home.name;
+    if (match.away.score > match.home.score) return match.away.name;
+    return null;
+}
+
+function getKnockoutSlotWinner(slotId) {
+    const overrides = loadKnockoutWinnerOverrides();
+    if (overrides[slotId]) return overrides[slotId];
+    return getKnockoutAutoWinner(slotId);
+}
+
+function getKnockoutSlotLoser(slotId) {
+    const slot = resolveKnockoutSlotTeams(slotId);
+    if (!slot || slot.home === "待定" || slot.away === "待定") return null;
+    const winner = getKnockoutSlotWinner(slotId);
+    if (!winner) return null;
+    return winner === slot.home ? slot.away : slot.home;
+}
+
+function getAllKnockoutSlotIds() {
+    const ids = [];
+    WC_KNOCKOUT_R32.left.concat(WC_KNOCKOUT_R32.right).forEach((s) => ids.push(s.id));
+    ["r16", "qf", "sf"].forEach((rk) => {
+        ids.push(...WC_KNOCKOUT_SLOT_IDS[rk].left, ...WC_KNOCKOUT_SLOT_IDS[rk].right);
+    });
+    ids.push("final", "bronze");
+    return ids;
+}
+
+function getKnockoutFixturesForRound(roundKey) {
+    return getAllKnockoutSlotIds()
+        .map((id) => {
+            const slot = resolveKnockoutSlot(id);
+            if (!slot || slot.round !== roundKey) return null;
+            const sched = WC_KNOCKOUT_SLOT_SCHEDULE[id] || { date: "2026-07-01", time: "12:00" };
+            return {
+                id,
+                home: slot.home,
+                away: slot.away,
+                date: sched.date,
+                time: sched.time,
+                roundKey: slot.round
+            };
+        })
+        .filter(Boolean);
+}
+
 function setWcPhase(phase) {
     selectedWcPhase = phase;
     const groupsPanel = document.getElementById("wcGroupsPanel");
@@ -1463,7 +1656,83 @@ function setWcPhase(phase) {
     if (knockoutPanel) knockoutPanel.style.display = phase === "knockout" ? "" : "none";
     if (btnGroups) btnGroups.classList.toggle("active", phase === "groups");
     if (btnKnockout) btnKnockout.classList.toggle("active", phase === "knockout");
-    if (phase === "knockout") renderWcKnockoutList();
+    if (phase === "knockout") {
+        renderWcKnockoutRoundSwitch();
+        renderWcKnockoutList();
+        renderKnockoutWinnerPanel();
+    }
+}
+
+function saveKnockoutWinner(slotId, team) {
+    const store = loadKnockoutWinnerOverrides();
+    if (!team) delete store[slotId];
+    else store[slotId] = team;
+    saveKnockoutWinnerOverrides(store);
+    renderKnockoutWinnerPanel();
+    renderWcKnockoutList();
+}
+
+function renderKnockoutWinnerPanel() {
+    const container = document.getElementById("wcKnockoutWinnerPanel");
+    if (!container) return;
+
+    const overrides = loadKnockoutWinnerOverrides();
+    const cards = getAllKnockoutSlotIds().map((slotId) => {
+        const slot = resolveKnockoutSlot(slotId);
+        if (!slot || slot.home === "待定" || slot.away === "待定") return "";
+
+        const match = findComputeKnockoutFinalMatch(slot.home, slot.away);
+        const autoWinner = getKnockoutAutoWinner(slotId);
+        const current = overrides[slotId] || "";
+        const scoreText = match ? `${match.home.score} : ${match.away.score}` : "未結算";
+        const isDraw = match && match.home.score === match.away.score;
+        const roundLabel = (WC_KNOCKOUT_ROUND_META[slot.round] || {}).label || slot.round;
+
+        return `
+        <div class="wc-fixture-card">
+            <div class="wc-fixture-head">
+                <span class="wc-fixture-round">${roundLabel}</span>
+                <span class="wc-fixture-match">${slot.home} vs ${slot.away}</span>
+                <span class="wc-fixture-time">比分 ${scoreText}</span>
+            </div>
+            <div class="field-label">晉級隊伍${isDraw ? "（平手／點球請手動指定）" : ""}</div>
+            <select onchange="saveKnockoutWinner('${slotId}', this.value)">
+                <option value="" ${!current ? "selected" : ""}>自動（依比分）</option>
+                <option value="${slot.home}" ${current === slot.home ? "selected" : ""}>${slot.home}</option>
+                <option value="${slot.away}" ${current === slot.away ? "selected" : ""}>${slot.away}</option>
+            </select>
+            ${autoWinner ? `<div class="hint" style="margin-top:8px">自動判定晉級：${autoWinner}</div>` : ""}
+        </div>`;
+    }).join("");
+
+    container.innerHTML = cards || `<div class="hint">尚無可設定的晉級場次（需先結算上游比賽）</div>`;
+}
+
+function setWcKnockoutRound(roundKey) {
+    selectedWcKnockoutRound = roundKey;
+    renderWcKnockoutRoundSwitch();
+    renderWcKnockoutList();
+}
+
+function renderWcKnockoutRoundSwitch() {
+    const container = document.getElementById("wcKnockoutRoundSwitch");
+    if (!container) return;
+    container.innerHTML = Object.keys(WC_KNOCKOUT_ROUND_META)
+        .filter((key) => getKnockoutFixturesForRound(key).length > 0)
+        .map((key) => {
+            const activeClass = key === selectedWcKnockoutRound ? " active" : "";
+            return `<button type="button" class="${activeClass.trim()}" onclick="setWcKnockoutRound('${key}')">${WC_KNOCKOUT_ROUND_META[key].label}</button>`;
+        })
+        .join("");
+}
+
+function findWcKnockoutFixture(id) {
+    const keys = Object.keys(WC_KNOCKOUT_ROUND_META);
+    for (let i = 0; i < keys.length; i++) {
+        const row = getKnockoutFixturesForRound(keys[i]).find((fx) => fx.id === id);
+        if (row) return row;
+    }
+    return null;
 }
 
 function wcKnockoutFieldId(id, field) {
@@ -1474,16 +1743,26 @@ function renderWcKnockoutList() {
     const container = document.getElementById("wcKnockoutList");
     if (!container) return;
 
-    container.innerHTML = WC_KNOCKOUT_R32.map((fx) => {
+    const fixtures = getKnockoutFixturesForRound(selectedWcKnockoutRound);
+    const roundMeta = WC_KNOCKOUT_ROUND_META[selectedWcKnockoutRound] || { label: "淘汰賽", league: "世足 淘汰賽" };
+
+    if (!fixtures.length) {
+        container.innerHTML = `<div class="hint">此輪次尚無可匯入場次</div>`;
+        return;
+    }
+
+    container.innerHTML = fixtures.map((fx) => {
         const { id, home, away, date, time } = fx;
         const field = (name) => wcKnockoutFieldId(id, name);
+        const isTbd = home === "待定" || away === "待定";
         return `
         <div class="wc-fixture-card">
             <div class="wc-fixture-head">
-                <span class="wc-fixture-round">32 強</span>
+                <span class="wc-fixture-round">${roundMeta.label}</span>
                 <span class="wc-fixture-match">${home} vs ${away}</span>
                 <span class="wc-fixture-time">${formatWcDisplayDate(date)} ${time}</span>
             </div>
+            ${isTbd ? `<div class="hint" style="margin:8px 0">等待上游比賽結算後自動帶入晉級隊伍</div>` : ""}
             <div class="field-label">波膽（4 組）</div>
             <div class="wc-fixture-grid">
                 <input id="${field("s1")}" type="text" placeholder="波膽 1">
@@ -1493,16 +1772,17 @@ function renderWcKnockoutList() {
             </div>
             <div class="field-label">初盤</div>
             <input id="${field("line")}" type="text" placeholder="初盤，例如 大2.5">
-            <button type="button" class="wc-fixture-submit" onclick="addWorldCupKnockoutPrediction('${id}')">匯入此場</button>
+            <button type="button" class="wc-fixture-submit" onclick="addWorldCupKnockoutPrediction('${id}')" ${isTbd ? "disabled" : ""}>匯入此場</button>
         </div>`;
     }).join("");
 }
 
 async function addWorldCupKnockoutPrediction(id) {
-    const fx = WC_KNOCKOUT_R32.find((row) => row.id === id);
+    const fx = findWcKnockoutFixture(id);
     if (!fx) return;
 
-    const { home, away, date, time } = fx;
+    const { home, away, date, time, roundKey } = fx;
+    const roundMeta = WC_KNOCKOUT_ROUND_META[roundKey] || { league: "世足 淘汰賽" };
     const field = (name) => document.getElementById(wcKnockoutFieldId(id, name));
     const openingLine = (field("line").value || "").trim();
     const scores = ["s1", "s2", "s3", "s4"]
@@ -1519,7 +1799,7 @@ async function addWorldCupKnockoutPrediction(id) {
     }
 
     const item = {
-        league: "世足 32強",
+        league: roundMeta.league,
         sport: "soccer",
         home,
         away,

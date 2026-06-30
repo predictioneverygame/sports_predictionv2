@@ -406,8 +406,13 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-group-btn.active{background:var(--accent3);border-color:var(--accent3);color:#fff;box-shadow:0 4px 14px rgba(5,150,105,.25)}
 .wc-group-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;min-height:120px}
 .wc-group-layout{display:flex;gap:20px;align-items:flex-start}
+.wc-group-layout.knockout-mode{display:block}
+.wc-group-layout.knockout-mode .wc-group-main{width:100%;max-width:100%}
 .wc-group-main{flex:1;min-width:0}
 .wc-group-stats{flex:0 0 240px;position:sticky;top:16px;background:linear-gradient(165deg,rgba(5,150,105,.06),rgba(124,58,237,.05));border:1px solid rgba(5,150,105,.22);border-radius:12px;padding:16px 14px}
+@media(min-width:901px){
+  .wc-group-layout.knockout-mode .wc-group-stats{position:fixed;right:16px;top:68px;width:220px;z-index:40;flex:none}
+}
 .wc-group-stats-title{font-size:.78rem;font-weight:800;color:var(--accent3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 .wc-group-stats-block{margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--border)}
 .wc-group-stats-block:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
@@ -443,6 +448,7 @@ footer a{color:var(--accent);text-decoration:none}
 #wc-group-content .wc-no-pred{margin:12px 14px;flex:1;display:flex;align-items:center;justify-content:center}
 @media(max-width:768px){
   .wc-group-layout{flex-direction:column}
+  .wc-group-layout.knockout-mode .wc-group-stats{position:static;width:100%}
   .wc-group-stats{flex:none;width:100%;position:static}
   #wc-group-content .wc-match-body{flex-direction:column}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
@@ -469,9 +475,14 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-bracket-side.right{flex-direction:row-reverse}
 .wc-bracket-col{display:flex;flex-direction:column;justify-content:space-around;flex:1;min-width:0;min-height:600px;position:relative}
 .wc-bracket-col-label{font-size:.58rem;font-weight:800;color:#64748b;text-align:center;letter-spacing:.06em;margin-bottom:4px}
-.wc-brkt-match{display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.04);width:100%;min-width:0;cursor:pointer;transition:all .18s;text-align:left;padding:0;overflow:hidden}
+.wc-brkt-match{display:flex;flex-direction:column;border:1px solid rgba(255,255,255,.12);border-radius:8px;background:rgba(255,255,255,.04);width:100%;min-width:0;cursor:pointer;transition:border-color .18s,box-shadow .18s,background .18s,transform .18s;text-align:left;padding:0;overflow:hidden}
 .wc-brkt-match:hover{border-color:#38bdf8;background:rgba(56,189,248,.08);transform:translateY(-1px)}
-.wc-brkt-match.has-pred{border-color:#22c55e;box-shadow:0 0 0 1px rgba(34,197,94,.25)}
+.wc-brkt-match.has-pred{border-color:rgba(56,189,248,.5);box-shadow:inset 0 0 0 1px rgba(56,189,248,.12)}
+.wc-brkt-match.has-pred:hover{border-color:#38bdf8;background:rgba(56,189,248,.1)}
+.wc-brkt-match.pred-hit{border-color:rgba(74,222,128,.65);box-shadow:inset 0 0 0 1px rgba(74,222,128,.18)}
+.wc-brkt-match.pred-hit:hover{border-color:#4ade80;background:rgba(74,222,128,.08)}
+.wc-brkt-match.pred-miss{border-color:rgba(248,113,113,.65);box-shadow:inset 0 0 0 1px rgba(248,113,113,.18)}
+.wc-brkt-match.pred-miss:hover{border-color:#f87171;background:rgba(248,113,113,.08)}
 .wc-brkt-match.is-tbd{cursor:default;opacity:.55}
 .wc-brkt-match.is-tbd:hover{transform:none;border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
 .wc-brkt-team{padding:6px 8px;font-size:.68rem;font-weight:700;color:#f8fafc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;min-width:0}
@@ -639,7 +650,7 @@ footer a{color:var(--accent);text-decoration:none}
     <button type="button" class="wc-phase-btn active" id="wc-phase-btn-groups" onclick="selectWorldCupPhase('groups')">小組賽</button>
     <button type="button" class="wc-phase-btn" id="wc-phase-btn-knockout" onclick="selectWorldCupPhase('knockout')">淘汰賽</button>
   </div>
-  <div class="wc-group-layout">
+  <div class="wc-group-layout" id="wc-group-layout">
     <div class="wc-group-main">
       <div id="wc-groups-view">
         <div class="wc-group-tabs" id="wc-group-tabs"></div>
@@ -749,6 +760,33 @@ const WC_KNOCKOUT_R32 = {
     { id: 'r32-r7', home: '瑞士', away: '阿爾及利亞' },
     { id: 'r32-r8', home: '哥倫比亞', away: '迦納' }
   ]
+};
+
+const WC_KNOCKOUT_WINNERS_KEY = 'rs_knockout_winners';
+
+const WC_KNOCKOUT_SLOT_IDS = {
+  r16: { left: ['r16-l1', 'r16-l2', 'r16-l3', 'r16-l4'], right: ['r16-r1', 'r16-r2', 'r16-r3', 'r16-r4'] },
+  qf: { left: ['qf-l1', 'qf-l2'], right: ['qf-r1', 'qf-r2'] },
+  sf: { left: ['sf-l1'], right: ['sf-r1'] }
+};
+
+const WC_KNOCKOUT_ADVANCE = {
+  'r16-l1': { round: 'r16', feeders: ['r32-l1', 'r32-l2'] },
+  'r16-l2': { round: 'r16', feeders: ['r32-l3', 'r32-l4'] },
+  'r16-l3': { round: 'r16', feeders: ['r32-l5', 'r32-l6'] },
+  'r16-l4': { round: 'r16', feeders: ['r32-l7', 'r32-l8'] },
+  'r16-r1': { round: 'r16', feeders: ['r32-r1', 'r32-r2'] },
+  'r16-r2': { round: 'r16', feeders: ['r32-r3', 'r32-r4'] },
+  'r16-r3': { round: 'r16', feeders: ['r32-r5', 'r32-r6'] },
+  'r16-r4': { round: 'r16', feeders: ['r32-r7', 'r32-r8'] },
+  'qf-l1': { round: 'qf', feeders: ['r16-l1', 'r16-l2'] },
+  'qf-l2': { round: 'qf', feeders: ['r16-l3', 'r16-l4'] },
+  'qf-r1': { round: 'qf', feeders: ['r16-r1', 'r16-r2'] },
+  'qf-r2': { round: 'qf', feeders: ['r16-r3', 'r16-r4'] },
+  'sf-l1': { round: 'sf', feeders: ['qf-l1', 'qf-l2'] },
+  'sf-r1': { round: 'sf', feeders: ['qf-r1', 'qf-r2'] },
+  'final': { round: 'final', feeders: ['sf-l1', 'sf-r1'] },
+  'bronze': { round: 'bronze', feeders: ['sf-l1', 'sf-r1'], useLosers: true }
 };
 
 const WC_KNOCKOUT_ROUND_LABELS = {
@@ -2310,12 +2348,82 @@ function selectWorldCupPhase(phase) {
   renderWorldCupPage();
 }
 
-function getWcKnockoutSlotById(id) {
+function loadKnockoutWinnerOverrides() {
+  try {
+    return JSON.parse(localStorage.getItem(WC_KNOCKOUT_WINNERS_KEY) || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function getKnockoutR32SlotById(slotId) {
   var all = WC_KNOCKOUT_R32.left.concat(WC_KNOCKOUT_R32.right);
   for (var i = 0; i < all.length; i++) {
-    if (all[i].id === id) return Object.assign({ round: 'r32' }, all[i]);
+    if (all[i].id === slotId) return all[i];
   }
   return null;
+}
+
+function getKnockoutAutoWinner(slotId) {
+  var slot = resolveKnockoutSlotTeams(slotId);
+  if (!slot || slot.home === '待定' || slot.away === '待定') return null;
+  var match = findKnockoutMatchForStats(slot.home, slot.away);
+  if (!match || match.status !== 'final') return null;
+  if (match.home.score > match.away.score) return match.home.name;
+  if (match.away.score > match.home.score) return match.away.name;
+  return null;
+}
+
+function getKnockoutSlotWinner(slotId) {
+  var overrides = loadKnockoutWinnerOverrides();
+  if (overrides[slotId]) return overrides[slotId];
+  return getKnockoutAutoWinner(slotId);
+}
+
+function getKnockoutSlotLoser(slotId) {
+  var slot = resolveKnockoutSlotTeams(slotId);
+  if (!slot || slot.home === '待定' || slot.away === '待定') return null;
+  var winner = getKnockoutSlotWinner(slotId);
+  if (!winner) return null;
+  return winner === slot.home ? slot.away : slot.home;
+}
+
+function resolveKnockoutSlotTeams(slotId) {
+  var r32 = getKnockoutR32SlotById(slotId);
+  if (r32) return { id: slotId, round: 'r32', home: r32.home, away: r32.away };
+
+  var adv = WC_KNOCKOUT_ADVANCE[slotId];
+  if (!adv) return null;
+
+  var pick = adv.useLosers ? getKnockoutSlotLoser : getKnockoutSlotWinner;
+  var home = pick(adv.feeders[0]);
+  var away = pick(adv.feeders[1]);
+  return {
+    id: slotId,
+    round: adv.round,
+    home: home || '待定',
+    away: away || '待定'
+  };
+}
+
+function resolveKnockoutSlot(slotId) {
+  return resolveKnockoutSlotTeams(slotId);
+}
+
+function getAllKnockoutSlotIds() {
+  var ids = [];
+  WC_KNOCKOUT_R32.left.concat(WC_KNOCKOUT_R32.right).forEach(function (s) {
+    ids.push(s.id);
+  });
+  ['r16', 'qf', 'sf'].forEach(function (rk) {
+    ids = ids.concat(WC_KNOCKOUT_SLOT_IDS[rk].left).concat(WC_KNOCKOUT_SLOT_IDS[rk].right);
+  });
+  ids.push('final', 'bronze');
+  return ids;
+}
+
+function getWcKnockoutSlotById(id) {
+  return resolveKnockoutSlot(id);
 }
 
 function findKnockoutMatch(home, away, roundKey) {
@@ -2344,13 +2452,49 @@ function findKnockoutMatch(home, away, roundKey) {
   return candidates[0];
 }
 
+function isKnockoutResultHit(result) {
+  return result === 'hit' || result === 'half_hit';
+}
+
+function isKnockoutResultMiss(result) {
+  return result === 'miss' || result === 'half_miss';
+}
+
+function getKnockoutBracketMatchState(match) {
+  if (!match || !match.prediction) return 'none';
+
+  var os = getMatchOpeningAndScores(match);
+  if (!os) return 'pred';
+
+  var r = resolveOpeningScoreResults(match, os.opening, os.scores);
+  var hasOpening = !!(os.opening && os.opening !== '—');
+  var hasScores = !!(os.scores && os.scores.length);
+  var openingSettled = hasOpening && r.openingResult && r.openingResult !== 'pending';
+  var scoresSettled = hasScores && r.scoresResult && r.scoresResult !== 'pending';
+
+  if (!openingSettled && !scoresSettled) return 'pred';
+
+  var results = [];
+  if (openingSettled) results.push(r.openingResult);
+  if (scoresSettled) results.push(r.scoresResult);
+  if (!results.length) return 'pred';
+
+  if (results.some(isKnockoutResultHit)) return 'hit';
+  if (results.length > 0 && results.every(isKnockoutResultMiss)) return 'miss';
+  return 'pred';
+}
+
 function renderKnockoutMatchBtn(slot, roundKey) {
   var home = slot.home || '待定';
   var away = slot.away || '待定';
   var isTbd = home === '待定' || away === '待定';
-  var match = isTbd ? null : findKnockoutMatch(home, away, roundKey);
-  var hasPred = !!(match && match.prediction);
-  var cls = 'wc-brkt-match' + (hasPred ? ' has-pred' : '') + (isTbd ? ' is-tbd' : '');
+  var match = isTbd ? null : findKnockoutMatchForStats(home, away);
+  var state = getKnockoutBracketMatchState(match);
+  var cls = 'wc-brkt-match' +
+    (state === 'pred' ? ' has-pred' : '') +
+    (state === 'hit' ? ' pred-hit' : '') +
+    (state === 'miss' ? ' pred-miss' : '') +
+    (isTbd ? ' is-tbd' : '');
   var onclick = isTbd ? '' : (' onclick="openWcKnockoutModal(\'' + slot.id + '\')"');
   return (
     '<button type="button" class="' + cls + '"' + onclick + '>' +
@@ -2360,19 +2504,15 @@ function renderKnockoutMatchBtn(slot, roundKey) {
   );
 }
 
-function renderKnockoutPlaceholderCol(label, count, roundKey, sidePrefix) {
-  var items = [];
-  for (var i = 0; i < count; i++) {
-    items.push(renderKnockoutMatchBtn({
-      id: roundKey + '-' + sidePrefix + (i + 1),
-      home: '待定',
-      away: '待定'
-    }, roundKey));
-  }
+function renderKnockoutRoundCol(label, roundKey, side) {
+  var ids = WC_KNOCKOUT_SLOT_IDS[roundKey][side];
   return (
     '<div class="wc-bracket-col">' +
       '<div class="wc-bracket-col-label">' + label + '</div>' +
-      items.join('') +
+      ids.map(function (id) {
+        var slot = resolveKnockoutSlot(id);
+        return renderKnockoutMatchBtn(slot, roundKey);
+      }).join('') +
     '</div>'
   );
 }
@@ -2382,7 +2522,7 @@ function renderKnockoutR32Col(label, list) {
     '<div class="wc-bracket-col">' +
       '<div class="wc-bracket-col-label">' + label + '</div>' +
       list.map(function (slot) {
-        return renderKnockoutMatchBtn(Object.assign({ round: 'r32' }, slot), 'r32');
+        return renderKnockoutMatchBtn(resolveKnockoutSlot(slot.id), 'r32');
       }).join('') +
     '</div>'
   );
@@ -2394,24 +2534,24 @@ function renderWorldCupKnockoutBracket() {
   root.innerHTML =
     '<div class="wc-bracket-side left">' +
       renderKnockoutR32Col('32 強', WC_KNOCKOUT_R32.left) +
-      renderKnockoutPlaceholderCol('16 強', 4, 'r16', 'l') +
-      renderKnockoutPlaceholderCol('8 強', 2, 'qf', 'l') +
-      renderKnockoutPlaceholderCol('4 強', 1, 'sf', 'l') +
+      renderKnockoutRoundCol('16 強', 'r16', 'left') +
+      renderKnockoutRoundCol('8 強', 'qf', 'left') +
+      renderKnockoutRoundCol('4 強', 'sf', 'left') +
     '</div>' +
     '<div class="wc-bracket-center">' +
       '<div class="wc-bracket-finals">' +
         '<div class="wc-bracket-final-label">WORLD CHAMPION</div>' +
-        renderKnockoutMatchBtn({ id: 'final', home: '待定', away: '待定' }, 'final') +
+        renderKnockoutMatchBtn(resolveKnockoutSlot('final'), 'final') +
         '<div class="wc-bracket-trophy">🏆</div>' +
         '<div class="wc-bracket-final-label">BRONZE FINAL</div>' +
-        renderKnockoutMatchBtn({ id: 'bronze', home: '待定', away: '待定' }, 'bronze') +
+        renderKnockoutMatchBtn(resolveKnockoutSlot('bronze'), 'bronze') +
       '</div>' +
     '</div>' +
     '<div class="wc-bracket-side right">' +
       renderKnockoutR32Col('32 強', WC_KNOCKOUT_R32.right) +
-      renderKnockoutPlaceholderCol('16 強', 4, 'r16', 'r') +
-      renderKnockoutPlaceholderCol('8 強', 2, 'qf', 'r') +
-      renderKnockoutPlaceholderCol('4 強', 1, 'sf', 'r') +
+      renderKnockoutRoundCol('16 強', 'r16', 'right') +
+      renderKnockoutRoundCol('8 強', 'qf', 'right') +
+      renderKnockoutRoundCol('4 強', 'sf', 'right') +
     '</div>';
 }
 
@@ -2429,7 +2569,7 @@ function openWcKnockoutModal(slotId) {
     predHtml = '<div class="wc-modal-pred"><div class="prediction-box"><div class="pred-title">🎯 本場推薦預測</div><div class="pred-items">' +
       buildMatchPredictionItemsHtml(match) + '</div></div></div>';
   } else {
-    predHtml = '<div class="wc-modal-empty">📋 此場尚無推薦資料<br><span style="font-size:.78rem;margin-top:6px;display:block"></span></div>';
+    predHtml = '<div class="wc-modal-empty">📋 此場尚無推薦資料<br><span style="font-size:.78rem;margin-top:6px;display:block">可於 compute 匯入後同步顯示</span></div>';
   }
 
   var statusText = match && match.status === 'final'
@@ -2490,6 +2630,105 @@ function countOpeningScoreResult(result, tally) {
   }
 }
 
+function findKnockoutMatchForStats(home, away) {
+  var previewRec = null;
+  var finalMatch = null;
+
+  MATCHES.forEach(function (m) {
+    if (!isWorldCupKnockoutLeague(m.league)) return;
+    var h = m.home.name;
+    var a = m.away.name;
+    if (!((h === home && a === away) || (h === away && a === home))) return;
+    if (m.status === 'final') finalMatch = m;
+    else if (m.prediction) previewRec = m;
+  });
+
+  var base = finalMatch || previewRec;
+  if (!base) return null;
+
+  var manualBase = finalMatch || previewRec || base;
+  var manualResults = mergeManualResults(manualBase.id, manualBase.manualResults || {});
+
+  var prediction = null;
+  if (previewRec && previewRec.prediction && previewRec.prediction.opening) {
+    prediction = JSON.parse(JSON.stringify(previewRec.prediction));
+  } else if (base.prediction) {
+    prediction = JSON.parse(JSON.stringify(base.prediction));
+  } else if (finalMatch && finalMatch.prediction) {
+    prediction = JSON.parse(JSON.stringify(finalMatch.prediction));
+  }
+
+  var merged = {
+    id: finalMatch ? finalMatch.id : base.id,
+    date: base.date,
+    time: base.time,
+    league: base.league,
+    sport: base.sport,
+    status: base.status,
+    home: {
+      name: home,
+      short: home,
+      logo: base.home.logo || '',
+      score: base.home.score || 0
+    },
+    away: {
+      name: away,
+      short: away,
+      logo: base.away.logo || '',
+      score: base.away.score || 0
+    },
+    prediction: prediction,
+    mvps: base.mvps || [],
+    summary: base.summary || '',
+    manualResults: manualResults
+  };
+
+  if (finalMatch) {
+    merged.status = 'final';
+    merged.home.score = finalMatch.home.name === home ? finalMatch.home.score : finalMatch.away.score;
+    merged.away.score = finalMatch.away.name === away ? finalMatch.away.score : finalMatch.home.score;
+  }
+
+  return applyWorldCupFinalResult(merged, home, away, base.date, base.time);
+}
+
+function getKnockoutMatchupList() {
+  var seen = {};
+  var list = [];
+
+  function add(home, away) {
+    if (!home || !away || home === '待定' || away === '待定') return;
+    var key = [home, away].sort().join('|');
+    if (seen[key]) return;
+    seen[key] = true;
+    list.push({ home: home, away: away });
+  }
+
+  getAllKnockoutSlotIds().forEach(function (slotId) {
+    var slot = resolveKnockoutSlot(slotId);
+    if (slot) add(slot.home, slot.away);
+  });
+
+  MATCHES.forEach(function (m) {
+    if (!isWorldCupKnockoutLeague(m.league)) return;
+    add(m.home.name, m.away.name);
+  });
+
+  return list;
+}
+
+function tallyMatchOpeningScoreStats(m, opening, scores) {
+  var os = getMatchOpeningAndScores(m);
+  if (!os) return false;
+  var r = resolveOpeningScoreResults(m, os.opening, os.scores);
+  var hasOpening = r.openingResult && r.openingResult !== 'pending';
+  var hasScores = r.scoresResult && r.scoresResult !== 'pending';
+  if (!hasOpening && !hasScores) return false;
+  if (hasOpening) countOpeningScoreResult(r.openingResult, opening);
+  if (hasScores) countOpeningScoreResult(r.scoresResult, scores);
+  return true;
+}
+
 function tallyAllWorldCupStats() {
   var opening = { hit: 0, miss: 0, push: 0 };
   var scores = { hit: 0, miss: 0, push: 0 };
@@ -2500,16 +2739,22 @@ function tallyAllWorldCupStats() {
     fixtures.forEach(function (fx) {
       var m = findWorldCupMatchForFixture(group, fx[0], fx[1], fx[2], fx[3]);
       if (!m) return;
-      var os = getMatchOpeningAndScores(m);
-      if (!os) return;
-      var r = resolveOpeningScoreResults(m, os.opening, os.scores);
-      var hasOpening = r.openingResult && r.openingResult !== 'pending';
-      var hasScores = r.scoresResult && r.scoresResult !== 'pending';
-      if (!hasOpening && !hasScores) return;
-      settled += 1;
-      if (hasOpening) countOpeningScoreResult(r.openingResult, opening);
-      if (hasScores) countOpeningScoreResult(r.scoresResult, scores);
+      if (tallyMatchOpeningScoreStats(m, opening, scores)) settled += 1;
     });
+  });
+
+  return { opening: opening, scores: scores, settled: settled };
+}
+
+function tallyKnockoutWorldCupStats() {
+  var opening = { hit: 0, miss: 0, push: 0 };
+  var scores = { hit: 0, miss: 0, push: 0 };
+  var settled = 0;
+
+  getKnockoutMatchupList().forEach(function (pair) {
+    var m = findKnockoutMatchForStats(pair.home, pair.away);
+    if (!m) return;
+    if (tallyMatchOpeningScoreStats(m, opening, scores)) settled += 1;
   });
 
   return { opening: opening, scores: scores, settled: settled };
@@ -2521,8 +2766,7 @@ function formatOpeningWinRate(hit, miss) {
   return String(Math.round((hit / total) * 1000) / 10) + '%';
 }
 
-function renderWorldCupGroupStatsHtml() {
-  var stats = tallyAllWorldCupStats();
+function buildWorldCupStatsBlocksHtml(stats, title, hint) {
   var openNet = stats.opening.hit - stats.opening.miss;
   var openNetClass = openNet > 0 ? 'pos' : (openNet < 0 ? 'neg' : 'zero');
   var openNetText = openNet > 0 ? ('+' + openNet) : String(openNet);
@@ -2552,10 +2796,28 @@ function renderWorldCupGroupStatsHtml() {
   }
 
   return (
-    '<div class="wc-group-stats-title">📊 全部預測戰績</div>' +
+    '<div class="wc-group-stats-title">' + title + '</div>' +
     blockHtml('初盤', stats.opening, openSummaryText, openNetClass, true, true) +
     blockHtml('波膽', stats.scores, '', '', false, false) +
-    '<div class="wc-group-stats-hint">A–L 組已結算 ' + stats.settled + ' 場有預測資料</div>'
+    '<div class="wc-group-stats-hint">' + hint + '</div>'
+  );
+}
+
+function renderWorldCupGroupStatsHtml() {
+  var stats = tallyAllWorldCupStats();
+  return buildWorldCupStatsBlocksHtml(
+    stats,
+    '📊 全部預測戰績',
+    'A–L 組已結算 ' + stats.settled + ' 場有預測資料'
+  );
+}
+
+function renderWorldCupKnockoutStatsHtml() {
+  var stats = tallyKnockoutWorldCupStats();
+  return buildWorldCupStatsBlocksHtml(
+    stats,
+    '📊 淘汰賽戰績',
+    '淘汰賽已結算 ' + stats.settled + ' 場有預測資料'
   );
 }
 
@@ -2563,8 +2825,13 @@ function renderWorldCupPage() {
   var groupsView = document.getElementById('wc-groups-view');
   var knockoutView = document.getElementById('wc-knockout-view');
   var statsEl = document.getElementById('wc-group-stats');
+  var layoutEl = document.getElementById('wc-group-layout');
   var phaseBtnGroups = document.getElementById('wc-phase-btn-groups');
   var phaseBtnKnockout = document.getElementById('wc-phase-btn-knockout');
+
+  if (layoutEl) {
+    layoutEl.classList.toggle('knockout-mode', selectedWorldCupPhase === 'knockout');
+  }
 
   if (phaseBtnGroups && phaseBtnKnockout) {
     phaseBtnGroups.classList.toggle('active', selectedWorldCupPhase === 'groups');
@@ -2574,11 +2841,10 @@ function renderWorldCupPage() {
   if (knockoutView) knockoutView.style.display = selectedWorldCupPhase === 'knockout' ? '' : 'none';
 
   if (statsEl) {
+    statsEl.style.display = '';
     if (selectedWorldCupPhase === 'knockout') {
-      statsEl.style.display = 'none';
-      statsEl.innerHTML = '';
+      statsEl.innerHTML = renderWorldCupKnockoutStatsHtml();
     } else {
-      statsEl.style.display = '';
       statsEl.innerHTML = renderWorldCupGroupStatsHtml();
     }
   }
