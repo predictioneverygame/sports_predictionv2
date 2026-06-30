@@ -316,7 +316,7 @@ input[type="text"] {
   <div class="wc-group-switch" id="wcKnockoutRoundSwitch"></div>
   <div class="wc-fixtures-list" id="wcKnockoutList"></div>
   <div class="card-title" style="margin-top:18px">淘汰賽晉級（手動覆寫）</div>
-  <div class="hint">比分平手或點球大戰時，請手動選晉級隊；選「自動」則依已結算比分判定勝者</div>
+  <div class="hint">比分平手或點球大戰時，請手動選晉級隊；選「自動」則依已結算比分判定勝者。設定會同步至雲端，前台網站會自動更新。</div>
   <div class="wc-fixtures-list" id="wcKnockoutWinnerPanel"></div>
 </div>
 </div>
@@ -581,6 +581,8 @@ const WC_GROUP_FIXTURES = {
 };
 
 const WC_KNOCKOUT_WINNERS_KEY = "rs_knockout_winners";
+const KNOCKOUT_WINNERS_CLOUD_ID = "rs-knockout-winners";
+const KNOCKOUT_WINNERS_META_LEAGUE = "__meta__";
 
 const WC_KNOCKOUT_R32 = {
     left: [
@@ -1305,7 +1307,9 @@ async function loadCloudSettledMatches() {
             throw new Error(msg || "讀取失敗");
         }
 
-        cloudSettledMatches = await response.json();
+        const raw = await response.json();
+        await ensureKnockoutWinnersCloudSeed(raw);
+        cloudSettledMatches = raw.filter((item) => !isKnockoutWinnersMetaRow(item));
         renderCloudSettledMatches();
         setSettledStatus(`目前共 ${cloudSettledMatches.length} 筆`);
         if (selectedWcPhase === "knockout") {
@@ -1348,6 +1352,10 @@ function renderCloudSettledMatches() {
 
 async function deleteSettledMatch(id) {
     if (!id) return;
+    if (id === KNOCKOUT_WINNERS_CLOUD_ID) {
+        alert("此為系統晉級設定，無法刪除");
+        return;
+    }
     if (!confirm("確定要刪除這筆已結算資料嗎？")) return;
 
     try {
@@ -1548,6 +1556,64 @@ function saveKnockoutWinnerOverrides(store) {
     localStorage.setItem(WC_KNOCKOUT_WINNERS_KEY, JSON.stringify(store));
 }
 
+function isKnockoutWinnersMetaRow(row) {
+    if (!row) return false;
+    return row.id === KNOCKOUT_WINNERS_CLOUD_ID || String(row.league || "") === KNOCKOUT_WINNERS_META_LEAGUE;
+}
+
+function parseKnockoutWinnersPayload(text) {
+    try {
+        const parsed = JSON.parse(String(text || "{}"));
+        return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch (err) {
+        return {};
+    }
+}
+
+function syncKnockoutWinnersFromCloudRows(rows) {
+    const meta = (rows || []).find(isKnockoutWinnersMetaRow);
+    if (!meta) return false;
+    saveKnockoutWinnerOverrides(parseKnockoutWinnersPayload(meta.prediction_value));
+    return true;
+}
+
+async function saveKnockoutWinnersToCloud(store) {
+    const row = {
+        id: KNOCKOUT_WINNERS_CLOUD_ID,
+        date: "2099-01-01",
+        time: "00:00",
+        league: KNOCKOUT_WINNERS_META_LEAGUE,
+        sport: "soccer",
+        status: "final",
+        home_name: "_knockout",
+        away_name: "_winners",
+        home_short: "_knockout",
+        away_short: "_winners",
+        home_logo: "",
+        away_logo: "",
+        home_score: 0,
+        away_score: 0,
+        prediction_value: JSON.stringify(store || {}),
+        prediction_result: "pending",
+        odds: 0,
+        stake: 0,
+        profit: 0,
+        summary: ""
+    };
+    await saveMatchRowToCloud(row);
+}
+
+async function ensureKnockoutWinnersCloudSeed(rows) {
+    if (syncKnockoutWinnersFromCloudRows(rows)) return;
+    const local = loadKnockoutWinnerOverrides();
+    if (!Object.keys(local).length) return;
+    try {
+        await saveKnockoutWinnersToCloud(local);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 function getKnockoutR32SlotById(slotId) {
     const all = WC_KNOCKOUT_R32.left.concat(WC_KNOCKOUT_R32.right);
     return all.find((s) => s.id === slotId) || null;
@@ -1663,11 +1729,18 @@ function setWcPhase(phase) {
     }
 }
 
-function saveKnockoutWinner(slotId, team) {
+async function saveKnockoutWinner(slotId, team) {
     const store = loadKnockoutWinnerOverrides();
     if (!team) delete store[slotId];
     else store[slotId] = team;
     saveKnockoutWinnerOverrides(store);
+    try {
+        await saveKnockoutWinnersToCloud(store);
+        setSettledStatus("晉級設定已同步至雲端");
+    } catch (err) {
+        console.error(err);
+        setSettledStatus("晉級設定已存本機，但雲端同步失敗");
+    }
     renderKnockoutWinnerPanel();
     renderWcKnockoutList();
 }

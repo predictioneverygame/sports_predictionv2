@@ -828,6 +828,9 @@ const WC_KNOCKOUT_R32 = {
 };
 
 const WC_KNOCKOUT_WINNERS_KEY = 'rs_knockout_winners';
+const KNOCKOUT_WINNERS_CLOUD_ID = 'rs-knockout-winners';
+const KNOCKOUT_WINNERS_META_LEAGUE = '__meta__';
+var knockoutWinnerOverridesCache = null;
 
 const WC_KNOCKOUT_SLOT_IDS = {
   r16: { left: ['r16-l1', 'r16-l2', 'r16-l3', 'r16-l4'], right: ['r16-r1', 'r16-r2', 'r16-r3', 'r16-r4'] },
@@ -1305,6 +1308,10 @@ async function loadSupabaseMatches() {
     throw new Error(msg || 'Supabase 歷史比賽讀取失敗');
   }
   var list = await response.json();
+  list.forEach(function (r) {
+    if (isKnockoutWinnersMetaRow(r)) applyKnockoutWinnersFromMetaRow(r);
+  });
+  list = list.filter(function (r) { return !isKnockoutWinnersMetaRow(r); });
   return normalizeCloudMatches(list);
 }
 
@@ -2413,7 +2420,36 @@ function selectWorldCupPhase(phase) {
   renderWorldCupPage();
 }
 
+function isKnockoutWinnersMetaRow(r) {
+  if (!r) return false;
+  return r.id === KNOCKOUT_WINNERS_CLOUD_ID || String(r.league || '') === KNOCKOUT_WINNERS_META_LEAGUE;
+}
+
+function parseKnockoutWinnersPayload(text) {
+  try {
+    var parsed = JSON.parse(String(text || '{}'));
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function setKnockoutWinnerOverridesCache(store) {
+  knockoutWinnerOverridesCache = store && typeof store === 'object' ? store : {};
+  try {
+    localStorage.setItem(WC_KNOCKOUT_WINNERS_KEY, JSON.stringify(knockoutWinnerOverridesCache));
+  } catch (e) {}
+}
+
+function applyKnockoutWinnersFromMetaRow(row) {
+  if (!row) return;
+  setKnockoutWinnerOverridesCache(parseKnockoutWinnersPayload(row.prediction_value));
+}
+
 function loadKnockoutWinnerOverrides() {
+  if (knockoutWinnerOverridesCache && typeof knockoutWinnerOverridesCache === 'object') {
+    return knockoutWinnerOverridesCache;
+  }
   try {
     return JSON.parse(localStorage.getItem(WC_KNOCKOUT_WINNERS_KEY) || '{}');
   } catch (e) {
