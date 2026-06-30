@@ -454,29 +454,6 @@ footer a{color:var(--accent);text-decoration:none}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
   #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
 }
-@media(max-width:960px){
-  #page-worldcup .container{padding-left:10px;padding-right:10px;padding-top:24px}
-  .wc-bracket-panel{padding:14px 10px 18px}
-  .wc-bracket-head h2{font-size:1.15rem}
-  .wc-bracket-scroll{
-    overflow-x:auto;
-    overflow-y:hidden;
-    -webkit-overflow-scrolling:touch;
-    margin:0 -6px;
-    padding:0 6px 10px;
-  }
-  .wc-bracket-scroll::-webkit-scrollbar{height:5px}
-  .wc-bracket-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
-  .wc-bracket{min-width:980px;width:max-content;gap:8px;padding:8px 4px}
-  .wc-bracket-side{flex:0 0 auto;gap:6px}
-  .wc-bracket-col{flex:0 0 92px;min-width:92px;min-height:520px}
-  .wc-bracket-col-label{font-size:.65rem;margin-bottom:6px}
-  .wc-brkt-match{min-width:88px}
-  .wc-brkt-team{font-size:.72rem;padding:6px 7px}
-  .wc-bracket-center{flex:0 0 112px;min-width:112px}
-  .wc-bracket-final-label{font-size:.65rem}
-  .wc-bracket-mobile-hint{display:block}
-}
 .wc-phase-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
 .wc-phase-btn{padding:10px 20px;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--muted);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
 .wc-phase-btn:hover{border-color:var(--accent3);color:var(--accent3)}
@@ -528,6 +505,73 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-modal-sub{font-size:.82rem;color:var(--muted);margin-bottom:14px}
 .wc-modal-pred .prediction-box{margin:0}
 .wc-modal-empty{padding:18px 14px;text-align:center;color:var(--muted);background:rgba(100,116,139,.08);border:1px dashed var(--border);border-radius:10px;font-size:.88rem}
+@media(max-width:960px){
+  #page-worldcup .container{padding-left:10px;padding-right:10px;padding-top:24px}
+  .wc-bracket-panel{padding:14px 10px 18px;overflow:visible}
+  .wc-bracket-head h2{font-size:1.15rem}
+  .wc-bracket-mobile-hint{display:block}
+  .wc-bracket-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x;
+    overscroll-behavior-x:contain;
+    margin:0 -6px;
+    padding:0 6px 10px;
+    max-width:100%;
+  }
+  .wc-bracket-scroll::-webkit-scrollbar{height:5px}
+  .wc-bracket-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
+  .wc-bracket-scroll .wc-bracket{
+    min-width:1100px;
+    width:max-content;
+    flex-shrink:0;
+    gap:8px;
+    padding:8px 4px;
+  }
+  .wc-bracket-scroll .wc-bracket-side{
+    flex:0 0 auto;
+    flex-shrink:0;
+    gap:8px;
+  }
+  .wc-bracket-scroll .wc-bracket-col{
+    flex:0 0 108px;
+    min-width:108px;
+    flex-shrink:0;
+    min-height:520px;
+  }
+  .wc-bracket-scroll .wc-bracket-col-label{font-size:.68rem;margin-bottom:6px}
+  .wc-bracket-scroll .wc-brkt-match{
+    min-width:104px;
+    width:104px;
+    flex-shrink:0;
+  }
+  .wc-bracket-scroll .wc-brkt-team{
+    font-size:.78rem;
+    padding:7px 8px;
+    white-space:normal;
+    line-height:1.25;
+    align-items:flex-start;
+  }
+  .wc-bracket-scroll .wc-bracket-center{
+    flex:0 0 120px;
+    min-width:120px;
+    flex-shrink:0;
+  }
+  .wc-bracket-scroll .wc-bracket-final-label{font-size:.68rem}
+  .wc-bracket-scroll .wc-team-label{
+    flex-direction:column;
+    align-items:flex-start;
+    gap:3px;
+    width:100%;
+  }
+  .wc-bracket-scroll .wc-team-text{
+    white-space:normal;
+    word-break:break-word;
+    line-height:1.2;
+    font-size:.72rem;
+  }
+}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}.mobile-only-wc{display:block}#profit-summary-card{display:none}}
 </style>
 </head>
