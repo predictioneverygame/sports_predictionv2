@@ -453,10 +453,29 @@ footer a{color:var(--accent);text-decoration:none}
   #wc-group-content .wc-match-body{flex-direction:column}
   #wc-group-content .wc-match-body .scoreboard{flex:none;border-right:none;border-bottom:1px solid var(--border)}
   #wc-group-content .wc-match-body .pred-items{grid-template-columns:1fr 1fr}
-  .wc-bracket{min-width:0}
-  .wc-brkt-team{font-size:.62rem;padding:5px 6px}
-  .wc-bracket-col{min-height:520px}
-  .wc-bracket-center{flex:0 0 100px}
+}
+@media(max-width:960px){
+  #page-worldcup .container{padding-left:10px;padding-right:10px;padding-top:24px}
+  .wc-bracket-panel{padding:14px 10px 18px}
+  .wc-bracket-head h2{font-size:1.15rem}
+  .wc-bracket-scroll{
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    margin:0 -6px;
+    padding:0 6px 10px;
+  }
+  .wc-bracket-scroll::-webkit-scrollbar{height:5px}
+  .wc-bracket-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
+  .wc-bracket{min-width:980px;width:max-content;gap:8px;padding:8px 4px}
+  .wc-bracket-side{flex:0 0 auto;gap:6px}
+  .wc-bracket-col{flex:0 0 92px;min-width:92px;min-height:520px}
+  .wc-bracket-col-label{font-size:.65rem;margin-bottom:6px}
+  .wc-brkt-match{min-width:88px}
+  .wc-brkt-team{font-size:.72rem;padding:6px 7px}
+  .wc-bracket-center{flex:0 0 112px;min-width:112px}
+  .wc-bracket-final-label{font-size:.65rem}
+  .wc-bracket-mobile-hint{display:block}
 }
 .wc-phase-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:20px}
 .wc-phase-btn{padding:10px 20px;border:1px solid var(--border);border-radius:999px;background:var(--card);color:var(--muted);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .2s}
@@ -469,6 +488,7 @@ footer a{color:var(--accent);text-decoration:none}
 .wc-bracket-head{text-align:center;margin-bottom:18px}
 .wc-bracket-head h2{margin:0;font-size:1.5rem;font-weight:900;letter-spacing:.06em;color:#fff}
 .wc-bracket-head p{margin:8px 0 0;font-size:.95rem;color:#94a3b8}
+.wc-bracket-mobile-hint{display:none;margin:10px 0 0;font-size:.78rem;color:#64748b;letter-spacing:.02em}
 .wc-bracket-scroll{overflow-x:hidden;padding-bottom:0}
 .wc-bracket{display:flex;align-items:stretch;gap:10px;width:100%;min-width:0;padding:8px 4px;box-sizing:border-box}
 .wc-bracket-side{display:flex;gap:8px;flex:1;min-width:0}
@@ -664,6 +684,7 @@ footer a{color:var(--accent);text-decoration:none}
           <div class="wc-bracket-head">
             <h2>FIFA WORLD CUP 2026™</h2>
             <p>點擊對戰組合查看本場推薦 · 32 強起</p>
+            <p class="wc-bracket-mobile-hint">← 左右滑動查看完整對戰表 →</p>
           </div>
           <div class="wc-bracket-scroll">
             <div id="wc-bracket-root" class="wc-bracket"></div>
