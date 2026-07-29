@@ -358,6 +358,7 @@ function buildBasketballLineOptions() {
 
 const CUP_LEAGUES = ['UCL', 'SuperCup'];
 const FREE_INPUT_LEAGUES = ['UCL', 'SuperCup', 'Other'];
+const FREE_INPUT_LEAGUES_LABELS = ['歐冠', '歐洲超級盃', '其他賽事'];
 function isCupLeague(league) { return CUP_LEAGUES.includes(league); }
 function isFreeInputLeague(league) { return FREE_INPUT_LEAGUES.includes(league); }
 
@@ -1166,16 +1167,41 @@ async function settleCloudRecommendation(id) {
         return;
     }
 
-    const homeScoreRaw = prompt(`請輸入主隊 ${item.home} 比分`, "0");
-    if (homeScoreRaw === null) return;
-    const awayScoreRaw = prompt(`請輸入客隊 ${item.away} 比分`, "0");
-    if (awayScoreRaw === null) return;
+    const STANDARD_LEAGUE_LABELS = Object.keys(leagues).filter(k => !FREE_INPUT_LEAGUES.includes(k)).map(k => leagues[k].label);
+    const isFreeInput = !STANDARD_LEAGUE_LABELS.includes(item.league);
 
-    const homeScore = toNum(homeScoreRaw);
-    const awayScore = toNum(awayScoreRaw);
-    if (homeScore === null || awayScore === null) {
-        alert("賽果格式錯誤，請輸入數字");
-        return;
+    let homeScore, awayScore, manualResult;
+
+    if (isFreeInput) {
+        const resultChoice = prompt(
+            `${item.home} vs ${item.away}\n盤口：${item.line}\n\n請輸入結果：\n1 = 命中\n2 = 未中\n3 = 半贏\n4 = 半輸\n5 = 和局（退款）`,
+            "1"
+        );
+        if (resultChoice === null) return;
+        const resultMap = { "1": "hit", "2": "miss", "3": "half_hit", "4": "half_miss", "5": "push" };
+        manualResult = resultMap[resultChoice.trim()];
+        if (!manualResult) { alert("無效選項"); return; }
+
+        const scoreInput = prompt("請輸入比分（格式：主隊-客隊，如 2-1），可留空", "");
+        if (scoreInput && scoreInput.includes("-")) {
+            const parts = scoreInput.split("-");
+            homeScore = toNum(parts[0]);
+            awayScore = toNum(parts[1]);
+        } else {
+            homeScore = 0;
+            awayScore = 0;
+        }
+    } else {
+        const homeScoreRaw = prompt(`請輸入主隊 ${item.home} 比分`, "0");
+        if (homeScoreRaw === null) return;
+        const awayScoreRaw = prompt(`請輸入客隊 ${item.away} 比分`, "0");
+        if (awayScoreRaw === null) return;
+        homeScore = toNum(homeScoreRaw);
+        awayScore = toNum(awayScoreRaw);
+        if (homeScore === null || awayScore === null) {
+            alert("賽果格式錯誤，請輸入數字");
+            return;
+        }
     }
 
     const groupKey = getMatchGroupKey(item);
@@ -1186,6 +1212,15 @@ async function settleCloudRecommendation(id) {
     }
 
     const settledRows = sameMatchItems.map((entry) => {
+        if (isFreeInput) {
+            const profit = getProfitByResult(manualResult, entry.stake, entry.odds);
+            return {
+                line: parsePredictionResultsFromLine(entry.line).display,
+                result: manualResult,
+                profit,
+                stake: toNum(entry.stake) || 0
+            };
+        }
         const displayLine = parsePredictionResultsFromLine(entry.line).display;
         const parsedLine = parseStoredLine(displayLine, entry.sport);
         const result = getPredictionResultByLine(parsedLine.lineValue, homeScore, awayScore, parsedLine.lineSide);
