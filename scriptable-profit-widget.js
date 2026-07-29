@@ -10,7 +10,11 @@ const CONFIG = {
   seasonSplitDate: "2026-07-17",
   unitStake2526: 8100,
   unitStake2627: 10600,
+  unitStakeCup: 8100,
+  unitStakeOther: 10600,
   bankrollUnits: 20,
+  cupLeagues: ["歐冠", "歐洲超級盃"],
+  knownLeagues: ["SBL", "TPBL", "PLG", "BCL", "英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "荷蘭甲"],
   timeoutMs: 12000,
   // 建議改用本地照片最穩定：先在 Scriptable App 內執行一次，會讓你選圖
   preferLocalPhoto: true,
@@ -49,6 +53,7 @@ async function fetchSettledMatches() {
     "date",
     "status",
     "sport",
+    "league",
     "odds",
     "stake",
     "profit",
@@ -227,12 +232,44 @@ function calcSeasonSummary(rows, unitStake) {
   };
 }
 
+function isWorldCupRelated(row) {
+  const league = String(row?.league || "");
+  return /世足\s*[A-L]組/.test(league) || /世足\s*(32強|16強|8強|4強|決賽|季軍|淘汰)/.test(league);
+}
+
+function isCupMatch(row) {
+  return CONFIG.cupLeagues.indexOf(String(row?.league || "")) !== -1;
+}
+
+function isOtherMatch(row) {
+  const league = String(row?.league || "");
+  return CONFIG.cupLeagues.indexOf(league) === -1
+    && CONFIG.knownLeagues.indexOf(league) === -1
+    && !isWorldCupRelated(row);
+}
+
 function calcSummary(rows) {
-  const season2526Rows = rows.filter((row) => String(row?.date || "") < CONFIG.seasonSplitDate);
-  const season2627Rows = rows.filter((row) => String(row?.date || "") >= CONFIG.seasonSplitDate);
+  const cupRows = rows.filter(isCupMatch);
+  const otherRows = rows.filter(isOtherMatch);
+  const leagueOnly = rows.filter((row) => !isCupMatch(row) && !isOtherMatch(row));
+  const season2526Rows = leagueOnly.filter((row) => String(row?.date || "") < CONFIG.seasonSplitDate);
+  const season2627LeagueRows = leagueOnly.filter((row) => String(row?.date || "") >= CONFIG.seasonSplitDate);
+
+  const league = calcSeasonSummary(season2627LeagueRows, CONFIG.unitStake2627);
+  const cup = calcSeasonSummary(cupRows, CONFIG.unitStakeCup);
+  const other = calcSeasonSummary(otherRows, CONFIG.unitStakeOther);
+  const combinedUnits = league.units + cup.units + other.units;
+
   return {
     season2526: calcSeasonSummary(season2526Rows, CONFIG.unitStake2526),
-    season2627: calcSeasonSummary(season2627Rows, CONFIG.unitStake2627)
+    season2627: {
+      settledCount: league.settledCount + cup.settledCount + other.settledCount,
+      units: combinedUnits,
+      roi: (combinedUnits / CONFIG.bankrollUnits) * 100
+    },
+    league,
+    cup,
+    other
   };
 }
 
@@ -298,17 +335,29 @@ async function applyWidgetBackground(widget) {
 
 async function buildWidget(summary) {
   const w = new ListWidget();
-  w.setPadding(8, 14, 12, 14);
+  w.setPadding(8, 12, 10, 12);
   await applyWidgetBackground(w);
 
-  const title = w.addText(`${CONFIG.siteName} 獲利`);
+  const title = w.addText("2026–27 獲利");
   title.font = Font.semiboldSystemFont(12);
   title.textColor = new Color("#f8fafc");
   title.centerAlignText();
 
+  w.addSpacer(4);
+
+  const totalCls = roiClass(summary.season2627.roi);
+  const totalColor =
+    totalCls === "pos" ? new Color("#22c55e")
+      : totalCls === "neg" ? new Color("#ef4444")
+      : new Color("#f1f5f9");
+  const total = w.addText(formatSignedPercent(summary.season2627.roi));
+  total.font = Font.boldSystemFont(20);
+  total.textColor = totalColor;
+  total.centerAlignText();
+
   w.addSpacer(6);
 
-  function addSeasonRow(label, season) {
+  function addDetailRow(label, season) {
     const row = w.addStack();
     row.layoutHorizontally();
     row.centerAlignContent();
@@ -316,6 +365,7 @@ async function buildWidget(summary) {
     const name = row.addText(label);
     name.font = Font.mediumSystemFont(11);
     name.textColor = new Color("#cbd5e1");
+    name.minimumScaleFactor = 0.8;
 
     row.addSpacer();
 
@@ -325,13 +375,15 @@ async function buildWidget(summary) {
         : cls === "neg" ? new Color("#ef4444")
         : new Color("#f1f5f9");
     const value = row.addText(formatSignedPercent(season.roi));
-    value.font = Font.boldSystemFont(16);
+    value.font = Font.boldSystemFont(13);
     value.textColor = roiColor;
   }
 
-  addSeasonRow("2025–26", summary.season2526);
-  w.addSpacer(4);
-  addSeasonRow("2026–27", summary.season2627);
+  addDetailRow("聯賽", summary.league);
+  w.addSpacer(2);
+  addDetailRow("歐冠及盃賽", summary.cup);
+  w.addSpacer(2);
+  addDetailRow("其他賽事", summary.other);
 
   return w;
 }
