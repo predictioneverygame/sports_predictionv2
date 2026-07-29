@@ -1436,7 +1436,7 @@ async function addRecommendation() {
 
     const item = {
         league: leagueName,
-        sport: isOther ? "soccer" : inferSportByLeague(league),
+        sport: isOther ? currentSport : inferSportByLeague(league),
         home: home,
         away: away,
         line: lineText,
