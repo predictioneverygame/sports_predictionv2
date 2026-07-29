@@ -7,7 +7,10 @@ const CONFIG = {
   supabaseAnonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA",
   matchesTable: "matches",
   profitStartDate: "2026-04-23",
-  baseCapital: 162000,
+  seasonSplitDate: "2026-07-17",
+  unitStake2526: 8100,
+  unitStake2627: 10600,
+  bankrollUnits: 20,
   timeoutMs: 12000,
   // 建議改用本地照片最穩定：先在 Scriptable App 內執行一次，會讓你選圖
   preferLocalPhoto: true,
@@ -208,16 +211,28 @@ function calcProfitForMatch(row) {
   return 0;
 }
 
-function calcSummary(rows) {
+function calcSeasonSummary(rows, unitStake) {
   let totalProfit = 0;
+  let totalUnits = 0;
   for (const row of rows) {
-    totalProfit += calcProfitForMatch(row);
+    const profit = calcProfitForMatch(row);
+    totalProfit += profit;
+    totalUnits += unitStake > 0 ? profit / unitStake : 0;
   }
-  const roi = (totalProfit / CONFIG.baseCapital) * 100;
   return {
     settledCount: rows.length,
     totalProfit,
-    roi
+    units: totalUnits,
+    roi: (totalUnits / CONFIG.bankrollUnits) * 100
+  };
+}
+
+function calcSummary(rows) {
+  const season2526Rows = rows.filter((row) => String(row?.date || "") < CONFIG.seasonSplitDate);
+  const season2627Rows = rows.filter((row) => String(row?.date || "") >= CONFIG.seasonSplitDate);
+  return {
+    season2526: calcSeasonSummary(season2526Rows, CONFIG.unitStake2526),
+    season2627: calcSeasonSummary(season2627Rows, CONFIG.unitStake2627)
   };
 }
 
@@ -283,28 +298,40 @@ async function applyWidgetBackground(widget) {
 
 async function buildWidget(summary) {
   const w = new ListWidget();
-  w.setPadding(6, 14, 14, 14);
+  w.setPadding(8, 14, 12, 14);
   await applyWidgetBackground(w);
-
-  const cls = roiClass(summary.roi);
-  const roiColor =
-    cls === "pos" ? new Color("#22c55e")
-      : cls === "neg" ? new Color("#ef4444")
-      : new Color("#f1f5f9");
 
   const title = w.addText(`${CONFIG.siteName} 獲利`);
   title.font = Font.semiboldSystemFont(12);
   title.textColor = new Color("#f8fafc");
   title.centerAlignText();
 
-  w.addSpacer(0);
+  w.addSpacer(6);
 
-  const main = w.addText(formatSignedPercent(summary.roi));
-  main.font = Font.boldSystemFont(30);
-  main.textColor = roiColor;
-  main.centerAlignText();
+  function addSeasonRow(label, season) {
+    const row = w.addStack();
+    row.layoutHorizontally();
+    row.centerAlignContent();
 
-  w.addSpacer();
+    const name = row.addText(label);
+    name.font = Font.mediumSystemFont(11);
+    name.textColor = new Color("#cbd5e1");
+
+    row.addSpacer();
+
+    const cls = roiClass(season.roi);
+    const roiColor =
+      cls === "pos" ? new Color("#22c55e")
+        : cls === "neg" ? new Color("#ef4444")
+        : new Color("#f1f5f9");
+    const value = row.addText(formatSignedPercent(season.roi));
+    value.font = Font.boldSystemFont(16);
+    value.textColor = roiColor;
+  }
+
+  addSeasonRow("2025–26", summary.season2526);
+  w.addSpacer(4);
+  addSeasonRow("2026–27", summary.season2627);
 
   return w;
 }
