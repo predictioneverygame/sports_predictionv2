@@ -322,6 +322,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .profit-card .profit-main.neg{color:var(--red)}
 .profit-card .profit-main.zero{color:var(--muted)}
 .profit-card .profit-sub{margin-top:4px;font-size:.72rem;color:var(--muted)}
+.profit-card .profit-season-head.expandable{cursor:pointer}
+.profit-card .profit-season-head.expandable .profit-chev{font-size:.6rem;color:var(--muted);transition:transform .2s}
+.profit-card .profit-season.open .profit-chev{transform:rotate(180deg)}
+.profit-card .profit-detail{display:none;padding:4px 0 0 12px;font-size:.72rem;color:var(--muted)}
+.profit-card .profit-season.open .profit-detail{display:block}
+.profit-card .profit-detail-row{display:flex;justify-content:space-between;padding:2px 0}
+.profit-card .profit-detail-val.pos{color:var(--green)}.profit-card .profit-detail-val.neg{color:var(--red)}.profit-card .profit-detail-val.zero{color:var(--muted)}
 .mobile-only-profit{display:none;margin-bottom:14px}
 /* 側欄：當周總累積（預測戰績與搜尋之間） */
 .week-summary-card{margin-top:18px}
@@ -642,19 +649,17 @@ footer a{color:var(--accent);text-decoration:none}
     <div>
       <div class="sb-card stats-card profit-card mobile-only-profit" id="profit-summary-card-mobile">
         <div class="profit-title">獲利</div>
-        <div class="profit-season">
-          <div class="profit-season-head">
-            <span class="profit-season-label">2026–2027</span>
+        <div class="profit-season" id="profit-season-mobile-2627">
+          <div class="profit-season-head expandable" onclick="this.parentElement.classList.toggle('open')">
+            <span class="profit-season-label">2026–2027 <span class="profit-chev">▼</span></span>
             <span class="profit-main zero" id="profit-main-value-mobile-2627">0.00%</span>
           </div>
           <div class="profit-sub" id="profit-sub-text-mobile-2627">已結算 0 場</div>
-        </div>
-        <div class="profit-season">
-          <div class="profit-season-head">
-            <span class="profit-season-label">🏆 歐冠及盃賽</span>
-            <span class="profit-main zero" id="profit-main-value-mobile-cup">0.00%</span>
+          <div class="profit-detail">
+            <div class="profit-detail-row"><span>⚽ 聯賽</span><span class="profit-detail-val zero" id="profit-detail-mobile-league">0.00%</span></div>
+            <div class="profit-detail-row"><span>🏆 歐冠及盃賽</span><span class="profit-detail-val zero" id="profit-detail-mobile-cup">0.00%</span></div>
+            <div class="profit-detail-row"><span>📋 其他賽事</span><span class="profit-detail-val zero" id="profit-detail-mobile-other">0.00%</span></div>
           </div>
-          <div class="profit-sub" id="profit-sub-text-mobile-cup">已結算 0 場</div>
         </div>
         <div class="profit-season">
           <div class="profit-season-head">
@@ -672,19 +677,17 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="sidebar">
       <div class="sb-card stats-card profit-card" id="profit-summary-card">
         <div class="profit-title">獲利</div>
-        <div class="profit-season">
-          <div class="profit-season-head">
-            <span class="profit-season-label">2026–2027</span>
+        <div class="profit-season" id="profit-season-2627">
+          <div class="profit-season-head expandable" onclick="this.parentElement.classList.toggle('open')">
+            <span class="profit-season-label">2026–2027 <span class="profit-chev">▼</span></span>
             <span class="profit-main zero" id="profit-main-value-2627">0.00%</span>
           </div>
           <div class="profit-sub" id="profit-sub-text-2627">已結算 0 場</div>
-        </div>
-        <div class="profit-season">
-          <div class="profit-season-head">
-            <span class="profit-season-label">🏆 歐冠及盃賽</span>
-            <span class="profit-main zero" id="profit-main-value-cup">0.00%</span>
+          <div class="profit-detail">
+            <div class="profit-detail-row"><span>⚽ 聯賽</span><span class="profit-detail-val zero" id="profit-detail-league">0.00%</span></div>
+            <div class="profit-detail-row"><span>🏆 歐冠及盃賽</span><span class="profit-detail-val zero" id="profit-detail-cup">0.00%</span></div>
+            <div class="profit-detail-row"><span>📋 其他賽事</span><span class="profit-detail-val zero" id="profit-detail-other">0.00%</span></div>
           </div>
-          <div class="profit-sub" id="profit-sub-text-cup">已結算 0 場</div>
         </div>
         <div class="profit-season">
           <div class="profit-season-head">
@@ -1902,7 +1905,7 @@ const LEAGUE_STATS_LABEL = {
   歐洲超級盃: '🏆 歐超盃',
 };
 
-/** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0） */
+/** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
 const PRED_STATS_LEAGUE_ORDER = [
   'SBL', 'TPBL', 'PLG', 'BCL',
   '英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃',
@@ -2017,8 +2020,11 @@ function renderProfitSummary() {
   var UNIT_STAKE_2526 = 8100;
   var UNIT_STAKE_2627 = 10600;
   var UNIT_STAKE_CUP = 8100;
+  var UNIT_STAKE_OTHER = 8100;
   var BANKROLL_UNITS = 20;
   var CUP_LEAGUES = ['歐冠', '歐洲超級盃'];
+  var KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲'];
+  function isOtherMatch(m) { return CUP_LEAGUES.indexOf(m.league) === -1 && KNOWN_LEAGUES.indexOf(m.league) === -1 && !isWorldCupRelated(m); }
 
   function calcSeasonSummary(matches, unitStake) {
     var totalUnits = matches.reduce(function (sum, m) {
@@ -2048,54 +2054,44 @@ function renderProfitSummary() {
   });
   function isCupMatch(m) { return CUP_LEAGUES.indexOf(m.league) !== -1; }
   var cupMatches = finals.filter(isCupMatch);
-  var nonCup = finals.filter(function (m) { return !isCupMatch(m); });
-  var season2526 = nonCup.filter(function (m) {
+  var otherMatches = finals.filter(isOtherMatch);
+  var leagueOnly = finals.filter(function (m) { return !isCupMatch(m) && !isOtherMatch(m); });
+  var season2526 = leagueOnly.filter(function (m) {
     return String(m.date) < SEASON_SPLIT_DATE;
   });
-  var season2627 = nonCup.filter(function (m) {
+  var season2627 = leagueOnly.filter(function (m) {
     return String(m.date) >= SEASON_SPLIT_DATE;
   });
 
-  var summary2526 = calcSeasonSummary(season2526, UNIT_STAKE_2526);
-  var summary2627 = calcSeasonSummary(season2627, UNIT_STAKE_2627);
+  var summaryLeague = calcSeasonSummary(season2627, UNIT_STAKE_2627);
   var summaryCup = calcSeasonSummary(cupMatches, UNIT_STAKE_CUP);
+  var summaryOther = calcSeasonSummary(otherMatches, UNIT_STAKE_OTHER);
+  var summary2526 = calcSeasonSummary(season2526, UNIT_STAKE_2526);
 
-  applySeasonToEls(
-    'profit-main-value-2526',
-    'profit-sub-text-2526',
-    summary2526,
-    '已結算 ' + summary2526.count + ' 場'
-  );
-  applySeasonToEls(
-    'profit-main-value-2627',
-    'profit-sub-text-2627',
-    summary2627,
-    '已結算 ' + summary2627.count + ' 場'
-  );
-  applySeasonToEls(
-    'profit-main-value-mobile-2526',
-    'profit-sub-text-mobile-2526',
-    summary2526,
-    '已結算 ' + summary2526.count + ' 場'
-  );
-  applySeasonToEls(
-    'profit-main-value-mobile-2627',
-    'profit-sub-text-mobile-2627',
-    summary2627,
-    '已結算 ' + summary2627.count + ' 場'
-  );
-  applySeasonToEls(
-    'profit-main-value-cup',
-    'profit-sub-text-cup',
-    summaryCup,
-    '已結算 ' + summaryCup.count + ' 場'
-  );
-  applySeasonToEls(
-    'profit-main-value-mobile-cup',
-    'profit-sub-text-mobile-cup',
-    summaryCup,
-    '已結算 ' + summaryCup.count + ' 場'
-  );
+  var combined2627Units = summaryLeague.units + summaryCup.units + summaryOther.units;
+  var combined2627Roi = (combined2627Units / BANKROLL_UNITS) * 100;
+  var combined2627 = { count: summaryLeague.count + summaryCup.count + summaryOther.count, units: combined2627Units, roi: combined2627Roi };
+
+  applySeasonToEls('profit-main-value-2627', 'profit-sub-text-2627', combined2627, '已結算 ' + combined2627.count + ' 場');
+  applySeasonToEls('profit-main-value-mobile-2627', 'profit-sub-text-mobile-2627', combined2627, '已結算 ' + combined2627.count + ' 場');
+  applySeasonToEls('profit-main-value-2526', 'profit-sub-text-2526', summary2526, '已結算 ' + summary2526.count + ' 場');
+  applySeasonToEls('profit-main-value-mobile-2526', 'profit-sub-text-mobile-2526', summary2526, '已結算 ' + summary2526.count + ' 場');
+
+  function applyDetailEl(id, summary) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('pos', 'neg', 'zero');
+    if (summary.units > 0) el.classList.add('pos');
+    else if (summary.units < 0) el.classList.add('neg');
+    else el.classList.add('zero');
+    el.textContent = (summary.roi > 0 ? '+' : '') + summary.roi.toFixed(2) + '% (' + summary.count + '場)';
+  }
+  applyDetailEl('profit-detail-league', summaryLeague);
+  applyDetailEl('profit-detail-cup', summaryCup);
+  applyDetailEl('profit-detail-other', summaryOther);
+  applyDetailEl('profit-detail-mobile-league', summaryLeague);
+  applyDetailEl('profit-detail-mobile-cup', summaryCup);
+  applyDetailEl('profit-detail-mobile-other', summaryOther);
 }
 
 function renderPredictionStats() {
@@ -2112,7 +2108,9 @@ function renderPredictionStats() {
     btn2627.classList.toggle('active', selectedPredStatsSeason === '2627');
   }
 
-  rowsEl.innerHTML = PRED_STATS_LEAGUE_ORDER.map(function (lg) {
+  var extraLeagues = Object.keys(byLeague).filter(function (lg) { return PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1; });
+  var allLeagues = PRED_STATS_LEAGUE_ORDER.concat(extraLeagues);
+  rowsEl.innerHTML = allLeagues.map(function (lg) {
     const rec = byLeague[lg] || { hit: 0, miss: 0 };
     const hit = rec.hit;
     const miss = rec.miss;
@@ -2333,6 +2331,7 @@ function sortFinalMatchesChrono(matches) {
 }
 const BB_LEAGUE_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
 const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃'];
+/* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
   SBL: '🏀 SBL', TPBL: '🏀 TPBL', PLG: '🏀 PLG', BCL: '🌏 BCL',
   英超: '⚽ 英超', 西甲: '⚽ 西甲', 德甲: '⚽ 德甲', 法甲: '⚽ 法甲', 德乙: '⚽ 德乙', 澳甲: '⚽ 澳甲', 美足: '⚽ 美足', 荷蘭甲: '⚽ 荷蘭甲',
@@ -2519,7 +2518,36 @@ function renderDateList() {
     headFinals.innerHTML = '<span>📅 已結算賽事</span>';
     container.appendChild(headFinals);
 
-    appendSettledDateRows(container, finalDates2627, groupedFinals2627, dates.length === 0);
+    var today = new Date();
+    var sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
+    var cutoff7 = sevenDaysAgo.toISOString().slice(0, 10);
+    var recentDates2627 = finalDates2627.filter(function (d) { return d >= cutoff7; });
+    var olderDates2627 = finalDates2627.filter(function (d) { return d < cutoff7; });
+
+    appendSettledDateRows(container, recentDates2627, groupedFinals2627, dates.length === 0);
+
+    if (olderDates2627.length > 0) {
+      var olderCount = olderDates2627.reduce(function (s, d) { return s + groupedFinals2627[d].length; }, 0);
+      var olderRow = document.createElement('div');
+      olderRow.className = 'date-row season-archive';
+      olderRow.innerHTML = `
+        <div class="date-header" onclick="this.parentElement.classList.toggle('open')">
+          <div class="date-left">
+            <span class="date-pill">更早</span>
+            <div>
+              <div class="date-title">7 天前的已結算</div>
+              <div class="date-sub">共 ${olderCount} 場</div>
+            </div>
+          </div>
+          <div class="date-meta">
+            <span class="chevron">▼</span>
+          </div>
+        </div>
+        <div class="date-body season-archive-nested"></div>
+      `;
+      appendSettledDateRows(olderRow.querySelector('.season-archive-nested'), olderDates2627, groupedFinals2627, false);
+      container.appendChild(olderRow);
+    }
 
     if (finalDates2526.length > 0) {
       var archiveRow = document.createElement('div');

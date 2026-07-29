@@ -174,6 +174,7 @@ input[type="text"] {
 
 <!-- 聯賽 -->
 <select id="league" onchange="updateTeams();renderLineOptions()"></select>
+<input id="leagueText" type="text" placeholder="賽事名稱（如：歐霸、世俱盃…）" style="display:none">
 
 <!-- 主隊 -->
 <select id="home"></select>
@@ -336,6 +337,11 @@ const leagues = {
     label: "歐洲超級盃",
     sport: "soccer",
     teams: ["皇家馬德里", "巴塞隆拿", "拜仁慕尼黑", "曼城", "利物浦", "阿仙奴", "巴黎聖日門", "國際米蘭", "AC米蘭", "祖雲達斯", "多蒙特", "馬德里體育會", "車路士", "塞維利亞", "法蘭克福", "維拉利爾", "亞特蘭大"]
+  },
+  Other: {
+    label: "其他賽事",
+    sport: "other",
+    teams: []
   }
 };
 let currentSport = "soccer";
@@ -351,7 +357,9 @@ function buildBasketballLineOptions() {
 }
 
 const CUP_LEAGUES = ['UCL', 'SuperCup'];
+const FREE_INPUT_LEAGUES = ['UCL', 'SuperCup', 'Other'];
 function isCupLeague(league) { return CUP_LEAGUES.includes(league); }
+function isFreeInputLeague(league) { return FREE_INPUT_LEAGUES.includes(league); }
 
 const LINE_OPTIONS = {
     soccer: [
@@ -415,6 +423,12 @@ function renderLeagueOptions() {
         option.textContent = leagues[key].label;
         leagueSelect.appendChild(option);
     });
+    if (!leagueKeys.includes('Other')) {
+        const opt = document.createElement("option");
+        opt.value = "Other";
+        opt.textContent = "其他賽事";
+        leagueSelect.appendChild(opt);
+    }
 
     if (preferredLeague && leagueKeys.includes(preferredLeague)) {
         leagueSelect.value = preferredLeague;
@@ -443,7 +457,7 @@ function renderLineOptions() {
     const lineSideSelect = document.getElementById("lineSide");
     const lineSideSelect2 = document.getElementById("lineSide2");
     const league = document.getElementById("league").value;
-    const cup = isCupLeague(league);
+    const cup = isFreeInputLeague(league);
 
     if (cup) {
         lineSelect.style.display = "none";
@@ -474,15 +488,19 @@ function toggleSecondBetFields() {
 
 function updateTeams() {
     const league = document.getElementById("league").value;
-    const cup = isCupLeague(league);
+    const cup = isFreeInputLeague(league);
+    const isOther = (league === 'Other');
 
     const home = document.getElementById("home");
     const away = document.getElementById("away");
     const homeText = document.getElementById("homeText");
     const awayText = document.getElementById("awayText");
+    const leagueTextEl = document.getElementById("leagueText");
     const secondBetLabel = document.getElementById("enableSecondBet").parentElement;
     const secondBetFields = document.getElementById("secondBetFields");
     const lineSide = document.getElementById("lineSide");
+
+    leagueTextEl.style.display = isOther ? "block" : "none";
 
     if (cup) {
         home.style.display = "none";
@@ -1083,7 +1101,16 @@ function renderCloudSettledMatches() {
         return;
     }
 
-    cloudSettledMatches.forEach((item) => {
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10);
+    const recent = cloudSettledMatches.filter(item => String(item.date || '') >= cutoff);
+
+    if (recent.length < cloudSettledMatches.length) {
+        document.getElementById("settledStatus").innerText =
+            `顯示近 7 天共 ${recent.length} 筆（全部 ${cloudSettledMatches.length} 筆）`;
+    }
+
+    recent.forEach((item) => {
         const profit = toNum(item.profit) || 0;
         const displayLine = parsePredictionResultsFromLine(item.prediction_value || "").display;
         settledList.innerHTML += `
@@ -1367,7 +1394,7 @@ async function ensureKnockoutWinnersCloudSeed(rows) {
 
 async function addRecommendation() {
     const league = document.getElementById("league").value;
-    const cup = isCupLeague(league);
+    const cup = isFreeInputLeague(league);
     const home = cup ? document.getElementById("homeText").value.trim() : document.getElementById("home").value;
     const away = cup ? document.getElementById("awayText").value.trim() : document.getElementById("away").value;
     const line = cup ? document.getElementById("lineText").value.trim() : document.getElementById("line").value;
@@ -1400,9 +1427,16 @@ async function addRecommendation() {
         return;
     }
 
+    const isOther = (league === 'Other');
+    const leagueName = isOther ? (document.getElementById("leagueText").value.trim() || "其他賽事") : formatLeagueName(league);
+    if (isOther && !document.getElementById("leagueText").value.trim()) {
+        alert("請輸入賽事名稱");
+        return;
+    }
+
     const item = {
-        league: formatLeagueName(league),
-        sport: inferSportByLeague(league),
+        league: leagueName,
+        sport: isOther ? "soccer" : inferSportByLeague(league),
         home: home,
         away: away,
         line: lineText,
