@@ -311,6 +311,16 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 #pred-stats-card .pred-stats-season-btn.active{
   background:rgba(2,132,199,.12);border-color:rgba(2,132,199,.4);color:var(--accent)
 }
+#pred-stats-card .pred-stat-sport-group{border-bottom:1px solid var(--border)}
+#pred-stats-card .pred-stat-sport-group:last-child{border-bottom:none}
+#pred-stats-card .pred-stat-sport-head{cursor:pointer;user-select:none}
+#pred-stats-card .pred-stat-sport-head .pred-stat-sport-label{font-weight:800;color:var(--text)}
+#pred-stats-card .pred-stat-sport-head .pred-sport-chev{font-size:.6rem;color:var(--muted);margin-left:4px;transition:transform .2s;display:inline-block}
+#pred-stats-card .pred-stat-sport-group.open .pred-sport-chev{transform:rotate(180deg)}
+#pred-stats-card .pred-stat-sport-body{display:none;padding-left:8px}
+#pred-stats-card .pred-stat-sport-group.open .pred-stat-sport-body{display:block}
+#pred-stats-card .pred-stat-sport-body .pred-stat-row{padding:6px 0;border-bottom:1px dashed var(--border);opacity:.92}
+#pred-stats-card .pred-stat-sport-body .pred-stat-row:last-child{border-bottom:none}
 .profit-card{padding:14px 16px}
 .profit-card .profit-title{font-size:.84rem;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
 .profit-card .profit-season{padding:8px 0;border-top:1px dashed var(--border)}
@@ -1906,10 +1916,9 @@ const LEAGUE_STATS_LABEL = {
 };
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
-const PRED_STATS_LEAGUE_ORDER = [
-  'SBL', 'TPBL', 'PLG', 'BCL',
-  '英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃',
-];
+const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
+const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃'];
+const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const PROFIT_START_DATE = '2026-04-23';
 const SEASON_SPLIT_DATE = '2026-07-17';
 let selectedPredStatsSeason = '2627';
@@ -2109,23 +2118,60 @@ function renderPredictionStats() {
   }
 
   var extraLeagues = Object.keys(byLeague).filter(function (lg) { return PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1; });
-  var allLeagues = PRED_STATS_LEAGUE_ORDER.concat(extraLeagues);
-  rowsEl.innerHTML = allLeagues.map(function (lg) {
+  var bbExtras = [];
+  var scExtras = [];
+  extraLeagues.forEach(function (lg) {
+    var isBb = seasonMatches.some(function (m) { return m.league === lg && m.sport === 'basketball'; });
+    if (isBb) bbExtras.push(lg);
+    else scExtras.push(lg);
+  });
+  var bbLeagues = PRED_STATS_BB_ORDER.concat(bbExtras);
+  var scLeagues = PRED_STATS_SC_ORDER.concat(scExtras);
+
+  function sumGroup(leagues) {
+    var hit = 0, miss = 0;
+    leagues.forEach(function (lg) {
+      var rec = byLeague[lg] || { hit: 0, miss: 0 };
+      hit += rec.hit;
+      miss += rec.miss;
+    });
+    return { hit: hit, miss: miss };
+  }
+
+  function buildLeagueRow(lg) {
     const rec = byLeague[lg] || { hit: 0, miss: 0 };
-    const hit = rec.hit;
-    const miss = rec.miss;
     const label = LEAGUE_STATS_LABEL[lg] || lg;
-    const net = formatNet(hit, miss);
-    const nc = netClass(hit, miss);
+    const net = formatNet(rec.hit, rec.miss);
+    const nc = netClass(rec.hit, rec.miss);
     const sblTitle = lg === 'SBL' ? 'SBL 結算：贏+0.5、輸+0.5 計欄位加總，半贏/半輸各±0.25' : '';
     return `<div class="pred-stat-row pred-stat-grid">
       <span class="pred-stat-league pred-stat-col-league" title="${(lg + (sblTitle ? ' — ' + sblTitle : '')).replace(/"/g, '&quot;')}">${label}</span>
-      <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(hit)}</span>
+      <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(rec.hit)}</span>
       <span class="pred-stat-sep">·</span>
-      <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(miss)}</span>
+      <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(rec.miss)}</span>
       <span class="pred-stat-net pred-stat-col-net ${nc}">${net}</span>
     </div>`;
-  }).join('');
+  }
+
+  function buildSportGroup(icon, name, leagues) {
+    var sum = sumGroup(leagues);
+    var net = formatNet(sum.hit, sum.miss);
+    var nc = netClass(sum.hit, sum.miss);
+    return (
+      '<div class="pred-stat-sport-group">' +
+        '<div class="pred-stat-row pred-stat-grid pred-stat-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
+          '<span class="pred-stat-col-league pred-stat-sport-label">' + icon + ' ' + name + ' <span class="pred-sport-chev">▼</span></span>' +
+          '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(sum.hit) + '</span>' +
+          '<span class="pred-stat-sep">·</span>' +
+          '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(sum.miss) + '</span>' +
+          '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
+        '</div>' +
+        '<div class="pred-stat-sport-body">' + leagues.map(buildLeagueRow).join('') + '</div>' +
+      '</div>'
+    );
+  }
+
+  rowsEl.innerHTML = buildSportGroup('🏀', '籃球', bbLeagues) + buildSportGroup('⚽', '足球', scLeagues);
 
   const tNet = formatNet(totalHit, totalMiss);
   const tNc = netClass(totalHit, totalMiss);
