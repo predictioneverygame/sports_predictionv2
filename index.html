@@ -827,7 +827,6 @@ footer a{color:var(--accent);text-decoration:none}
       <div class="league-card football" onclick="showLeague('德甲')"><div class="lg-name">德甲</div><div class="lg-sub">Bundesliga</div><span class="badge-f">德國</span></div>
       <div class="league-card football" onclick="showLeague('法甲')"><div class="lg-name">法甲</div><div class="lg-sub">Ligue 1</div><span class="badge-f">法國</span></div>
       <div class="league-card football" onclick="showLeague('德乙')"><div class="lg-name">德乙</div><div class="lg-sub">Bundesliga 2</div><span class="badge-f">德國</span></div>
-      <div class="league-card football" onclick="showLeague('澳甲')"><div class="lg-name">澳甲</div><div class="lg-sub">A-League</div><span class="badge-f">澳洲</span></div>
       <div class="league-card football" onclick="showLeague('美足')"><div class="lg-name">美足 MLS</div><div class="lg-sub">Major League Soccer</div><span class="badge-f">美國</span></div>
       <div class="league-card football" onclick="showLeague('墨超')"><div class="lg-name">墨超</div><div class="lg-sub">Liga MX</div><span class="badge-f">墨西哥</span></div>
       <div class="league-card football" onclick="showLeague('荷蘭甲')"><div class="lg-name">荷蘭甲</div><div class="lg-sub">Eredivisie</div><span class="badge-f">荷蘭</span></div>
@@ -1986,7 +1985,7 @@ const LEAGUE_STATS_LABEL = {
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
 const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
-const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const PROFIT_START_DATE = '2026-04-23';
 const SEASON_SPLIT_DATE = '2026-07-17';
@@ -2198,8 +2197,13 @@ function renderPredictionStats() {
     if (isBb) bbExtras.push(lg);
     else scExtras.push(lg);
   });
+  var scOrder = selectedPredStatsSeason === '2526'
+    ? ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃']
+    : PRED_STATS_SC_ORDER;
   var bbLeagues = PRED_STATS_BB_ORDER.concat(bbExtras);
-  var scLeagues = PRED_STATS_SC_ORDER.concat(scExtras);
+  var scLeagues = scOrder.concat(scExtras.filter(function (lg) {
+    return selectedPredStatsSeason === '2526' || lg !== '澳甲';
+  }));
 
   function sumGroup(leagues) {
     var hit = 0, miss = 0;
@@ -2449,7 +2453,7 @@ function sortFinalMatchesChrono(matches) {
   });
 }
 const BB_LEAGUE_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
-const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 /* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
   SBL: '🏀 SBL', TPBL: '🏀 TPBL', PLG: '🏀 PLG', BCL: '🌏 BCL',
@@ -2715,7 +2719,7 @@ function showLeague(league) {
   const leagueNames = {
     'BCL':'🌏 BCL Asia-East', 'SBL':'🏀 SBL 超級籃球聯賽',
     'TPBL':'🏀 TPBL', 'PLG':'🏀 PLG P.LEAGUE+',
-    '英超':'⚽ 英超', '西甲':'⚽ 西甲', '德甲':'⚽ 德甲', '法甲':'⚽ 法甲', '德乙':'⚽ 德乙', '澳甲':'⚽ 澳甲',
+    '英超':'⚽ 英超', '西甲':'⚽ 西甲', '德甲':'⚽ 德甲', '法甲':'⚽ 法甲', '德乙':'⚽ 德乙',
     '美足':'⚽ 美足 MLS', '墨超':'⚽ 墨超 Liga MX', '荷蘭甲':'⚽ 荷蘭甲',
     '歐冠':'🏆 歐冠 Champions League', '歐洲超級盃':'🏆 歐洲超級盃', '聯賽盃':'🏆 聯賽盃 Leagues Cup'
   };

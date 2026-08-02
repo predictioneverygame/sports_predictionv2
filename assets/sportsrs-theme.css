@@ -477,24 +477,6 @@ nav.scrolled {
   border-radius: var(--radius-sm);
   position: relative;
 }
-.match-card .prediction-box::after {
-  content: '';
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 3px solid rgba(0, 229, 255, 0.15);
-  border-top-color: var(--primary);
-  border-right-color: var(--primary);
-  opacity: 0.7;
-  pointer-events: none;
-}
-@media (max-width: 640px) {
-  .match-card .prediction-box::after { display: none; }
-}
 .pred-title { color: #c4b5fd; }
 .pred-item { background: rgba(255, 255, 255, 0.04); }
 .pred-value.hit, .pred-value.half_hit,
