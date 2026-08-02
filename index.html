@@ -771,9 +771,11 @@ footer a{color:var(--accent);text-decoration:none}
       <div class="league-card football" onclick="showLeague('德乙')"><div class="lg-name">德乙</div><div class="lg-sub">Bundesliga 2</div><span class="badge-f">德國</span></div>
       <div class="league-card football" onclick="showLeague('澳甲')"><div class="lg-name">澳甲</div><div class="lg-sub">A-League</div><span class="badge-f">澳洲</span></div>
       <div class="league-card football" onclick="showLeague('美足')"><div class="lg-name">美足 MLS</div><div class="lg-sub">Major League Soccer</div><span class="badge-f">美國</span></div>
+      <div class="league-card football" onclick="showLeague('墨超')"><div class="lg-name">墨超</div><div class="lg-sub">Liga MX</div><span class="badge-f">墨西哥</span></div>
       <div class="league-card football" onclick="showLeague('荷蘭甲')"><div class="lg-name">荷蘭甲</div><div class="lg-sub">Eredivisie</div><span class="badge-f">荷蘭</span></div>
       <div class="league-card football" onclick="showLeague('歐冠')"><div class="lg-name">歐冠</div><div class="lg-sub">Champions League</div><span class="badge-f">歐洲</span></div>
       <div class="league-card football" onclick="showLeague('歐洲超級盃')"><div class="lg-name">歐超盃</div><div class="lg-sub">UEFA Super Cup</div><span class="badge-f">歐洲</span></div>
+      <div class="league-card football" onclick="showLeague('聯賽盃')"><div class="lg-name">聯賽盃</div><div class="lg-sub">Leagues Cup</div><span class="badge-f">北美</span></div>
     </div>
   </div>
       </div>
@@ -1910,14 +1912,16 @@ const LEAGUE_STATS_LABEL = {
   德乙: '⚽ 德乙',
   澳甲: '⚽ 澳甲',
   美足: '⚽ MLS',
+  墨超: '⚽ 墨超',
   荷蘭甲: '⚽ 荷甲',
   歐冠: '🏆 歐冠',
   歐洲超級盃: '🏆 歐超盃',
+  聯賽盃: '🏆 聯賽盃',
 };
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
 const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
-const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃'];
+const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const PROFIT_START_DATE = '2026-04-23';
 const SEASON_SPLIT_DATE = '2026-07-17';
@@ -2031,8 +2035,8 @@ function renderProfitSummary() {
   var UNIT_STAKE_CUP = 8100;
   var UNIT_STAKE_OTHER = 10600;
   var BANKROLL_UNITS = 20;
-  var CUP_LEAGUES = ['歐冠', '歐洲超級盃'];
-  var KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲'];
+  var CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
+  var KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','英超','西甲','德甲','法甲','德乙','澳甲','美足','墨超','荷蘭甲'];
   function isOtherMatch(m) { return CUP_LEAGUES.indexOf(m.league) === -1 && KNOWN_LEAGUES.indexOf(m.league) === -1 && !isWorldCupRelated(m); }
 
   function calcSeasonSummary(matches, unitStake) {
@@ -2376,12 +2380,12 @@ function sortFinalMatchesChrono(matches) {
   });
 }
 const BB_LEAGUE_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
-const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃'];
+const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 /* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
   SBL: '🏀 SBL', TPBL: '🏀 TPBL', PLG: '🏀 PLG', BCL: '🌏 BCL',
-  英超: '⚽ 英超', 西甲: '⚽ 西甲', 德甲: '⚽ 德甲', 法甲: '⚽ 法甲', 德乙: '⚽ 德乙', 澳甲: '⚽ 澳甲', 美足: '⚽ 美足', 荷蘭甲: '⚽ 荷蘭甲',
-  歐冠: '🏆 歐冠', 歐洲超級盃: '🏆 歐超盃',
+  英超: '⚽ 英超', 西甲: '⚽ 西甲', 德甲: '⚽ 德甲', 法甲: '⚽ 法甲', 德乙: '⚽ 德乙', 澳甲: '⚽ 澳甲', 美足: '⚽ 美足', 墨超: '⚽ 墨超', 荷蘭甲: '⚽ 荷蘭甲',
+  歐冠: '🏆 歐冠', 歐洲超級盃: '🏆 歐超盃', 聯賽盃: '🏆 聯賽盃',
 };
 function sortLeagueKeys(keys, order) {
   return keys.slice().sort(function (a, b) {
@@ -2643,8 +2647,8 @@ function showLeague(league) {
     'BCL':'🌏 BCL Asia-East', 'SBL':'🏀 SBL 超級籃球聯賽',
     'TPBL':'🏀 TPBL', 'PLG':'🏀 PLG P.LEAGUE+',
     '英超':'⚽ 英超', '西甲':'⚽ 西甲', '德甲':'⚽ 德甲', '法甲':'⚽ 法甲', '德乙':'⚽ 德乙', '澳甲':'⚽ 澳甲',
-    '美足':'⚽ 美足 MLS', '荷蘭甲':'⚽ 荷蘭甲',
-    '歐冠':'🏆 歐冠 Champions League', '歐洲超級盃':'🏆 歐洲超級盃'
+    '美足':'⚽ 美足 MLS', '墨超':'⚽ 墨超 Liga MX', '荷蘭甲':'⚽ 荷蘭甲',
+    '歐冠':'🏆 歐冠 Champions League', '歐洲超級盃':'🏆 歐洲超級盃', '聯賽盃':'🏆 聯賽盃 Leagues Cup'
   };
   document.getElementById('league-header').textContent = leagueNames[league] || league;
   const content = document.getElementById('league-content');

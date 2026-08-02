@@ -13,8 +13,8 @@ const CONFIG = {
   unitStakeCup: 8100,
   unitStakeOther: 10600,
   bankrollUnits: 20,
-  cupLeagues: ["歐冠", "歐洲超級盃"],
-  knownLeagues: ["SBL", "TPBL", "PLG", "BCL", "英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "荷蘭甲"],
+  cupLeagues: ["歐冠", "歐洲超級盃", "聯賽盃"],
+  knownLeagues: ["SBL", "TPBL", "PLG", "BCL", "英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "墨超", "荷蘭甲"],
   timeoutMs: 12000,
   // 建議改用本地照片最穩定：先在 Scriptable App 內執行一次，會讓你選圖
   preferLocalPhoto: true,

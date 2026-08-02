@@ -323,6 +323,11 @@ const leagues = {
     sport: "soccer",
     teams: ["亞特蘭大聯", "奧斯汀FC", "夏洛特FC", "芝加哥火燄", "辛辛那提", "科羅拉多急流", "哥倫布機員", "FC達拉斯", "華盛頓聯", "侯斯頓戴拿模", "國際邁阿密", "肯薩斯體育會", "洛杉磯FC", "洛杉磯銀河", "明尼蘇達聯", "CF蒙特利爾", "拿舒維爾SC", "新英倫革命", "紐約城", "紐約紅牛", "奧蘭多城", "費城聯", "波特蘭伐木者", "皇家鹽湖城", "聖何塞地震", "西雅圖海灣者", "聖路易城", "多倫多FC", "溫哥華白浪", "聖地牙哥FC"]
   },
+  LigaMX: {
+    label: "墨超",
+    sport: "soccer",
+    teams: ["美洲", "瓜達拉哈拉", "蒙特雷", "老虎", "藍十字", "帕丘卡", "托盧卡", "桑托斯拉古納", "萊昂", "阿特拉斯", "普馬斯", "內卡薩", "普埃布拉", "克雷塔羅", "馬薩特蘭", "華雷斯", "蒂華納", "聖路易斯"]
+  },
   Eredivisie: {
     label: "荷蘭甲",
     sport: "soccer",
@@ -337,6 +342,14 @@ const leagues = {
     label: "歐洲超級盃",
     sport: "soccer",
     teams: ["皇家馬德里", "巴塞隆拿", "拜仁慕尼黑", "曼城", "利物浦", "阿仙奴", "巴黎聖日門", "國際米蘭", "AC米蘭", "祖雲達斯", "多蒙特", "馬德里體育會", "車路士", "塞維利亞", "法蘭克福", "維拉利爾", "亞特蘭大"]
+  },
+  LeaguesCup: {
+    label: "聯賽盃",
+    sport: "soccer",
+    teams: [
+      "亞特蘭大聯", "奧斯汀FC", "夏洛特FC", "芝加哥火燄", "辛辛那提", "科羅拉多急流", "哥倫布機員", "FC達拉斯", "華盛頓聯", "侯斯頓戴拿模", "國際邁阿密", "肯薩斯體育會", "洛杉磯FC", "洛杉磯銀河", "明尼蘇達聯", "CF蒙特利爾", "拿舒維爾SC", "新英倫革命", "紐約城", "紐約紅牛", "奧蘭多城", "費城聯", "波特蘭伐木者", "皇家鹽湖城", "聖何塞地震", "西雅圖海灣者", "聖路易城", "多倫多FC", "溫哥華白浪", "聖地牙哥FC",
+      "美洲", "瓜達拉哈拉", "蒙特雷", "老虎", "藍十字", "帕丘卡", "托盧卡", "桑托斯拉古納", "萊昂", "阿特拉斯", "普馬斯", "內卡薩", "普埃布拉", "克雷塔羅", "馬薩特蘭", "華雷斯", "蒂華納", "聖路易斯"
+    ]
   },
   Other: {
     label: "其他賽事",
@@ -356,11 +369,13 @@ function buildBasketballLineOptions() {
     return options;
 }
 
-const CUP_LEAGUES = ['UCL', 'SuperCup'];
-const FREE_INPUT_LEAGUES = ['UCL', 'SuperCup', 'Other'];
-const FREE_INPUT_LEAGUES_LABELS = ['歐冠', '歐洲超級盃', '其他賽事'];
+const CUP_LEAGUES = ['UCL', 'SuperCup', 'LeaguesCup'];
+const FREE_INPUT_LEAGUES = ['UCL', 'SuperCup', 'LeaguesCup', 'Other'];
+const FREE_TEAM_LEAGUES = ['UCL', 'SuperCup', 'Other'];
+const FREE_INPUT_LEAGUES_LABELS = ['歐冠', '歐洲超級盃', '聯賽盃', '其他賽事'];
 function isCupLeague(league) { return CUP_LEAGUES.includes(league); }
 function isFreeInputLeague(league) { return FREE_INPUT_LEAGUES.includes(league); }
+function isFreeTeamLeague(league) { return FREE_TEAM_LEAGUES.includes(league); }
 
 const LINE_OPTIONS = {
     soccer: [
@@ -489,7 +504,8 @@ function toggleSecondBetFields() {
 
 function updateTeams() {
     const league = document.getElementById("league").value;
-    const cup = isFreeInputLeague(league);
+    const freeTeam = isFreeTeamLeague(league);
+    const freeLine = isFreeInputLeague(league);
     const isOther = (league === 'Other');
 
     const home = document.getElementById("home");
@@ -503,22 +519,16 @@ function updateTeams() {
 
     leagueTextEl.style.display = isOther ? "block" : "none";
 
-    if (cup) {
+    if (freeTeam) {
         home.style.display = "none";
         away.style.display = "none";
         homeText.style.display = "block";
         awayText.style.display = "block";
-        secondBetLabel.style.display = "none";
-        secondBetFields.style.display = "none";
-        lineSide.style.display = "none";
     } else {
         home.style.display = "";
         away.style.display = "";
         homeText.style.display = "none";
         awayText.style.display = "none";
-        secondBetLabel.style.display = "";
-        lineSide.style.display = currentSport === "basketball" ? "block" : "none";
-
         home.innerHTML = "";
         away.innerHTML = "";
         const teamList = (leagues[league] && leagues[league].teams) ? leagues[league].teams : [];
@@ -526,6 +536,15 @@ function updateTeams() {
             home.innerHTML += `<option value="${t}">${t}</option>`;
             away.innerHTML += `<option value="${t}">${t}</option>`;
         });
+    }
+
+    if (freeLine) {
+        secondBetLabel.style.display = "none";
+        secondBetFields.style.display = "none";
+        lineSide.style.display = "none";
+    } else {
+        secondBetLabel.style.display = "";
+        lineSide.style.display = currentSport === "basketball" ? "block" : "none";
     }
 }
 
@@ -1430,8 +1449,9 @@ async function ensureKnockoutWinnersCloudSeed(rows) {
 async function addRecommendation() {
     const league = document.getElementById("league").value;
     const cup = isFreeInputLeague(league);
-    const home = cup ? document.getElementById("homeText").value.trim() : document.getElementById("home").value;
-    const away = cup ? document.getElementById("awayText").value.trim() : document.getElementById("away").value;
+    const freeTeam = isFreeTeamLeague(league);
+    const home = freeTeam ? document.getElementById("homeText").value.trim() : document.getElementById("home").value;
+    const away = freeTeam ? document.getElementById("awayText").value.trim() : document.getElementById("away").value;
     const line = cup ? document.getElementById("lineText").value.trim() : document.getElementById("line").value;
     const lineSide = document.getElementById("lineSide").value;
     const enableSecondBet = !cup && document.getElementById("enableSecondBet").checked;
