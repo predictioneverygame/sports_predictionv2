@@ -327,63 +327,66 @@
       }
     };
 
+    function zeroLinePlugin() {
+      return {
+        id: 'sportsrsZeroLine',
+        afterDatasetsDraw: function (chart) {
+          if (!chart.options.plugins || !chart.options.plugins.sportsrsZeroLine || !chart.options.plugins.sportsrsZeroLine.enabled) {
+            return;
+          }
+          var yScale = chart.scales.y;
+          if (!yScale) return;
+          var y = yScale.getPixelForValue(0);
+          if (y < chart.chartArea.top || y > chart.chartArea.bottom) return;
+          var ctx = chart.ctx;
+          ctx.save();
+          ctx.beginPath();
+          ctx.setLineDash([6, 4]);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+          ctx.moveTo(chart.chartArea.left, y);
+          ctx.lineTo(chart.chartArea.right, y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      };
+    }
+
     function line(id, data, color, key, opts) {
       opts = opts || {};
       var canvas = qs(id);
       if (!canvas) return null;
       if (charts[key]) charts[key].destroy();
 
-      var datasets = [{
-        data: data,
-        borderColor: color,
-        backgroundColor: color + '22',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 3,
-        pointHoverRadius: 5,
-        pointBackgroundColor: color,
-        pointBorderColor: color,
-        borderWidth: 2,
-        order: 0
-      }];
-
-      if (opts.zeroLine) {
-        datasets.push({
-          data: labels.map(function () { return 0; }),
-          borderColor: 'rgba(255,255,255,0.75)',
-          borderWidth: 2,
-          borderDash: [6, 4],
-          pointRadius: 0,
-          pointHoverRadius: 0,
-          fill: false,
-          tension: 0,
-          order: 2
-        });
-      }
-
       var chartOpts = Object.assign({}, commonOpts, {
+        plugins: Object.assign({}, commonOpts.plugins, {
+          sportsrsZeroLine: { enabled: !!opts.zeroLine }
+        }),
         scales: {
           x: commonOpts.scales.x,
-          y: Object.assign({}, commonOpts.scales.y, opts.zeroLine ? {
-            grace: '8%',
-            grid: {
-              color: function (ctx) {
-                return ctx.tick && Number(ctx.tick.value) === 0
-                  ? 'rgba(255,255,255,0.28)'
-                  : 'rgba(255,255,255,0.06)';
-              },
-              lineWidth: function (ctx) {
-                return ctx.tick && Number(ctx.tick.value) === 0 ? 1.25 : 1;
-              }
-            }
-          } : {})
+          y: Object.assign({}, commonOpts.scales.y, opts.zeroLine ? { grace: '8%' } : {})
         }
       });
 
       charts[key] = new Chart(canvas, {
         type: 'line',
-        data: { labels: labels, datasets: datasets },
-        options: chartOpts
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            borderColor: color,
+            backgroundColor: color + '22',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: color,
+            pointBorderColor: color,
+            borderWidth: 2
+          }]
+        },
+        options: chartOpts,
+        plugins: opts.zeroLine ? [zeroLinePlugin()] : []
       });
       return charts[key];
     }
