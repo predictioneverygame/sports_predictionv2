@@ -343,20 +343,21 @@
         pointHoverRadius: 5,
         pointBackgroundColor: color,
         pointBorderColor: color,
-        borderWidth: 2
+        borderWidth: 2,
+        order: 0
       }];
 
       if (opts.zeroLine) {
         datasets.push({
           data: labels.map(function () { return 0; }),
-          borderColor: 'rgba(255,255,255,0.55)',
-          borderWidth: 1.5,
+          borderColor: 'rgba(255,255,255,0.75)',
+          borderWidth: 2,
           borderDash: [6, 4],
           pointRadius: 0,
           pointHoverRadius: 0,
           fill: false,
           tension: 0,
-          order: 0
+          order: 2
         });
       }
 
