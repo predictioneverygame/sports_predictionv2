@@ -3,30 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RS運彩分析</title>
+<title>SportsRS — Professional Sports Analytics</title>
 
 <link rel="icon" type="image/png" href="assets/favicon2.png">  
-<meta name="description" content="每日更新籃球與足球賽事推薦、已結算回顧與戰績統計。">
+<meta name="description" content="Data-driven sports predictions and analytics. Not gambling.">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="RS運彩分析">
-<meta property="og:title" content="RS運彩分析">
-<meta property="og:description" content="每日更新籃球與足球賽事推薦、已結算回顧與戰績統計。">
+<meta property="og:site_name" content="SportsRS">
+<meta property="og:title" content="SportsRS — Professional Sports Analytics">
+<meta property="og:description" content="Data-driven sports predictions and analytics. Not gambling.">
 <meta property="og:url" content="https://predictioneverygame.github.io/sports_predictionv2/">
 <meta property="og:image" content="https://predictioneverygame.github.io/sports_predictionv2/assets/hero-background-rs-light.png">
-<meta property="og:image:alt" content="RS運彩分析網站預覽圖">
+<meta property="og:image:alt" content="SportsRS preview">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="RS運彩分析">
-<meta name="twitter:description" content="每日更新籃球與足球賽事推薦、已結算回顧與戰績統計。">
+<meta name="twitter:title" content="SportsRS — Professional Sports Analytics">
+<meta name="twitter:description" content="Data-driven sports predictions and analytics. Not gambling.">
 <meta name="twitter:image" content="https://predictioneverygame.github.io/sports_predictionv2/assets/hero-background-rs-light.png">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebSite",
-  "name": "RS運彩分析",
+  "name": "SportsRS",
   "alternateName": "RS Sports Analysis",
   "url": "https://sportrs.com/"
 }
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+<script src="https://unpkg.com/lucide@0.469.0" defer></script>
 <style>
 :root{
   --bg:#ffffff;
@@ -623,37 +627,86 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
+<link rel="stylesheet" href="assets/sportsrs-theme.css">
 </head>
 <body>
-<nav>
-  <a class="nav-logo" onclick="showPage('home')"> 
-    <span>(ΘェΘ)RS運彩分析</span>
+<nav id="site-nav">
+  <a class="nav-logo" onclick="showPage('home')">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <span>Sports<span class="brand-rs">RS</span></span>
   </a>
   <ul class="nav-links">
     <li><a onclick="showPage('home')">首頁</a></li>
-    <li><a onclick="showPage('about')">關於RS運彩</a></li>
-    <li><a href="#" title="推薦頁面待補">每日推薦</a></li>
-    <li><a onclick="showPage('basketball')">籃球</a></li>
-    <li><a onclick="showPage('football')">足球</a></li>
-    <li><a class="nav-mail" href="mailto:predictioneverygame@gmail.com" title="寄信給本站">predictioneverygame@gmail.com</a></li>
+    <li><a onclick="showPage('about')">關於</a></li>
   </ul>
+  <a class="nav-cta" href="https://www.instagram.com/rs_sports_analytics" target="_blank" rel="noopener noreferrer" title="Instagram">IG</a>
+  <a class="nav-cta" href="mailto:predictioneverygame@gmail.com">聯絡</a>
 </nav>
 
 <!-- HOME PAGE -->
 <div id="page-home" class="page active">
 <div class="hero">
-  <div class="hero-tag">專業運彩分析</div>
-  <h1>每日賽事重點整理</h1>
-  <p>結合數據分析與多年研究，提供籃球、足球各大聯賽賽事預測推薦</p>
-  <div class="hero-stats">
-    <div class="stat"><div class="num" id="hero-stat-rec-count">0</div><div class="lbl">推薦</div></div>
-    <div class="stat"><div class="num">8</div><div class="lbl">涵蓋聯賽</div></div>
-    <div class="stat"><div class="num">3+</div><div class="lbl">年分析經驗</div></div>
-    <div class="stat"><div class="num">每日</div><div class="lbl">更新推薦</div></div>
+  <div class="hero-inner">
+    <div class="hero-tag">Professional Sports Analytics</div>
+    <h1 class="hero-brand">Sports<span class="accent">RS</span></h1>
+    <div class="hero-sub">Professional Sports Analytics</div>
+    <p class="hero-desc">Data-driven predictions.<br>Not gambling.</p>
+    <div class="hero-cta-row">
+      <a class="btn-primary" href="#dash-kpi" onclick="document.getElementById('dash-kpi').scrollIntoView({behavior:'smooth'}); return false;">免費分析</a>
+      <a class="btn-ghost" href="#daily-recs-title" onclick="(function(){ var el=document.getElementById('daily-recs-title'); if(!el) return false; var y=el.getBoundingClientRect().top+window.scrollY-80; window.scrollTo({top:y,behavior:'smooth'}); return false; })(); return false;">查看今日推薦</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="num" id="hero-stat-rec-count">0</div><div class="lbl">推薦</div></div>
+      <div class="stat"><div class="num">12+</div><div class="lbl">涵蓋聯賽</div></div>
+      <div class="stat"><div class="num">3+</div><div class="lbl">年分析經驗</div></div>
+      <div class="stat"><div class="num">每日</div><div class="lbl">更新推薦</div></div>
+    </div>
   </div>
 </div>
-<hr class="divider">
-  <div class="home-main">
+
+<section class="dash-section reveal" id="dash-kpi">
+  <div class="dash-grid">
+    <div class="kpi-card stagger-1">
+      <div class="kpi-label">Total Picks</div>
+      <div class="kpi-value" id="kpi-total-picks" data-count="0">0</div>
+      <div class="kpi-hint">已結算場次</div>
+    </div>
+    <div class="kpi-card stagger-2">
+      <div class="kpi-label">Win Rate</div>
+      <div class="kpi-value" id="kpi-win-rate" data-count="0">0%</div>
+      <div class="kpi-hint">命中率</div>
+    </div>
+    <div class="kpi-card stagger-3">
+      <div class="kpi-label">ROI</div>
+      <div class="kpi-value" id="kpi-roi" data-count="0">0.00%</div>
+      <div class="kpi-hint">2026–27 合計</div>
+    </div>
+    <div class="kpi-card stagger-4">
+      <div class="kpi-label">Units</div>
+      <div class="kpi-value" id="kpi-units" data-count="0">0.00</div>
+      <div class="kpi-hint">單位獲利</div>
+    </div>
+  </div>
+</section>
+
+<section class="charts-section reveal">
+  <div class="charts-grid">
+    <div class="chart-card stagger-1">
+      <h3>Win Rate</h3>
+      <canvas id="chart-winrate" height="140"></canvas>
+    </div>
+    <div class="chart-card stagger-2">
+      <h3>ROI</h3>
+      <canvas id="chart-roi" height="140"></canvas>
+    </div>
+    <div class="chart-card stagger-3">
+      <h3>Monthly Profit</h3>
+      <canvas id="chart-monthly" height="140"></canvas>
+    </div>
+  </div>
+</section>
+
+  <div class="home-main" id="daily-recs">
   <!-- 每日推薦 + 側欄 -->
   <div class="layout">
     <div>
@@ -680,7 +733,12 @@ footer a{color:var(--accent);text-decoration:none}
         </div>
       </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div class="section-title" style="margin-bottom:0">📅 每日推薦</div>
+        <div class="section-title" id="daily-recs-title" style="margin-bottom:0">每日推薦</div>
+      </div>
+      <div id="daily-recs-skeleton" aria-hidden="true">
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
+        <div class="skeleton sk-row"></div>
       </div>
       <div class="date-list" id="date-list"></div>
     </div>
@@ -725,10 +783,10 @@ footer a{color:var(--accent);text-decoration:none}
         </div>
       </div>
       <div class="sb-card stats-card week-summary-card" id="week-summary-card"></div>
-      <div class="sb-card"><input type="text" class="sb-search" placeholder="🔍 搜尋文章…"></div>
+      <div class="sb-card"><input type="text" class="sb-search" placeholder="搜尋文章…"></div>
       <div class="analyst-card">
-        <div class="analyst-avatar">🎯</div>
-        <div class="analyst-name">RS</div>
+        <div class="analyst-avatar">RS</div>
+        <div class="analyst-name">Analyst</div>
         <div class="analyst-legend" aria-label="預測結果符號說明">
           <div class="analyst-legend-row"><span class="analyst-legend-sym sym-hit">✓</span><span>贏</span></div>
           <div class="analyst-legend-row"><span class="analyst-legend-sym sym-miss">✗</span><span>輸</span></div>
@@ -752,7 +810,7 @@ footer a{color:var(--accent);text-decoration:none}
       <div class="container">
   <!-- 籃球 -->
   <div id="section-basketball" class="leagues-section">
-    <div class="section-title">🏀 籃球聯賽</div>
+    <div class="section-title">籃球聯賽</div>
     <div class="league-grid">
       <div class="league-card" onclick="showLeague('SBL')"><div class="lg-name">SBL</div><div class="lg-sub">超級籃球聯賽</div><span class="badge-b">台灣</span></div>
       <div class="league-card" onclick="showLeague('TPBL')"><div class="lg-name">TPBL</div><div class="lg-sub">台灣職籃</div><span class="badge-b">台灣</span></div>
@@ -762,7 +820,7 @@ footer a{color:var(--accent);text-decoration:none}
   </div>
   <!-- 足球 -->
   <div id="section-football" class="leagues-section">
-    <div class="section-title">⚽ 足球聯賽</div>
+    <div class="section-title">足球聯賽</div>
     <div class="league-grid">
       <div class="league-card football" onclick="showLeague('英超')"><div class="lg-name">英超</div><div class="lg-sub">Premier League</div><span class="badge-f">英格蘭</span></div>
       <div class="league-card football" onclick="showLeague('西甲')"><div class="lg-name">西甲</div><div class="lg-sub">LaLiga</div><span class="badge-f">西班牙</span></div>
@@ -874,8 +932,15 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 </div>
 
-<footer><p>© 2026 <a href="#">RS運彩分析</a> ‧ 本站內容僅供參考，博彩需量力而為，未滿18歲請勿進入。</p><p style="margin-top:10px">聯絡信箱：<a href="mailto:predictioneverygame@gmail.com">predictioneverygame@gmail.com</a></p></footer>
+<footer>
+  <p>© 2026 <a href="#" onclick="showPage('home');return false;">SportsRS</a> · Professional Sports Analytics · Data-driven. Not gambling.</p>
+  <p style="margin-top:10px">聯絡：<a href="mailto:predictioneverygame@gmail.com">predictioneverygame@gmail.com</a></p>
+</footer>
 
+<button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+
+<script src="assets/sportsrs-ui.js"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -2121,7 +2186,11 @@ function renderPredictionStats() {
     btn2627.classList.toggle('active', selectedPredStatsSeason === '2627');
   }
 
-  var extraLeagues = Object.keys(byLeague).filter(function (lg) { return PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1; });
+  var extraLeagues = Object.keys(byLeague).filter(function (lg) {
+    return PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1
+      && !isWorldCupLeague(lg)
+      && !isWorldCupKnockoutLeague(lg);
+  });
   var bbExtras = [];
   var scExtras = [];
   extraLeagues.forEach(function (lg) {
@@ -3441,6 +3510,9 @@ async function initApp() {
   renderWeekSummary();
   updateHeroRecCount();
   renderWorldCupPage();
+  if (window.SportsRSUI && typeof window.SportsRSUI.refresh === 'function') {
+    window.SportsRSUI.refresh();
+  }
 }
 
 initApp();
