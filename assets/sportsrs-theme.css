@@ -349,7 +349,7 @@ nav.scrolled {
   border-radius: var(--radius);
   padding: 18px;
   backdrop-filter: blur(16px);
-  min-height: 220px;
+  min-height: 240px;
   transition: transform .25s, border-color .25s, box-shadow .25s;
 }
 .chart-card:hover {
@@ -357,14 +357,63 @@ nav.scrolled {
   border-color: rgba(91, 140, 255, 0.35);
   box-shadow: 0 0 32px rgba(91, 140, 255, 0.1);
 }
+.chart-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
 .chart-card h3 {
   font-family: var(--font-display);
   font-size: .9rem;
   font-weight: 600;
   color: var(--text);
-  margin-bottom: 12px;
+  margin: 0;
 }
-.chart-card canvas { max-height: 160px; width: 100% !important; }
+.chart-hint {
+  font-size: .72rem;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+.chart-toggle {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+}
+.chart-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.chart-toggle-btn.active {
+  background: rgba(0, 229, 255, 0.16);
+  color: var(--primary);
+}
+.chart-card canvas { max-height: 180px; width: 100% !important; }
+.chart-pan {
+  width: 100%;
+  height: 180px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.chart-pan.is-dragging { cursor: grabbing; }
+.chart-pan canvas {
+  display: block;
+  width: 100% !important;
+  height: 180px !important;
+  max-height: none !important;
+}
 
 /* ─── LAYOUT / CONTAINER ─── */
 .divider { display: none; }
@@ -546,6 +595,10 @@ nav.scrolled {
 }
 #pred-stats-card .pred-stat-net.pos { color: var(--success); }
 #pred-stats-card .pred-stat-net.neg { color: var(--danger); }
+#pred-stats-card .pred-stat-col-units.pos,
+#pred-stats-card .pred-stat-col-roi.pos { color: var(--success); }
+#pred-stats-card .pred-stat-col-units.neg,
+#pred-stats-card .pred-stat-col-roi.neg { color: var(--danger); }
 #pred-stats-card .pred-stat-sport-head .pred-stat-sport-label { color: var(--text); }
 
 .analyst-card {

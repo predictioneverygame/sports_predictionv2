@@ -4,9 +4,13 @@
 (function () {
   'use strict';
 
-  var charts = { winrate: null, roi: null, monthly: null };
+  var charts = { winrate: null, monthly: null, cumulative: null };
   var UNIT = 10600;
   var BANKROLL = 20;
+  var monthlyMetric = 'roi';
+  var cumulMetric = 'roi';
+  var monthlySeriesCache = [];
+  var cumulPointsCache = [];
 
   function qs(id) { return document.getElementById(id); }
 
@@ -224,11 +228,407 @@
     });
   }
 
+  function matchTitle(m) {
+    var home = (m.home && m.home.name) || m.home_name || '主隊';
+    var away = (m.away && m.away.name) || m.away_name || '客隊';
+    return home + ' vs ' + away;
+  }
+
+  function buildCumulativePoints() {
+    var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
+    var finals = getFinals().filter(function (m) {
+      return String(m.date || '') >= split;
+    });
+    if (!finals.length) finals = getFinals();
+    finals = finals.slice().sort(function (a, b) {
+      var dc = String(a.date || '').localeCompare(String(b.date || ''));
+      if (dc !== 0) return dc;
+      return String(a.time || '').localeCompare(String(b.time || ''));
+    });
+
+    var runningUnits = 0;
+    var runningRoi = 0;
+    return finals.map(function (m, idx) {
+      var profit = calcProfit(m);
+      var units = UNIT > 0 ? profit / UNIT : 0;
+      var matchRoi = (units / BANKROLL) * 100;
+      runningUnits += units;
+      runningRoi += matchRoi;
+      return {
+        index: idx + 1,
+        label: String(idx + 1),
+        date: String(m.date || ''),
+        time: String(m.time || ''),
+        league: String(m.league || ''),
+        title: matchTitle(m),
+        profit: profit,
+        matchUnits: units,
+        matchRoi: matchRoi,
+        cumulUnits: runningUnits,
+        cumulRoi: runningRoi
+      };
+    });
+  }
+
   function chartDefaults() {
     if (!window.Chart) return;
     Chart.defaults.color = '#BFC8D6';
     Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
     Chart.defaults.font.family = 'Inter, sans-serif';
+  }
+
+  function ensureTooltipEl() {
+    var tooltipEl = document.getElementById('chartjs-tooltip');
+    if (!tooltipEl) {
+      tooltipEl = document.createElement('div');
+      tooltipEl.id = 'chartjs-tooltip';
+      tooltipEl.style.cssText = [
+        'position:absolute',
+        'pointer-events:none',
+        'z-index:50',
+        'transform:translate(-50%,-120%)',
+        'font-family:Inter,sans-serif',
+        'font-size:12px',
+        'font-weight:700',
+        'letter-spacing:0.01em',
+        'line-height:1.45',
+        'white-space:pre-line',
+        'text-align:center',
+        'padding:2px 0',
+        'text-shadow:0 0 6px #05070B,0 0 10px #05070B,0 1px 2px #05070B,0 -1px 2px #05070B',
+        'transition:opacity .12s ease',
+        'opacity:0'
+      ].join(';');
+      document.body.appendChild(tooltipEl);
+    }
+    return tooltipEl;
+  }
+
+  function positionTooltip(tooltipEl, context, tooltip) {
+    var canvas = context.chart.canvas;
+    var rect = canvas.getBoundingClientRect();
+    tooltipEl.style.left = (rect.left + window.scrollX + tooltip.caretX) + 'px';
+    tooltipEl.style.top = (rect.top + window.scrollY + tooltip.caretY) + 'px';
+    tooltipEl.style.opacity = '1';
+  }
+
+  function signedText(v, decimals, suffix) {
+    var prefix = v > 0 ? '+' : '';
+    return prefix + Number(v).toFixed(decimals) + (suffix || '');
+  }
+
+  function signedColor(v) {
+    if (v < 0) return '#FF5D73';
+    if (v > 0) return '#32D583';
+    return '#BFC8D6';
+  }
+
+  function zeroLinePlugin() {
+    return {
+      id: 'sportsrsZeroLine',
+      afterDatasetsDraw: function (chart) {
+        if (!chart.options.plugins || !chart.options.plugins.sportsrsZeroLine || !chart.options.plugins.sportsrsZeroLine.enabled) {
+          return;
+        }
+        var yScale = chart.scales.y;
+        if (!yScale) return;
+        var y = yScale.getPixelForValue(0);
+        if (y < chart.chartArea.top || y > chart.chartArea.bottom) return;
+        var ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.moveTo(chart.chartArea.left, y);
+        ctx.lineTo(chart.chartArea.right, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    };
+  }
+
+  function makeBaseOpts(tooltipFormatter) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'nearest', intersect: false, axis: 'x' },
+      plugins: {
+        legend: { display: false },
+        sportsrsZeroLine: { enabled: true },
+        tooltip: {
+          enabled: false,
+          external: function (context) {
+            var tooltipEl = ensureTooltipEl();
+            var tooltip = context.tooltip;
+            if (!tooltip || tooltip.opacity === 0 || !tooltip.dataPoints || !tooltip.dataPoints.length) {
+              tooltipEl.style.opacity = '0';
+              return;
+            }
+            var point = tooltip.dataPoints[0];
+            var info = tooltipFormatter(context.chart, point);
+            if (!info) {
+              tooltipEl.style.opacity = '0';
+              return;
+            }
+            tooltipEl.textContent = info.text;
+            tooltipEl.style.color = info.color || '#fff';
+            positionTooltip(tooltipEl, context, tooltip);
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+        },
+        y: {
+          grace: '8%',
+          grid: { color: 'rgba(255,255,255,0.06)' }
+        }
+      }
+    };
+  }
+
+  function renderWinRateChart() {
+    var series = monthlySeriesCache;
+    var labels = series.map(function (s) { return s.label; });
+    if (!labels.length) {
+      labels = ['—'];
+      series = [{ winRate: 0 }];
+    }
+    var data = series.map(function (s) { return Number((s.winRate || 0).toFixed(2)); });
+    var canvas = qs('chart-winrate');
+    if (!canvas) return;
+    if (charts.winrate) charts.winrate.destroy();
+
+    charts.winrate = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          borderColor: '#00E5FF',
+          backgroundColor: '#00E5FF22',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: '#00E5FF',
+          pointBorderColor: '#00E5FF',
+          borderWidth: 2
+        }]
+      },
+      options: makeBaseOpts(function (chart, point) {
+        var v = Number(point.parsed.y);
+        if (isNaN(v)) return null;
+        return {
+          text: v.toFixed(1) + '%',
+          color: v < 52 ? '#FF5D73' : '#32D583'
+        };
+      }),
+      plugins: []
+    });
+    if (charts.winrate.options.plugins) {
+      charts.winrate.options.plugins.sportsrsZeroLine = { enabled: false };
+    }
+  }
+
+  function renderMonthlyChart() {
+    var series = monthlySeriesCache;
+    var labels = series.map(function (s) { return s.label; });
+    if (!labels.length) {
+      labels = ['—'];
+      series = [{ roi: 0, profitUnits: 0 }];
+    }
+    var isRoi = monthlyMetric === 'roi';
+    var data = series.map(function (s) {
+      return Number((isRoi ? s.roi : s.profitUnits).toFixed(2));
+    });
+    var color = isRoi ? '#5B8CFF' : '#7C3AED';
+    var canvas = qs('chart-monthly');
+    if (!canvas) return;
+    if (charts.monthly) charts.monthly.destroy();
+
+    charts.monthly = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          borderColor: color,
+          backgroundColor: color + '22',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: color,
+          pointBorderColor: color,
+          borderWidth: 2
+        }]
+      },
+      options: makeBaseOpts(function (chart, point) {
+        var v = Number(point.parsed.y);
+        if (isNaN(v)) return null;
+        if (monthlyMetric === 'roi') {
+          return { text: signedText(v, 2, '%'), color: signedColor(v) };
+        }
+        return { text: signedText(v, 2, ' Unit'), color: signedColor(v) };
+      }),
+      plugins: [zeroLinePlugin()]
+    });
+  }
+
+  var cumulPanStart = 0;
+  var cumulPanBound = false;
+
+  function renderCumulativeChart() {
+    var points = cumulPointsCache;
+    var labels = points.map(function (p) { return p.label; });
+    if (!labels.length) {
+      labels = ['—'];
+      points = [{ cumulRoi: 0, cumulUnits: 0, matchRoi: 0, matchUnits: 0, profit: 0, title: '—', date: '', league: '' }];
+    }
+    var isRoi = cumulMetric === 'roi';
+    var data = points.map(function (p) {
+      return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
+    });
+    var color = isRoi ? '#00E5FF' : '#7C3AED';
+    var canvas = qs('chart-cumulative');
+    var panEl = qs('chart-cumulative-pan');
+    if (!canvas) return;
+    if (charts.cumulative) charts.cumulative.destroy();
+
+    var WINDOW = 10;
+    var n = Math.max(points.length, 1);
+    // 預設看最新 10 筆
+    cumulPanStart = Math.max(0, n - WINDOW);
+
+    var opts = makeBaseOpts(function (chart, point) {
+      var idx = point.dataIndex;
+      var row = cumulPointsCache[idx];
+      if (!row) return null;
+      var lines = [
+        row.title,
+        (row.date || '') + (row.league ? ' · ' + row.league : ''),
+        '該場 ' + signedText(row.matchRoi, 2, '%') + ' · ' + signedText(row.matchUnits, 2, ' Unit'),
+        '累積 ' + (cumulMetric === 'roi'
+          ? signedText(row.cumulRoi, 2, '%')
+          : signedText(row.cumulUnits, 2, ' Unit'))
+      ];
+      return { text: lines.join('\n'), color: signedColor(row.matchRoi) };
+    });
+    opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
+    if (n > WINDOW) {
+      opts.scales.x.min = cumulPanStart;
+      opts.scales.x.max = cumulPanStart + WINDOW - 1;
+    }
+
+    charts.cumulative = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          borderColor: color,
+          backgroundColor: color + '18',
+          fill: true,
+          tension: 0.15,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          pointBackgroundColor: color,
+          pointBorderColor: color,
+          borderWidth: 2
+        }]
+      },
+      options: opts,
+      plugins: [zeroLinePlugin()]
+    });
+    charts.cumulative.$sportsrsPoints = points;
+    charts.cumulative.$sportsrsWindow = WINDOW;
+
+    if (panEl && !cumulPanBound) {
+      cumulPanBound = true;
+      var dragging = false;
+      var lastX = 0;
+      var acc = 0;
+
+      function applyPan() {
+        var chart = charts.cumulative;
+        if (!chart) return;
+        var total = (cumulPointsCache && cumulPointsCache.length) || 0;
+        var win = chart.$sportsrsWindow || 10;
+        if (total <= win) {
+          delete chart.options.scales.x.min;
+          delete chart.options.scales.x.max;
+        } else {
+          cumulPanStart = Math.max(0, Math.min(total - win, cumulPanStart));
+          chart.options.scales.x.min = cumulPanStart;
+          chart.options.scales.x.max = cumulPanStart + win - 1;
+        }
+        chart.update('none');
+      }
+
+      panEl.addEventListener('pointerdown', function (e) {
+        if (!charts.cumulative) return;
+        dragging = true;
+        lastX = e.clientX;
+        acc = 0;
+        panEl.classList.add('is-dragging');
+        try { panEl.setPointerCapture(e.pointerId); } catch (err) {}
+      });
+      panEl.addEventListener('pointermove', function (e) {
+        if (!dragging || !charts.cumulative) return;
+        var dx = e.clientX - lastX;
+        lastX = e.clientX;
+        acc += dx;
+        var stepPx = Math.max(18, (panEl.clientWidth || 240) / 10);
+        var changed = false;
+        // 手指往左滑 → 看更早（index 變小）
+        while (acc <= -stepPx) {
+          acc += stepPx;
+          cumulPanStart -= 1;
+          changed = true;
+        }
+        while (acc >= stepPx) {
+          acc -= stepPx;
+          cumulPanStart += 1;
+          changed = true;
+        }
+        if (changed) applyPan();
+      });
+      function endDrag(e) {
+        if (!dragging) return;
+        dragging = false;
+        acc = 0;
+        panEl.classList.remove('is-dragging');
+        try { if (e && e.pointerId != null) panEl.releasePointerCapture(e.pointerId); } catch (err) {}
+      }
+      panEl.addEventListener('pointerup', endDrag);
+      panEl.addEventListener('pointercancel', endDrag);
+      panEl.addEventListener('lostpointercapture', function () {
+        dragging = false;
+        acc = 0;
+        panEl.classList.remove('is-dragging');
+      });
+    }
+  }
+
+  function bindMetricToggle(containerId, getMetric, setMetric, redraw) {
+    var box = qs(containerId);
+    if (!box || box.dataset.bound === '1') return;
+    box.dataset.bound = '1';
+    box.addEventListener('click', function (e) {
+      var btn = e.target.closest('.chart-toggle-btn');
+      if (!btn) return;
+      var metric = btn.getAttribute('data-metric');
+      if (!metric || metric === getMetric()) return;
+      setMetric(metric);
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-metric') === metric);
+      });
+      redraw();
+    });
   }
 
   function renderCharts() {
@@ -237,163 +637,13 @@
       return;
     }
     chartDefaults();
-    var series = buildMonthlySeries();
-    var labels = series.map(function (s) { return s.label; });
-    if (!labels.length) {
-      labels = ['—'];
-      series = [{ winRate: 0, roi: 0, profitUnits: 0 }];
-    }
-
-    var commonOpts = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          enabled: false,
-          external: function (context) {
-            var tooltipEl = document.getElementById('chartjs-tooltip');
-            if (!tooltipEl) {
-              tooltipEl = document.createElement('div');
-              tooltipEl.id = 'chartjs-tooltip';
-              tooltipEl.style.cssText = [
-                'position:absolute',
-                'pointer-events:none',
-                'z-index:50',
-                'transform:translate(-50%,-120%)',
-                'font-family:Inter,sans-serif',
-                'font-size:13px',
-                'font-weight:700',
-                'letter-spacing:0.02em',
-                'padding:2px 0',
-                'text-shadow:0 0 6px #05070B,0 0 10px #05070B,0 1px 2px #05070B,0 -1px 2px #05070B',
-                'transition:opacity .12s ease',
-                'opacity:0'
-              ].join(';');
-              document.body.appendChild(tooltipEl);
-            }
-
-            var tooltip = context.tooltip;
-            if (!tooltip || tooltip.opacity === 0 || !tooltip.dataPoints || !tooltip.dataPoints.length) {
-              tooltipEl.style.opacity = '0';
-              return;
-            }
-
-            var point = null;
-            for (var i = 0; i < tooltip.dataPoints.length; i++) {
-              if (tooltip.dataPoints[i].datasetIndex === 0) {
-                point = tooltip.dataPoints[i];
-                break;
-              }
-            }
-            if (!point) point = tooltip.dataPoints[0];
-            var v = Number(point.parsed.y);
-            if (isNaN(v)) {
-              tooltipEl.style.opacity = '0';
-              return;
-            }
-            var canvas = context.chart.canvas;
-            var chartId = canvas && canvas.id;
-            if (chartId === 'chart-winrate') {
-              tooltipEl.textContent = v.toFixed(1) + '%';
-              tooltipEl.style.color = v < 52 ? '#FF5D73' : '#32D583';
-            } else if (chartId === 'chart-roi') {
-              var roiPrefix = v > 0 ? '+' : '';
-              tooltipEl.textContent = roiPrefix + v.toFixed(2) + '%';
-              tooltipEl.style.color = v < 0 ? '#FF5D73' : (v > 0 ? '#32D583' : '#BFC8D6');
-            } else if (chartId === 'chart-monthly') {
-              var unitPrefix = v > 0 ? '+' : '';
-              tooltipEl.textContent = unitPrefix + v.toFixed(2) + ' Unit';
-              tooltipEl.style.color = v < 0 ? '#FF5D73' : (v > 0 ? '#32D583' : '#BFC8D6');
-            } else {
-              var prefix = v > 0 ? '+' : '';
-              tooltipEl.textContent = prefix + v.toFixed(2);
-              tooltipEl.style.color = v < 0 ? '#FF5D73' : (v > 0 ? '#32D583' : '#BFC8D6');
-            }
-
-            var rect = canvas.getBoundingClientRect();
-            var left = rect.left + window.scrollX + tooltip.caretX;
-            var top = rect.top + window.scrollY + tooltip.caretY;
-            tooltipEl.style.left = left + 'px';
-            tooltipEl.style.top = top + 'px';
-            tooltipEl.style.opacity = '1';
-          }
-        }
-      },
-      scales: {
-        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { maxRotation: 0 } },
-        y: { grid: { color: 'rgba(255,255,255,0.06)' } }
-      }
-    };
-
-    function zeroLinePlugin() {
-      return {
-        id: 'sportsrsZeroLine',
-        afterDatasetsDraw: function (chart) {
-          if (!chart.options.plugins || !chart.options.plugins.sportsrsZeroLine || !chart.options.plugins.sportsrsZeroLine.enabled) {
-            return;
-          }
-          var yScale = chart.scales.y;
-          if (!yScale) return;
-          var y = yScale.getPixelForValue(0);
-          if (y < chart.chartArea.top || y > chart.chartArea.bottom) return;
-          var ctx = chart.ctx;
-          ctx.save();
-          ctx.beginPath();
-          ctx.setLineDash([6, 4]);
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-          ctx.moveTo(chart.chartArea.left, y);
-          ctx.lineTo(chart.chartArea.right, y);
-          ctx.stroke();
-          ctx.restore();
-        }
-      };
-    }
-
-    function line(id, data, color, key, opts) {
-      opts = opts || {};
-      var canvas = qs(id);
-      if (!canvas) return null;
-      if (charts[key]) charts[key].destroy();
-
-      var chartOpts = Object.assign({}, commonOpts, {
-        plugins: Object.assign({}, commonOpts.plugins, {
-          sportsrsZeroLine: { enabled: !!opts.zeroLine }
-        }),
-        scales: {
-          x: commonOpts.scales.x,
-          y: Object.assign({}, commonOpts.scales.y, opts.zeroLine ? { grace: '8%' } : {})
-        }
-      });
-
-      charts[key] = new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            borderColor: color,
-            backgroundColor: color + '22',
-            fill: true,
-            tension: 0.35,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            pointBackgroundColor: color,
-            pointBorderColor: color,
-            borderWidth: 2
-          }]
-        },
-        options: chartOpts,
-        plugins: opts.zeroLine ? [zeroLinePlugin()] : []
-      });
-      return charts[key];
-    }
-
-    line('chart-winrate', series.map(function (s) { return Number(s.winRate.toFixed(2)); }), '#00E5FF', 'winrate');
-    line('chart-roi', series.map(function (s) { return Number(s.roi.toFixed(2)); }), '#5B8CFF', 'roi', { zeroLine: true });
-    line('chart-monthly', series.map(function (s) { return Number(s.profitUnits.toFixed(2)); }), '#7C3AED', 'monthly', { zeroLine: true });
+    monthlySeriesCache = buildMonthlySeries();
+    cumulPointsCache = buildCumulativePoints();
+    bindMetricToggle('monthly-metric-toggle', function () { return monthlyMetric; }, function (m) { monthlyMetric = m; }, renderMonthlyChart);
+    bindMetricToggle('cumul-metric-toggle', function () { return cumulMetric; }, function (m) { cumulMetric = m; }, renderCumulativeChart);
+    renderWinRateChart();
+    renderMonthlyChart();
+    renderCumulativeChart();
   }
 
   function refresh() {

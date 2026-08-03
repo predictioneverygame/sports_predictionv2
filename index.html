@@ -213,6 +213,22 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .sb-cnt{color:var(--accent);font-size:.76rem}
 /* 預測戰績：標題列與資料列共用欄寬；勿用 transform 微調（易與捲軸區寬度不一致） */
 .pred-stat-grid{display:grid;grid-template-columns:minmax(0,1fr) 38px 12px 38px 46px;align-items:center;column-gap:0;font-size:.8rem}
+#pred-stats-card .pred-stat-grid{grid-template-columns:minmax(0,1fr) 28px 8px 28px 44px 50px;font-size:.76rem;column-gap:2px}
+#pred-stats-card.pred-stats-no-metrics .pred-stat-grid{grid-template-columns:minmax(0,1fr) 38px 12px 38px 46px;column-gap:0;font-size:.8rem}
+#pred-stats-card.pred-stats-no-metrics .pred-stat-col-units,
+#pred-stats-card.pred-stats-no-metrics .pred-stat-col-roi{display:none}
+#pred-stats-card:not(.pred-stats-no-metrics) .pred-stat-col-net{display:none}
+#pred-stats-card .pred-stat-col-units,
+#pred-stats-card .pred-stat-col-roi{
+  text-align:right;font-weight:800;font-size:.72rem;white-space:nowrap;font-variant-numeric:tabular-nums
+}
+#pred-stats-card .pred-stat-col-units.pos,#pred-stats-card .pred-stat-col-roi.pos{color:var(--green)}
+#pred-stats-card .pred-stat-col-units.neg,#pred-stats-card .pred-stat-col-roi.neg{color:var(--red)}
+#pred-stats-card .pred-stat-col-units.zero,#pred-stats-card .pred-stat-col-roi.zero{color:var(--muted)}
+#pred-stats-card .stats-card-head .pred-stat-col-units,
+#pred-stats-card .stats-card-head .pred-stat-col-roi{
+  color:var(--muted);font-weight:700;font-size:.68rem;letter-spacing:.3px
+}
 .stats-card-head.pred-stat-grid{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
 .stats-card-head h3{margin:0;padding:0;border-bottom:none;margin-bottom:0}
 .stats-card-head .pred-stat-col-hit,
@@ -306,6 +322,8 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 #pred-stats-card .pred-stat-net.pos{color:var(--green)}
 #pred-stats-card .pred-stat-net.neg{color:var(--red)}
 #pred-stats-card .pred-stat-net.zero{color:var(--muted)}
+#pred-stats-card .pred-stat-sport-body .pred-stat-col-units,
+#pred-stats-card .pred-stat-sport-body .pred-stat-col-roi{font-size:.7rem}
 #pred-stats-card .pred-stats-season-tabs{display:flex;gap:6px;margin-bottom:10px}
 #pred-stats-card .pred-stats-season-btn{
   flex:1;padding:7px 8px;border:1px solid var(--border);border-radius:8px;
@@ -691,16 +709,33 @@ footer a{color:var(--accent);text-decoration:none}
 <section class="charts-section reveal">
   <div class="charts-grid">
     <div class="chart-card stagger-1">
-      <h3>Win Rate</h3>
-      <canvas id="chart-winrate" height="140"></canvas>
+      <div class="chart-card-head">
+        <h3>Win Rate</h3>
+      </div>
+      <canvas id="chart-winrate" height="160"></canvas>
     </div>
     <div class="chart-card stagger-2">
-      <h3>ROI</h3>
-      <canvas id="chart-roi" height="140"></canvas>
+      <div class="chart-card-head">
+        <h3>月度績效</h3>
+        <div class="chart-toggle" id="monthly-metric-toggle" role="group" aria-label="月度指標">
+          <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
+          <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+        </div>
+      </div>
+      <canvas id="chart-monthly" height="160"></canvas>
     </div>
     <div class="chart-card stagger-3">
-      <h3>Monthly Profit</h3>
-      <canvas id="chart-monthly" height="140"></canvas>
+      <div class="chart-card-head">
+        <h3>逐步累積</h3>
+        <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
+          <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
+          <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+        </div>
+      </div>
+      <p class="chart-hint">每一點＝一場結算 · 一次顯示 10 場，按住左右拖看更早／更新</p>
+      <div class="chart-pan" id="chart-cumulative-pan" title="按住左右拖曳">
+        <canvas id="chart-cumulative" height="160"></canvas>
+      </div>
     </div>
   </div>
 </section>
@@ -770,12 +805,14 @@ footer a{color:var(--accent);text-decoration:none}
           <button type="button" class="pred-stats-season-btn active" id="pred-season-btn-2627" onclick="selectPredStatsSeason('2627')">2026–2027</button>
         </div>
         <div class="pred-stat-scroll-wrap">
-          <div class="stats-card-head pred-stat-grid" title="有過／沒過">
+          <div class="stats-card-head pred-stat-grid" title="有過／沒過；Unit／% 僅 2026–2027">
             <h3 class="pred-stat-col-league">預測戰績</h3>
             <span class="pred-stat-col-hit ic-hit pred-stat-legend-ic">✓</span>
             <span class="pred-stat-sep">·</span>
             <span class="pred-stat-col-miss ic-miss pred-stat-legend-ic">✗</span>
             <span class="pred-stat-col-net"></span>
+            <span class="pred-stat-col-units">Unit</span>
+            <span class="pred-stat-col-roi">%</span>
           </div>
           <div class="pred-stat-rows" id="pred-stats-rows"></div>
           <div class="pred-stat-total pred-stat-grid" id="pred-stats-total"></div>
@@ -938,7 +975,7 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20260803b"></script>
+<script src="assets/sportsrs-ui.js?v=20260803f"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -2062,6 +2099,51 @@ function netClass(hit, miss) {
   return 'zero';
 }
 
+const PRED_CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
+const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','英超','西甲','德甲','法甲','德乙','澳甲','美足','墨超','荷蘭甲'];
+const PRED_BANKROLL_UNITS = 20;
+
+function unitStakeForLeague(lg, seasonKey) {
+  if (PRED_CUP_LEAGUES.indexOf(lg) !== -1) return 8100;
+  if (PRED_KNOWN_LEAGUES.indexOf(lg) === -1) return 10600;
+  return seasonKey === '2526' ? 8100 : 10600;
+}
+
+function signedMetricClass(n) {
+  if (n > 1e-9) return 'pos';
+  if (n < -1e-9) return 'neg';
+  return 'zero';
+}
+
+function formatUnitsDisplay(n) {
+  if (Math.abs(n) < 1e-9) return '0.00';
+  var v = Math.round(n * 100) / 100;
+  return (v > 0 ? '+' : '') + v.toFixed(2);
+}
+
+function formatRoiDisplay(units) {
+  var roi = (units / PRED_BANKROLL_UNITS) * 100;
+  if (Math.abs(roi) < 1e-9) return '0.00%';
+  return (roi > 0 ? '+' : '') + roi.toFixed(2) + '%';
+}
+
+function tallyUnitsByLeague(matches, seasonKey) {
+  var byLeague = {};
+  var totalUnits = 0;
+  matches.forEach(function (m) {
+    if (m.status !== 'final' || !m.prediction) return;
+    if (typeof isWorldCupRelated === 'function' && isWorldCupRelated(m)) return;
+    var lg = m.league;
+    var profit = calcProfitForMatch(m);
+    var stake = unitStakeForLeague(lg, seasonKey);
+    var units = stake > 0 ? profit / stake : 0;
+    if (!byLeague[lg]) byLeague[lg] = 0;
+    byLeague[lg] += units;
+    totalUnits += units;
+  });
+  return { byLeague: byLeague, totalUnits: totalUnits };
+}
+
 function calcProfitForMatch(m) {
   var stake = Number(m.stake || 0);
   var odds = Number(m.odds || 0);
@@ -2173,11 +2255,19 @@ function renderProfitSummary() {
 function renderPredictionStats() {
   var seasonMatches = getMatchesForSeason(selectedPredStatsSeason);
   const { byLeague, totalHit, totalMiss } = tallyPredictionsByLeague(seasonMatches);
+  var showMetrics = selectedPredStatsSeason !== '2526';
+  var unitsTally = showMetrics
+    ? tallyUnitsByLeague(seasonMatches, selectedPredStatsSeason)
+    : { byLeague: {}, totalUnits: 0 };
+  var byLeagueUnits = unitsTally.byLeague;
   const rowsEl = document.getElementById('pred-stats-rows');
   const totalEl = document.getElementById('pred-stats-total');
+  const cardEl = document.getElementById('pred-stats-card');
   const btn2526 = document.getElementById('pred-season-btn-2526');
   const btn2627 = document.getElementById('pred-season-btn-2627');
   if (!rowsEl || !totalEl) return;
+
+  if (cardEl) cardEl.classList.toggle('pred-stats-no-metrics', !showMetrics);
 
   if (btn2526 && btn2627) {
     btn2526.classList.toggle('active', selectedPredStatsSeason === '2526');
@@ -2188,6 +2278,14 @@ function renderPredictionStats() {
     return PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1
       && !isWorldCupLeague(lg)
       && !isWorldCupKnockoutLeague(lg);
+  });
+  Object.keys(byLeagueUnits).forEach(function (lg) {
+    if (extraLeagues.indexOf(lg) === -1
+      && PRED_STATS_LEAGUE_ORDER.indexOf(lg) === -1
+      && !isWorldCupLeague(lg)
+      && !isWorldCupKnockoutLeague(lg)) {
+      extraLeagues.push(lg);
+    }
   });
   var bbExtras = [];
   var scExtras = [];
@@ -2205,34 +2303,44 @@ function renderPredictionStats() {
   }));
 
   function sumGroup(leagues) {
-    var hit = 0, miss = 0;
+    var hit = 0, miss = 0, units = 0;
     leagues.forEach(function (lg) {
       var rec = byLeague[lg] || { hit: 0, miss: 0 };
       hit += rec.hit;
       miss += rec.miss;
+      units += byLeagueUnits[lg] || 0;
     });
-    return { hit: hit, miss: miss };
+    return { hit: hit, miss: miss, units: units };
+  }
+
+  function trailingCells(hit, miss, units) {
+    if (!showMetrics) {
+      var nc = netClass(hit, miss);
+      return '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + formatNet(hit, miss) + '</span>';
+    }
+    var uc = signedMetricClass(units);
+    return (
+      '<span class="pred-stat-col-units ' + uc + '">' + formatUnitsDisplay(units) + '</span>' +
+      '<span class="pred-stat-col-roi ' + uc + '">' + formatRoiDisplay(units) + '</span>'
+    );
   }
 
   function buildLeagueRow(lg) {
     const rec = byLeague[lg] || { hit: 0, miss: 0 };
+    const units = byLeagueUnits[lg] || 0;
     const label = LEAGUE_STATS_LABEL[lg] || lg;
-    const net = formatNet(rec.hit, rec.miss);
-    const nc = netClass(rec.hit, rec.miss);
     const sblTitle = lg === 'SBL' ? 'SBL 結算：贏+0.5、輸+0.5 計欄位加總，半贏/半輸各±0.25' : '';
     return `<div class="pred-stat-row pred-stat-grid">
       <span class="pred-stat-league pred-stat-col-league" title="${(lg + (sblTitle ? ' — ' + sblTitle : '')).replace(/"/g, '&quot;')}">${label}</span>
       <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(rec.hit)}</span>
       <span class="pred-stat-sep">·</span>
       <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(rec.miss)}</span>
-      <span class="pred-stat-net pred-stat-col-net ${nc}">${net}</span>
+      ${trailingCells(rec.hit, rec.miss, units)}
     </div>`;
   }
 
   function buildSportGroup(icon, name, leagues) {
     var sum = sumGroup(leagues);
-    var net = formatNet(sum.hit, sum.miss);
-    var nc = netClass(sum.hit, sum.miss);
     return (
       '<div class="pred-stat-sport-group">' +
         '<div class="pred-stat-row pred-stat-grid pred-stat-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
@@ -2240,7 +2348,7 @@ function renderPredictionStats() {
           '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(sum.hit) + '</span>' +
           '<span class="pred-stat-sep">·</span>' +
           '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(sum.miss) + '</span>' +
-          '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
+          trailingCells(sum.hit, sum.miss, sum.units) +
         '</div>' +
         '<div class="pred-stat-sport-body">' + leagues.map(buildLeagueRow).join('') + '</div>' +
       '</div>'
@@ -2249,14 +2357,13 @@ function renderPredictionStats() {
 
   rowsEl.innerHTML = buildSportGroup('🏀', '籃球', bbLeagues) + buildSportGroup('⚽', '足球', scLeagues);
 
-  const tNet = formatNet(totalHit, totalMiss);
-  const tNc = netClass(totalHit, totalMiss);
+  var groupUnits = sumGroup(bbLeagues.concat(scLeagues)).units;
   totalEl.innerHTML = `
     <span class="lbl pred-stat-col-league">全部聯賽</span>
     <span class="pred-stat-col-hit ic-hit">${formatTallyDisplay(totalHit)}</span>
     <span class="pred-stat-sep">·</span>
     <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(totalMiss)}</span>
-    <span class="pred-stat-net pred-stat-col-net ${tNc}">${tNet}</span>
+    ${trailingCells(totalHit, totalMiss, groupUnits)}
   `;
 }
 
