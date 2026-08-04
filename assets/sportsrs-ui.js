@@ -584,15 +584,15 @@
         acc += dx;
         var stepPx = Math.max(18, (panEl.clientWidth || 240) / 10);
         var changed = false;
-        // 手指往左滑 → 看更早（index 變小）
+        // 往右拖／滑 → 看更早（圖往右移）；往左 → 看更新
         while (acc <= -stepPx) {
           acc += stepPx;
-          cumulPanStart -= 1;
+          cumulPanStart += 1;
           changed = true;
         }
         while (acc >= stepPx) {
           acc -= stepPx;
-          cumulPanStart += 1;
+          cumulPanStart -= 1;
           changed = true;
         }
         if (changed) applyPan();
