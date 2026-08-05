@@ -338,6 +338,14 @@ nav.scrolled {
   margin: 0 auto;
   padding: 8px 24px 36px;
 }
+.charts-sport-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.charts-sport-toggle .chart-toggle-btn {
+  min-width: 52px;
+}
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

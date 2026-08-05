@@ -10,11 +10,9 @@ const CONFIG = {
   seasonSplitDate: "2026-07-17",
   unitStake2526: 8100,
   unitStake2627: 10600,
-  unitStakeCup: 8100,
-  unitStakeOther: 10600,
   bankrollUnits: 20,
-  cupLeagues: ["歐冠", "歐洲超級盃", "聯賽盃"],
-  knownLeagues: ["SBL", "TPBL", "PLG", "BCL", "英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "墨超", "荷蘭甲"],
+  soccerLeagues: ["英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "墨超", "荷蘭甲"],
+  basketballLeagues: ["SBL", "TPBL", "PLG", "BCL", "東超"],
   timeoutMs: 12000,
   // 建議改用本地照片最穩定：先在 Scriptable App 內執行一次，會讓你選圖
   preferLocalPhoto: true,
@@ -237,39 +235,61 @@ function isWorldCupRelated(row) {
   return /世足\s*[A-L]組/.test(league) || /世足\s*(32強|16強|8強|4強|決賽|季軍|淘汰)/.test(league);
 }
 
-function isCupMatch(row) {
-  return CONFIG.cupLeagues.indexOf(String(row?.league || "")) !== -1;
+function isBasketballMatch(row) {
+  const sport = String(row?.sport || "").toLowerCase();
+  if (sport === "basketball") return true;
+  if (sport === "soccer" || sport === "football") return false;
+  const league = String(row?.league || "");
+  if (CONFIG.basketballLeagues.indexOf(league) !== -1) return true;
+  if (CONFIG.soccerLeagues.indexOf(league) !== -1 || league === "歐冠" || league === "歐洲超級盃" || league === "聯賽盃") {
+    return false;
+  }
+  return false;
 }
 
-function isOtherMatch(row) {
+function profitBucket(row) {
+  if (isWorldCupRelated(row)) return null;
   const league = String(row?.league || "");
-  return CONFIG.cupLeagues.indexOf(league) === -1
-    && CONFIG.knownLeagues.indexOf(league) === -1
-    && !isWorldCupRelated(row);
+  if (isBasketballMatch(row)) {
+    return CONFIG.basketballLeagues.indexOf(league) !== -1 ? "bb_league" : "bb_other";
+  }
+  if (league === "歐冠") return "sc_ucl";
+  if (CONFIG.soccerLeagues.indexOf(league) !== -1) return "sc_league";
+  return "sc_other";
 }
 
 function calcSummary(rows) {
-  const cupRows = rows.filter(isCupMatch);
-  const otherRows = rows.filter(isOtherMatch);
-  const leagueOnly = rows.filter((row) => !isCupMatch(row) && !isOtherMatch(row));
-  const season2526Rows = leagueOnly.filter((row) => String(row?.date || "") < CONFIG.seasonSplitDate);
-  const season2627LeagueRows = leagueOnly.filter((row) => String(row?.date || "") >= CONFIG.seasonSplitDate);
+  const eligible = rows.filter((row) => {
+    return String(row?.status || "") === "final"
+      && String(row?.date || "") >= CONFIG.profitStartDate
+      && !isWorldCupRelated(row);
+  });
+  const finals2526 = eligible.filter((row) => String(row?.date || "") < CONFIG.seasonSplitDate);
+  const finals2627 = eligible.filter((row) => String(row?.date || "") >= CONFIG.seasonSplitDate);
 
-  const league = calcSeasonSummary(season2627LeagueRows, CONFIG.unitStake2627);
-  const cup = calcSeasonSummary(cupRows, CONFIG.unitStakeCup);
-  const other = calcSeasonSummary(otherRows, CONFIG.unitStakeOther);
-  const combinedUnits = league.units + cup.units + other.units;
+  function bucket(list, key) {
+    return list.filter((row) => profitBucket(row) === key);
+  }
+
+  const scLeague = calcSeasonSummary(bucket(finals2627, "sc_league"), CONFIG.unitStake2627);
+  const scUcl = calcSeasonSummary(bucket(finals2627, "sc_ucl"), CONFIG.unitStake2627);
+  const scOther = calcSeasonSummary(bucket(finals2627, "sc_other"), CONFIG.unitStake2627);
+  const bbLeague = calcSeasonSummary(bucket(finals2627, "bb_league"), CONFIG.unitStake2627);
+  const bbOther = calcSeasonSummary(bucket(finals2627, "bb_other"), CONFIG.unitStake2627);
+  const combinedUnits = scLeague.units + scUcl.units + scOther.units + bbLeague.units + bbOther.units;
 
   return {
-    season2526: calcSeasonSummary(season2526Rows, CONFIG.unitStake2526),
+    season2526: calcSeasonSummary(finals2526, CONFIG.unitStake2526),
     season2627: {
-      settledCount: league.settledCount + cup.settledCount + other.settledCount,
+      settledCount: finals2627.length,
       units: combinedUnits,
       roi: (combinedUnits / CONFIG.bankrollUnits) * 100
     },
-    league,
-    cup,
-    other
+    scLeague,
+    scUcl,
+    scOther,
+    bbLeague,
+    bbOther
   };
 }
 
@@ -379,11 +399,15 @@ async function buildWidget(summary) {
     value.textColor = roiColor;
   }
 
-  addDetailRow("聯賽", summary.league);
+  addDetailRow("⚽聯賽", summary.scLeague);
   w.addSpacer(2);
-  addDetailRow("歐冠及盃賽", summary.cup);
+  addDetailRow("⚽歐冠", summary.scUcl);
   w.addSpacer(2);
-  addDetailRow("其他賽事", summary.other);
+  addDetailRow("⚽其他", summary.scOther);
+  w.addSpacer(2);
+  addDetailRow("🏀聯賽", summary.bbLeague);
+  w.addSpacer(2);
+  addDetailRow("🏀其他", summary.bbOther);
 
   return w;
 }

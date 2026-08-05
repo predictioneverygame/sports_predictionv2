@@ -9,6 +9,7 @@
   var BANKROLL = 20;
   var monthlyMetric = 'roi';
   var cumulMetric = 'roi';
+  var chartSport = 'all';
   var monthlySeriesCache = [];
   var cumulPointsCache = [];
 
@@ -102,6 +103,25 @@
   function getFinals() {
     var list = (typeof MATCHES !== 'undefined' && Array.isArray(MATCHES)) ? MATCHES : [];
     return list.filter(function (m) { return m && m.status === 'final'; });
+  }
+
+  function getChartFinals() {
+    return getFinals().filter(function (m) {
+      if (typeof isWorldCupRelated === 'function' && isWorldCupRelated(m)) return false;
+      return true;
+    });
+  }
+
+  function matchSportKey(m) {
+    var s = String(m && m.sport || '').toLowerCase();
+    if (s === 'basketball') return 'basketball';
+    if (s === 'soccer' || s === 'football') return 'soccer';
+    return '';
+  }
+
+  function filterByChartSport(list) {
+    if (chartSport === 'all') return list;
+    return list.filter(function (m) { return matchSportKey(m) === chartSport; });
   }
 
   function calcProfit(m) {
@@ -202,7 +222,7 @@
   }
 
   function buildMonthlySeries() {
-    var finals = getFinals().slice().sort(function (a, b) {
+    var finals = filterByChartSport(getChartFinals()).slice().sort(function (a, b) {
       return String(a.date).localeCompare(String(b.date));
     });
     var map = {};
@@ -216,7 +236,11 @@
       map[key].hit += hm.hit;
       map[key].miss += hm.miss;
     });
-    var keys = Object.keys(map).sort();
+    var keys = Object.keys(map).sort().filter(function (k) {
+      var row = map[k];
+      // 該月沒有可計場次就不畫點（避免無賽／空月顯示 0）
+      return row && row.count > 0 && (row.hit + row.miss > 0 || Math.abs(row.profit) > 1e-9);
+    });
     if (keys.length > 8) keys = keys.slice(-8);
     return keys.map(function (k) {
       var row = map[k];
@@ -236,10 +260,10 @@
 
   function buildCumulativePoints() {
     var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
-    var finals = getFinals().filter(function (m) {
+    var finals = filterByChartSport(getChartFinals()).filter(function (m) {
       return String(m.date || '') >= split;
     });
-    if (!finals.length) finals = getFinals();
+    if (!finals.length) finals = filterByChartSport(getChartFinals());
     finals = finals.slice().sort(function (a, b) {
       var dc = String(a.date || '').localeCompare(String(b.date || ''));
       if (dc !== 0) return dc;
@@ -631,19 +655,41 @@
     });
   }
 
+  function rebuildChartDataAndRender() {
+    monthlySeriesCache = buildMonthlySeries();
+    cumulPointsCache = buildCumulativePoints();
+    renderWinRateChart();
+    renderMonthlyChart();
+    renderCumulativeChart();
+  }
+
+  function bindSportToggle() {
+    var box = qs('charts-sport-toggle');
+    if (!box || box.dataset.bound === '1') return;
+    box.dataset.bound = '1';
+    box.addEventListener('click', function (e) {
+      var btn = e.target.closest('.chart-toggle-btn');
+      if (!btn) return;
+      var sport = btn.getAttribute('data-sport');
+      if (!sport || sport === chartSport) return;
+      chartSport = sport;
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === sport);
+      });
+      rebuildChartDataAndRender();
+    });
+  }
+
   function renderCharts() {
     if (!window.Chart) {
       setTimeout(renderCharts, 200);
       return;
     }
     chartDefaults();
-    monthlySeriesCache = buildMonthlySeries();
-    cumulPointsCache = buildCumulativePoints();
     bindMetricToggle('monthly-metric-toggle', function () { return monthlyMetric; }, function (m) { monthlyMetric = m; }, renderMonthlyChart);
     bindMetricToggle('cumul-metric-toggle', function () { return cumulMetric; }, function (m) { cumulMetric = m; }, renderCumulativeChart);
-    renderWinRateChart();
-    renderMonthlyChart();
-    renderCumulativeChart();
+    bindSportToggle();
+    rebuildChartDataAndRender();
   }
 
   function refresh() {
