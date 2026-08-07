@@ -4,14 +4,17 @@
 (function () {
   'use strict';
 
-  var charts = { winrate: null, monthly: null, cumulative: null };
+  var charts = { winrate: null, monthly: null, cumulative: null, leagueWr: null, leagueRoi: null, leagueUnits: null };
   var UNIT = 10600;
   var BANKROLL = 20;
   var monthlyMetric = 'roi';
   var cumulMetric = 'roi';
   var chartSport = 'all';
+  var leagueChartSport = 'all';
   var monthlySeriesCache = [];
   var cumulPointsCache = [];
+  var leagueCompareCache = [];
+  var leagueChartsSportBound = false;
 
   function qs(id) { return document.getElementById(id); }
 
@@ -663,6 +666,159 @@
     renderCumulativeChart();
   }
 
+  function leagueDisplayLabel(lg) {
+    if (typeof LEAGUE_STATS_LABEL !== 'undefined' && LEAGUE_STATS_LABEL[lg]) {
+      return String(LEAGUE_STATS_LABEL[lg]).replace(/^[^\w\u4e00-\u9fffA-Za-z0-9]+/, '').trim() || lg;
+    }
+    return lg;
+  }
+
+  function orderedLeagueKeys(map) {
+    var keys = Object.keys(map);
+    var preferred = [];
+    if (typeof PRED_STATS_LEAGUE_ORDER !== 'undefined' && Array.isArray(PRED_STATS_LEAGUE_ORDER)) {
+      preferred = PRED_STATS_LEAGUE_ORDER.slice();
+    } else {
+      preferred = ['SBL', 'TPBL', 'PLG', 'BCL', '英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+    }
+    var ordered = preferred.filter(function (lg) { return map[lg]; });
+    keys.sort().forEach(function (lg) {
+      if (ordered.indexOf(lg) === -1) ordered.push(lg);
+    });
+    return ordered;
+  }
+
+  function buildLeagueCompareSeries(sportFilter) {
+    var prev = chartSport;
+    chartSport = sportFilter || 'all';
+    var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
+    var finals = filterByChartSport(getChartFinals()).filter(function (m) {
+      return String(m.date || '') >= split;
+    });
+    chartSport = prev;
+
+    var map = {};
+    finals.forEach(function (m) {
+      var lg = String(m.league || '').trim();
+      if (!lg || lg === '__meta__') return;
+      if (!map[lg]) map[lg] = { profit: 0, hit: 0, miss: 0, count: 0 };
+      map[lg].profit += calcProfit(m);
+      map[lg].count += 1;
+      var hm = hitMissForMatch(m);
+      map[lg].hit += hm.hit;
+      map[lg].miss += hm.miss;
+    });
+
+    return orderedLeagueKeys(map).filter(function (lg) {
+      var row = map[lg];
+      return row && row.count > 0 && (row.hit + row.miss > 0 || Math.abs(row.profit) > 1e-9);
+    }).map(function (lg) {
+      var row = map[lg];
+      var denom = row.hit + row.miss;
+      var wr = denom > 0 ? (row.hit / denom) * 100 : 0;
+      var units = UNIT > 0 ? row.profit / UNIT : 0;
+      var roi = (units / BANKROLL) * 100;
+      return {
+        league: lg,
+        label: leagueDisplayLabel(lg),
+        count: row.count,
+        winRate: wr,
+        roi: roi,
+        units: units
+      };
+    });
+  }
+
+  function barColorsForValues(values, mode) {
+    return values.map(function (v) {
+      if (mode === 'winrate') return Number(v) < 52 ? '#FF5D73' : '#32D583';
+      if (v > 0) return '#32D583';
+      if (v < 0) return '#FF5D73';
+      return '#7C8AA5';
+    });
+  }
+
+  function renderLeagueBarChart(canvasId, chartKey, metricKey, suffix, colorMode, zeroLine) {
+    var series = leagueCompareCache;
+    var labels = series.map(function (s) { return s.label; });
+    var data = series.map(function (s) { return Number((s[metricKey] || 0).toFixed(2)); });
+    if (!labels.length) {
+      labels = ['—'];
+      data = [0];
+    }
+    var canvas = qs(canvasId);
+    if (!canvas) return;
+    if (charts[chartKey]) charts[chartKey].destroy();
+
+    var colors = barColorsForValues(data, colorMode);
+    var opts = makeBaseOpts(function (chart, point) {
+      var idx = point.dataIndex;
+      var row = leagueCompareCache[idx];
+      var v = Number(point.parsed.y);
+      if (isNaN(v)) return null;
+      var title = row ? (row.label + ' · ' + row.count + '場') : labels[idx];
+      var text = title + '\n' + (suffix === '%'
+        ? (metricKey === 'winRate' ? v.toFixed(1) + '%' : signedText(v, 2, '%'))
+        : signedText(v, 2, ' Unit'));
+      return { text: text, color: signedColor(metricKey === 'winRate' ? (v - 52) : v) };
+    });
+    opts.scales.x.ticks = {
+      maxRotation: 45,
+      minRotation: 0,
+      autoSkip: false,
+      font: { size: 10 }
+    };
+    opts.plugins.sportsrsZeroLine = { enabled: !!zeroLine };
+
+    charts[chartKey] = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: colors.map(function (c) { return c + 'CC'; }),
+          borderColor: colors,
+          borderWidth: 1,
+          borderRadius: 4,
+          maxBarThickness: 28
+        }]
+      },
+      options: opts,
+      plugins: zeroLine ? [zeroLinePlugin()] : []
+    });
+  }
+
+  function renderLeagueCharts() {
+    if (!window.Chart) {
+      setTimeout(renderLeagueCharts, 200);
+      return;
+    }
+    if (!qs('page-league-charts')) return;
+    chartDefaults();
+    leagueCompareCache = buildLeagueCompareSeries(leagueChartSport);
+    renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
+    renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
+    renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
+    bindLeagueChartsSportToggle();
+  }
+
+  function bindLeagueChartsSportToggle() {
+    var box = qs('league-charts-sport-toggle');
+    if (!box || leagueChartsSportBound) return;
+    leagueChartsSportBound = true;
+    box.addEventListener('click', function (e) {
+      var btn = e.target.closest('.chart-toggle-btn');
+      if (!btn) return;
+      var sport = btn.getAttribute('data-sport');
+      if (!sport || sport === leagueChartSport) return;
+      leagueChartSport = sport;
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === sport);
+      });
+      renderLeagueCharts();
+    });
+  }
+
   function bindSportToggle() {
     var box = qs('charts-sport-toggle');
     if (!box || box.dataset.bound === '1') return;
@@ -696,6 +852,9 @@
     hideSkeleton();
     updateKpis();
     renderCharts();
+    if (qs('page-league-charts') && qs('page-league-charts').classList.contains('active')) {
+      renderLeagueCharts();
+    }
     initLucide();
   }
 
@@ -715,6 +874,7 @@
   window.SportsRSUI = {
     refresh: refresh,
     showToast: showToast,
-    hideSkeleton: hideSkeleton
+    hideSkeleton: hideSkeleton,
+    renderLeagueCharts: renderLeagueCharts
   };
 })();

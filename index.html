@@ -738,7 +738,7 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
     <div class="chart-card stagger-3">
       <div class="chart-card-head">
-        <h3>逐步累積</h3>
+        <h3>逐場累積</h3>
         <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
           <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
           <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
@@ -748,6 +748,9 @@ footer a{color:var(--accent);text-decoration:none}
         <canvas id="chart-cumulative" height="160"></canvas>
       </div>
     </div>
+  </div>
+  <div class="charts-more-row">
+    <a href="#" class="charts-more-link" onclick="showPage('league-charts');return false;">更多</a>
   </div>
 </section>
 
@@ -901,6 +904,34 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 </div>
 
+<div id="page-league-charts" class="page">
+  <div class="league-charts-page">
+    <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
+    <div class="league-charts-head">
+      <h1>各聯賽績效 · 2026–27</h1>
+      <div class="chart-toggle charts-sport-toggle" id="league-charts-sport-toggle" role="group" aria-label="聯賽圖表運動篩選">
+        <button type="button" class="chart-toggle-btn active" data-sport="all">全部</button>
+        <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
+        <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
+      </div>
+    </div>
+    <div class="league-charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-head"><h3>勝率</h3></div>
+        <canvas id="chart-league-winrate" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head"><h3>ROI</h3></div>
+        <canvas id="chart-league-roi" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head"><h3>Unit</h3></div>
+        <canvas id="chart-league-units" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="page-worldcup" class="page">
 <div class="container">
   <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
@@ -994,7 +1025,7 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20260805b"></script>
+<script src="assets/sportsrs-ui.js?v=20260807b"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -3600,6 +3631,9 @@ function showPage(name) {
     pageEl.classList.add('active');
     window.scrollTo(0, 0);
     if (name === 'worldcup') renderWorldCupPage();
+    if (name === 'league-charts' && window.SportsRSUI && typeof SportsRSUI.renderLeagueCharts === 'function') {
+      SportsRSUI.renderLeagueCharts();
+    }
     return;
   }
   if (name === 'basketball') {
