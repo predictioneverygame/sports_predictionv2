@@ -15,6 +15,9 @@
   var cumulPointsCache = [];
   var leagueCompareCache = [];
   var leagueChartsSportBound = false;
+  var leagueCumulMetric = 'roi';
+  var leagueCumulCache = [];
+  var leagueCumulCharts = {};
 
   function qs(id) { return document.getElementById(id); }
 
@@ -688,7 +691,21 @@
     return ordered;
   }
 
-  function buildLeagueCompareSeries(sportFilter) {
+  /** 足球正規聯賽；盃賽／單場賽事（歐超盃、聯賽盃、明星賽等）不納入各聯賽績效圖 */
+  var SOCCER_LEAGUE_KEYS = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲'];
+  var BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+
+  function isSoccerCupOrOneOffLeague(lg) {
+    if (SOCCER_LEAGUE_KEYS.indexOf(lg) !== -1) return false;
+    if (BASKETBALL_LEAGUE_KEYS.indexOf(lg) !== -1) return false;
+    if (typeof PRED_CUP_LEAGUES !== 'undefined' && PRED_CUP_LEAGUES.indexOf(lg) !== -1) return true;
+    if (/盃|明星/.test(lg)) return true;
+    // 足球「其他」單場／盃賽（非正規聯賽）
+    return true;
+  }
+
+  /** 各聯賽績效頁共用：2026–27 起、依球種篩選、且排除足球盃賽／單場賽事 */
+  function getLeagueScopedFinals(sportFilter) {
     var prev = chartSport;
     chartSport = sportFilter || 'all';
     var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
@@ -697,10 +714,20 @@
     });
     chartSport = prev;
 
+    return finals.filter(function (m) {
+      var lg = String(m.league || '').trim();
+      if (!lg || lg === '__meta__') return false;
+      if (matchSportKey(m) === 'basketball') return true;
+      return !isSoccerCupOrOneOffLeague(lg);
+    });
+  }
+
+  function buildLeagueCompareSeries(sportFilter) {
+    var finals = getLeagueScopedFinals(sportFilter);
+
     var map = {};
     finals.forEach(function (m) {
       var lg = String(m.league || '').trim();
-      if (!lg || lg === '__meta__') return;
       if (!map[lg]) map[lg] = { profit: 0, hit: 0, miss: 0, count: 0 };
       map[lg].profit += calcProfit(m);
       map[lg].count += 1;
@@ -726,6 +753,196 @@
         roi: roi,
         units: units
       };
+    });
+  }
+
+  function buildLeagueCumulSeries(sportFilter) {
+    var finals = getLeagueScopedFinals(sportFilter).slice().sort(function (a, b) {
+      var dc = String(a.date || '').localeCompare(String(b.date || ''));
+      if (dc !== 0) return dc;
+      return String(a.time || '').localeCompare(String(b.time || ''));
+    });
+
+    var map = {};
+    finals.forEach(function (m) {
+      var lg = String(m.league || '').trim();
+      if (!map[lg]) map[lg] = [];
+      map[lg].push(m);
+    });
+
+    return orderedLeagueKeys(map).map(function (lg) {
+      var runningUnits = 0;
+      var runningRoi = 0;
+      var points = map[lg].map(function (m, idx) {
+        var profit = calcProfit(m);
+        var units = UNIT > 0 ? profit / UNIT : 0;
+        var matchRoi = (units / BANKROLL) * 100;
+        runningUnits += units;
+        runningRoi += matchRoi;
+        return {
+          label: String(idx + 1),
+          date: String(m.date || ''),
+          league: lg,
+          title: matchTitle(m),
+          matchUnits: units,
+          matchRoi: matchRoi,
+          cumulUnits: runningUnits,
+          cumulRoi: runningRoi
+        };
+      });
+      return { league: lg, label: leagueDisplayLabel(lg), points: points };
+    }).filter(function (row) { return row.points.length > 0; });
+  }
+
+  /** 讓圖表可左右拖曳檢視（往右拖看更早、往左拖看更新） */
+  function attachChartPan(panEl, getChart) {
+    if (!panEl || panEl.dataset.panBound === '1') return;
+    panEl.dataset.panBound = '1';
+    var dragging = false;
+    var lastX = 0;
+    var acc = 0;
+
+    function applyPan() {
+      var chart = getChart();
+      if (!chart) return;
+      var total = chart.$sportsrsTotal || 0;
+      var win = chart.$sportsrsWindow || 10;
+      if (total <= win) {
+        delete chart.options.scales.x.min;
+        delete chart.options.scales.x.max;
+      } else {
+        chart.$panStart = Math.max(0, Math.min(total - win, chart.$panStart || 0));
+        chart.options.scales.x.min = chart.$panStart;
+        chart.options.scales.x.max = chart.$panStart + win - 1;
+      }
+      chart.update('none');
+    }
+
+    panEl.addEventListener('pointerdown', function (e) {
+      if (!getChart()) return;
+      dragging = true;
+      lastX = e.clientX;
+      acc = 0;
+      panEl.classList.add('is-dragging');
+      try { panEl.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+    panEl.addEventListener('pointermove', function (e) {
+      var chart = getChart();
+      if (!dragging || !chart) return;
+      var dx = e.clientX - lastX;
+      lastX = e.clientX;
+      acc += dx;
+      var stepPx = Math.max(18, (panEl.clientWidth || 240) / 10);
+      var changed = false;
+      while (acc <= -stepPx) {
+        acc += stepPx;
+        chart.$panStart = (chart.$panStart || 0) + 1;
+        changed = true;
+      }
+      while (acc >= stepPx) {
+        acc -= stepPx;
+        chart.$panStart = (chart.$panStart || 0) - 1;
+        changed = true;
+      }
+      if (changed) applyPan();
+    });
+    function endDrag(e) {
+      if (!dragging) return;
+      dragging = false;
+      acc = 0;
+      panEl.classList.remove('is-dragging');
+      try { if (e && e.pointerId != null) panEl.releasePointerCapture(e.pointerId); } catch (err) {}
+    }
+    panEl.addEventListener('pointerup', endDrag);
+    panEl.addEventListener('pointercancel', endDrag);
+    panEl.addEventListener('lostpointercapture', endDrag);
+  }
+
+  function renderLeagueCumulCharts() {
+    var grid = qs('league-cumul-grid');
+    if (!grid) return;
+
+    Object.keys(leagueCumulCharts).forEach(function (key) {
+      if (leagueCumulCharts[key]) leagueCumulCharts[key].destroy();
+    });
+    leagueCumulCharts = {};
+
+    leagueCumulCache = buildLeagueCumulSeries(leagueChartSport);
+    if (!leagueCumulCache.length) {
+      grid.innerHTML = '<div class="league-cumul-empty">尚無結算資料</div>';
+      return;
+    }
+
+    grid.innerHTML = leagueCumulCache.map(function (row, i) {
+      return '<div class="chart-card">'
+        + '<div class="chart-card-head"><h3>' + row.label + '</h3>'
+        + '<span class="league-cumul-count">' + row.points.length + '場</span></div>'
+        + '<div class="chart-pan" id="league-cumul-pan-' + i + '" title="按住左右拖曳">'
+        + '<canvas id="league-cumul-canvas-' + i + '" height="160"></canvas>'
+        + '</div></div>';
+    }).join('');
+
+    var isRoi = leagueCumulMetric === 'roi';
+    var color = isRoi ? '#00E5FF' : '#7C3AED';
+    var WINDOW = 10;
+
+    leagueCumulCache.forEach(function (row, i) {
+      var canvas = qs('league-cumul-canvas-' + i);
+      if (!canvas) return;
+      var points = row.points;
+      var labels = points.map(function (p) { return p.label; });
+      var data = points.map(function (p) {
+        return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
+      });
+
+      var opts = makeBaseOpts(function (chart, point) {
+        var src = chart.$sportsrsPoints || [];
+        var p = src[point.dataIndex];
+        if (!p) return null;
+        var lines = [
+          p.title,
+          (p.date || '') + (p.league ? ' · ' + p.league : ''),
+          '該場 ' + signedText(p.matchRoi, 2, '%') + ' · ' + signedText(p.matchUnits, 2, ' Unit'),
+          '累積 ' + (isRoi ? signedText(p.cumulRoi, 2, '%') : signedText(p.cumulUnits, 2, ' Unit'))
+        ];
+        return { text: lines.join('\n'), color: signedColor(p.matchRoi) };
+      });
+      opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
+      var start = Math.max(0, points.length - WINDOW);
+      if (points.length > WINDOW) {
+        opts.scales.x.min = start;
+        opts.scales.x.max = start + WINDOW - 1;
+      }
+
+      var chart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: data,
+            borderColor: color,
+            backgroundColor: color + '18',
+            fill: true,
+            tension: 0.15,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: color,
+            pointBorderColor: color,
+            borderWidth: 2
+          }]
+        },
+        options: opts,
+        plugins: [zeroLinePlugin()]
+      });
+      chart.$sportsrsPoints = points;
+      chart.$sportsrsWindow = WINDOW;
+      chart.$sportsrsTotal = points.length;
+      chart.$panStart = start;
+      leagueCumulCharts[i] = chart;
+
+      attachChartPan(qs('league-cumul-pan-' + i), (function (key) {
+        return function () { return leagueCumulCharts[key]; };
+      })(i));
     });
   }
 
@@ -799,7 +1016,12 @@
     renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
     renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
     renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
+    renderLeagueCumulCharts();
     bindLeagueChartsSportToggle();
+    bindMetricToggle('league-cumul-metric-toggle',
+      function () { return leagueCumulMetric; },
+      function (m) { leagueCumulMetric = m; },
+      renderLeagueCumulCharts);
   }
 
   function bindLeagueChartsSportToggle() {
