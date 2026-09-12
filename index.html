@@ -393,12 +393,42 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .week-summary-card .week-summary-head .week-summary-total-net.pos{color:var(--green)}
 .week-summary-card .week-summary-head .week-summary-total-net.neg{color:var(--red)}
 .week-summary-card .week-summary-head .week-summary-total-net.zero{color:var(--muted)}
+.week-summary-card .week-summary-head .week-summary-metrics{
+  display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:.76rem;
+  letter-spacing:.2px;white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.week-summary-card .week-summary-head .week-summary-metrics .pos{color:var(--green)}
+.week-summary-card .week-summary-head .week-summary-metrics .neg{color:var(--red)}
+.week-summary-card .week-summary-head .week-summary-metrics .zero{color:var(--muted)}
 .week-summary-card .week-summary-head .chevron{color:var(--muted);font-size:.9rem;transition:transform .3s}
 .week-summary-card .week-summary-item.open > .week-summary-head .chevron{transform:rotate(180deg)}
 .week-summary-card .week-summary-body{display:none;padding:0 18px 18px}
 .week-summary-card .week-summary-item.open > .week-summary-body{display:block}
 .week-summary-card .week-summary-range{font-size:.72rem;color:var(--muted);line-height:1.4;margin-bottom:12px}
 .week-summary-card .week-summary-rows{display:flex;flex-direction:column;gap:0}
+.week-summary-card .pred-stat-grid{
+  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
+  column-gap:8px;font-size:.76rem;
+}
+.week-summary-card .pred-stat-col-hit,
+.week-summary-card .pred-stat-col-miss,
+.week-summary-card .pred-stat-sep,
+.week-summary-card .pred-stat-col-net{display:none}
+.week-summary-card .pred-stat-col-units,
+.week-summary-card .pred-stat-col-roi{
+  display:block;text-align:right;font-weight:800;font-size:.76rem;white-space:nowrap;
+  font-variant-numeric:tabular-nums
+}
+.week-summary-card .pred-stat-col-units.pos,.week-summary-card .pred-stat-col-roi.pos{color:var(--green)}
+.week-summary-card .pred-stat-col-units.neg,.week-summary-card .pred-stat-col-roi.neg{color:var(--red)}
+.week-summary-card .pred-stat-col-units.zero,.week-summary-card .pred-stat-col-roi.zero{color:var(--muted)}
+.week-summary-card .week-summary-col-head{
+  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
+  column-gap:8px;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--border);
+  font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.3px;
+}
+.week-summary-card .week-summary-col-head .pred-stat-col-units,
+.week-summary-card .week-summary-col-head .pred-stat-col-roi{display:block;text-align:right}
 .week-summary-card .pred-stat-row.pred-stat-grid{padding:8px 0;border-bottom:1px solid var(--border)}
 .week-summary-card .pred-stat-row:last-of-type{border-bottom:none}
 .week-summary-card .pred-stat-row .pred-stat-league{color:var(--text)}
@@ -414,6 +444,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .week-summary-card .week-league-breakdown[open] summary::before{transform:rotate(90deg) translateX(1px)}
 .week-summary-card .week-league-breakdown .week-league-rows{margin-top:8px}
 .week-summary-card .week-league-breakdown .empty{font-size:.74rem;color:var(--muted);padding:8px 0}
+.week-summary-card .week-league-col-head{
+  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
+  column-gap:8px;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--border);
+  font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.3px;
+}
+.week-summary-card .week-league-col-head .pred-stat-col-units,
+.week-summary-card .week-league-col-head .pred-stat-col-roi{display:block;text-align:right}
 .week-summary-card .pred-stat-net{font-weight:800;font-size:.82rem}
 .week-summary-card .pred-stat-net.pos{color:var(--green)}
 .week-summary-card .pred-stat-net.neg{color:var(--red)}
@@ -2465,7 +2502,7 @@ function tallyHitsMissesInMatches(matches) {
   return { hit: hit, miss: miss };
 }
 
-// 可手動補充本賽季週次；未設定時會依已結算賽事自動分週（週一～週日）
+// 可手動補充本賽季週次；未設定時會依已結算賽事自動分週（週二～隔週週一）
 const WEEK_RANGES = [];
 
 function formatYmd(date) {
@@ -2475,11 +2512,12 @@ function formatYmd(date) {
   return y + '-' + m + '-' + d;
 }
 
-function getMondayOfWeek(dateStr) {
+/** 取得該日期所屬週的週二（週區間：週二～隔週週一） */
+function getWeekStartTuesday(dateStr) {
   var d = new Date(dateStr + 'T12:00:00');
-  var day = d.getDay();
-  var offset = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + offset);
+  var day = d.getDay(); // 0日 1一 2二 …
+  var offset = (day - 2 + 7) % 7; // 距離本週週二的天數
+  d.setDate(d.getDate() - offset);
   return formatYmd(d);
 }
 
@@ -2506,8 +2544,8 @@ function buildCurrentSeasonWeekRanges() {
     if (m.status !== 'final' || isWorldCupMatch(m)) return;
     var date = String(m.date || '');
     if (date < SEASON_SPLIT_DATE) return;
-    var mon = getMondayOfWeek(date);
-    addRange(mon, addDaysYmd(mon, 6));
+    var tue = getWeekStartTuesday(date);
+    addRange(tue, addDaysYmd(tue, 6)); // 週二～隔週週一
   });
 
   return Object.keys(ranges).map(function (key) { return ranges[key]; }).sort(function (a, b) {
@@ -2522,49 +2560,62 @@ function buildWeekSummaryItemHtml(range) {
   var bbList = inRange.filter(function (m) { return m.sport === 'basketball'; });
   var scList = inRange.filter(function (m) { return m.sport === 'soccer' || m.sport === 'football'; });
 
-  var recBb = tallyHitsMissesInMatches(bbList);
-  var recSc = tallyHitsMissesInMatches(scList);
-  var recAll = tallyHitsMissesInMatches(inRange);
-  var netAll = formatNet(recAll.hit, recAll.miss);
-  var ncAll = netClass(recAll.hit, recAll.miss);
-  var netBb = formatNet(recBb.hit, recBb.miss);
-  var netSc = formatNet(recSc.hit, recSc.miss);
-  var ncBb = netClass(recBb.hit, recBb.miss);
-  var ncSc = netClass(recSc.hit, recSc.miss);
+  var unitsBb = tallyUnitsByLeague(bbList, '2627').totalUnits;
+  var unitsSc = tallyUnitsByLeague(scList, '2627').totalUnits;
 
-  function rowHtml(label, rec, net, nc) {
+  function formatWeekUnits(n) {
+    if (Math.abs(n) < 1e-9) return '0.00';
+    var v = Math.round(n * 100) / 100;
+    return (v > 0 ? '+' : '') + v.toFixed(2);
+  }
+  function formatWeekRoi(units) {
+    var roi = (units / PRED_BANKROLL_UNITS) * 100;
+    if (Math.abs(roi) < 1e-9) return '0.00%';
+    return (roi > 0 ? '+' : '') + roi.toFixed(2) + '%';
+  }
+  function metricCells(units) {
+    var uc = signedMetricClass(units);
+    return (
+      '<span class="pred-stat-col-units ' + uc + '">' + formatWeekUnits(units) + '</span>' +
+      '<span class="pred-stat-col-roi ' + uc + '">' + formatWeekRoi(units) + '</span>'
+    );
+  }
+
+  function rowHtml(label, units) {
     return (
       '<div class="pred-stat-row pred-stat-grid">' +
         '<span class="lbl pred-stat-col-league">' + label + '</span>' +
-        '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(rec.hit) + '</span>' +
-        '<span class="pred-stat-sep">·</span>' +
-        '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(rec.miss) + '</span>' +
-        '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
+        metricCells(units) +
       '</div>'
     );
   }
 
   function buildLeagueRowsInWeek(list) {
+    var byLeagueUnits = tallyUnitsByLeague(list, '2627').byLeague;
     var byLeague = tallyPredictionsByLeague(list).byLeague;
     var ordered = PRED_STATS_LEAGUE_ORDER.filter(function (lg) {
+      return Math.abs(byLeagueUnits[lg] || 0) > 1e-9
+        || (byLeague[lg] && (Math.abs(byLeague[lg].hit) > 1e-9 || Math.abs(byLeague[lg].miss) > 1e-9));
+    });
+    Object.keys(byLeagueUnits).concat(Object.keys(byLeague)).forEach(function (lg) {
+      if (ordered.indexOf(lg) !== -1) return;
+      if (isWorldCupLeague(lg) || isWorldCupKnockoutLeague(lg)) return;
+      var units = byLeagueUnits[lg] || 0;
       var rec = byLeague[lg];
-      return rec && (Math.abs(rec.hit) > 1e-9 || Math.abs(rec.miss) > 1e-9);
+      if (Math.abs(units) > 1e-9 || (rec && (Math.abs(rec.hit) > 1e-9 || Math.abs(rec.miss) > 1e-9))) {
+        ordered.push(lg);
+      }
     });
     if (!ordered.length) {
       return '<div class="empty">本週尚無可統計的聯賽結算資料</div>';
     }
     return ordered.map(function (lg) {
-      var rec = byLeague[lg] || { hit: 0, miss: 0 };
-      var net = formatNet(rec.hit, rec.miss);
-      var nc = netClass(rec.hit, rec.miss);
+      var units = byLeagueUnits[lg] || 0;
       var label = LEAGUE_STATS_LABEL[lg] || lg;
       return (
         '<div class="pred-stat-row pred-stat-grid">' +
           '<span class="pred-stat-league pred-stat-col-league">' + label + '</span>' +
-          '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(rec.hit) + '</span>' +
-          '<span class="pred-stat-sep">·</span>' +
-          '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(rec.miss) + '</span>' +
-          '<span class="pred-stat-net pred-stat-col-net ' + nc + '">' + net + '</span>' +
+          metricCells(units) +
         '</div>'
       );
     }).join('');
@@ -2577,19 +2628,27 @@ function buildWeekSummaryItemHtml(range) {
       <div class="week-summary-head" onclick="this.parentElement.classList.toggle('open')">
         <h3 class="week-summary-head-title">
           <span class="week-summary-dates">${range.from.slice(5).replace('-','/')}－${range.to.slice(5).replace('-','/')}</span>
-          <span class="week-summary-sep-dot" aria-hidden="true">·</span>
-          <span class="week-summary-total-net ${ncAll}" title="當周已結算：✓加總 / ✗加總；SBL 每場贏+0.5、輸+0.5 計欄；淨＝兩欄差（和局不計）"> ${netAll}</span>
         </h3>
         <span class="chevron">▼</span>
       </div>
       <div class="week-summary-body">
-        <div class="week-summary-range" title="統計 ${range.from}～${range.to} 期間已結算場次，分籃球／足球之預測"></div>
+        <div class="week-summary-range" title="統計 ${range.from}～${range.to} 期間已結算場次；Unit＝獲利÷10600；%＝Unit÷20×100"></div>
+        <div class="week-summary-col-head">
+          <span></span>
+          <span class="pred-stat-col-units">Unit</span>
+          <span class="pred-stat-col-roi">%</span>
+        </div>
         <div class="week-summary-rows">
-          ${rowHtml('🏀 籃球', recBb, netBb, ncBb)}
-          ${rowHtml('⚽ 足球', recSc, netSc, ncSc)}
+          ${rowHtml('🏀 籃球', unitsBb)}
+          ${rowHtml('⚽ 足球', unitsSc)}
         </div>
         <details class="week-league-breakdown">
           <summary>查看當周各聯賽狀況</summary>
+          <div class="week-league-col-head">
+            <span></span>
+            <span class="pred-stat-col-units">Unit</span>
+            <span class="pred-stat-col-roi">%</span>
+          </div>
           <div class="week-league-rows">
             ${leagueRowsHtml}
           </div>
