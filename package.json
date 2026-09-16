@@ -1,0 +1,19 @@
+{
+  "name": "sportsrs",
+  "version": "1.0.0",
+  "description": "SportsRS prediction dashboard",
+  "private": true,
+  "scripts": {
+    "supabase:login": "supabase login",
+    "supabase:link": "supabase link --project-ref zcytivwjylkmnpqszvui",
+    "supabase:deploy:scores": "supabase functions deploy fetch-football-fixtures"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/predictioneverygame/sports_predictionv2.git"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "supabase": "^2.117.0"
+  }
+}

@@ -687,7 +687,7 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20260816a">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20260917a">
 </head>
 <body>
 <nav id="site-nav">
@@ -776,12 +776,18 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="chart-card stagger-3">
       <div class="chart-card-head">
         <h3>逐場累積</h3>
-        <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
-          <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
-          <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+        <div class="chart-card-toggles">
+          <div class="chart-toggle" id="cumul-range-toggle" role="group" aria-label="累積範圍">
+            <button type="button" class="chart-toggle-btn active" data-range="all">全部</button>
+            <button type="button" class="chart-toggle-btn" data-range="window">近10場</button>
+          </div>
+          <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
+            <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
+            <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+          </div>
         </div>
       </div>
-      <div class="chart-pan" id="chart-cumulative-pan" title="按住左右拖曳">
+      <div class="chart-pan is-overview" id="chart-cumulative-pan" title="一次顯示全部場次趨勢">
         <canvas id="chart-cumulative" height="160"></canvas>
       </div>
     </div>
@@ -1070,7 +1076,7 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20260816a"></script>
+<script src="assets/sportsrs-ui.js?v=20260917a"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果

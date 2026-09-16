@@ -502,12 +502,23 @@ nav.scrolled {
   touch-action: none;
   user-select: none;
 }
+.chart-pan.is-overview {
+  cursor: default;
+  touch-action: auto;
+}
 .chart-pan.is-dragging { cursor: grabbing; }
 .chart-pan canvas {
   display: block;
   width: 100% !important;
   height: 180px !important;
   max-height: none !important;
+}
+.chart-card-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 /* ─── LAYOUT / CONTAINER ─── */

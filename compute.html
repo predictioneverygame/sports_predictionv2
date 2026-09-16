@@ -320,8 +320,15 @@ input[type="text"] {
 <div class="card-title">已匯入推薦清單（雲端）</div>
 <div class="action-row">
     <button class="smallBtn" onclick="loadCloudRecommendations()">重新整理清單</button>
+    <button class="smallBtn" onclick="syncSoccerScoresAndSettle()" title="用 API-Football 抓完場比分並結算足球推薦">同步足球比分結算</button>
 </div>
 <div class="hint" id="cloudStatus">尚未讀取</div>
+<div class="field-label">API-Football Key（可選：本機測試用；線上網站請改放 Supabase Secrets）</div>
+<input id="apiSportsKey" type="password" placeholder="本機測試才需要貼 Key" autocomplete="off">
+<div class="action-row">
+    <button class="smallBtn" type="button" onclick="saveApiSportsKey()">儲存本機 Key</button>
+</div>
+<div class="hint" id="apiSportsStatus">線上版：部署 Edge Function 後不需在網站貼 Key</div>
 <table>
     <thead>
         <tr>
@@ -361,6 +368,7 @@ input[type="text"] {
 </table>
 </div>
 
+<script src="compute-secrets.local.js" onerror=""></script>
 <script>
 
 const leagues = {
@@ -1270,59 +1278,19 @@ async function deleteSettledMatch(id) {
     }
 }
 
-async function settleCloudRecommendation(id) {
-    const item = cloudRecommendations.find((x) => String(x.id) === String(id));
-    if (!item) {
-        alert("找不到要結算的推薦資料");
-        return;
-    }
-
+async function settleRecommendationGroupWithScores(item, homeScore, awayScore, manualResult) {
     const STANDARD_LEAGUE_LABELS = Object.keys(leagues).filter(k => !FREE_INPUT_LEAGUES.includes(k)).map(k => leagues[k].label);
     const isFreeInput = !STANDARD_LEAGUE_LABELS.includes(item.league);
-
-    let homeScore, awayScore, manualResult;
-
-    if (isFreeInput) {
-        const resultChoice = prompt(
-            `${item.home} vs ${item.away}\n盤口：${item.line}\n\n請輸入結果：\n1 = 命中\n2 = 未中\n3 = 半贏\n4 = 半輸\n5 = 和局（退款）`,
-            "1"
-        );
-        if (resultChoice === null) return;
-        const resultMap = { "1": "hit", "2": "miss", "3": "half_hit", "4": "half_miss", "5": "push" };
-        manualResult = resultMap[resultChoice.trim()];
-        if (!manualResult) { alert("無效選項"); return; }
-
-        const scoreInput = prompt("請輸入比分（格式：主隊-客隊，如 2-1），可留空", "");
-        if (scoreInput && scoreInput.includes("-")) {
-            const parts = scoreInput.split("-");
-            homeScore = toNum(parts[0]);
-            awayScore = toNum(parts[1]);
-        } else {
-            homeScore = 0;
-            awayScore = 0;
-        }
-    } else {
-        const homeScoreRaw = prompt(`請輸入主隊 ${item.home} 比分`, "0");
-        if (homeScoreRaw === null) return;
-        const awayScoreRaw = prompt(`請輸入客隊 ${item.away} 比分`, "0");
-        if (awayScoreRaw === null) return;
-        homeScore = toNum(homeScoreRaw);
-        awayScore = toNum(awayScoreRaw);
-        if (homeScore === null || awayScore === null) {
-            alert("賽果格式錯誤，請輸入數字");
-            return;
-        }
-    }
 
     const groupKey = getMatchGroupKey(item);
     const sameMatchItems = cloudRecommendations.filter((x) => getMatchGroupKey(x) === groupKey);
     if (!sameMatchItems.length) {
-        alert("找不到同場推薦資料");
-        return;
+        throw new Error("找不到同場推薦資料");
     }
 
     const settledRows = sameMatchItems.map((entry) => {
         if (isFreeInput) {
+            if (!manualResult) throw new Error("自由輸入賽事需手動結果");
             const profit = getProfitByResult(manualResult, entry.stake, entry.odds);
             return {
                 line: parsePredictionResultsFromLine(entry.line).display,
@@ -1373,32 +1341,410 @@ async function settleCloudRecommendation(id) {
         summary: ""
     };
 
-    try {
-        await saveMatchRowToCloud(row);
+    await saveMatchRowToCloud(row);
 
-        for (const entry of sameMatchItems) {
-            const deleteResponse = await fetch(
-                `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(entry.id)}`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        "apikey": SUPABASE_ANON_KEY,
-                        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-                    }
+    for (const entry of sameMatchItems) {
+        const deleteResponse = await fetch(
+            `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(entry.id)}`,
+            {
+                method: "DELETE",
+                headers: {
+                    "apikey": SUPABASE_ANON_KEY,
+                    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
                 }
-            );
-            if (!deleteResponse.ok) {
-                const msg = await deleteResponse.text();
-                throw new Error(msg || "已寫入戰績，但刪除推薦失敗");
             }
+        );
+        if (!deleteResponse.ok) {
+            const msg = await deleteResponse.text();
+            throw new Error(msg || "已寫入戰績，但刪除推薦失敗");
         }
+    }
 
-        alert(`已結算同場 ${sameMatchItems.length} 筆，合計獲利 ${totalProfit.toFixed(2)}`);
+    cloudRecommendations = cloudRecommendations.filter((x) => getMatchGroupKey(x) !== groupKey);
+    return { count: sameMatchItems.length, totalProfit, homeScore, awayScore };
+}
+
+async function settleCloudRecommendation(id) {
+    const item = cloudRecommendations.find((x) => String(x.id) === String(id));
+    if (!item) {
+        alert("找不到要結算的推薦資料");
+        return;
+    }
+
+    const STANDARD_LEAGUE_LABELS = Object.keys(leagues).filter(k => !FREE_INPUT_LEAGUES.includes(k)).map(k => leagues[k].label);
+    const isFreeInput = !STANDARD_LEAGUE_LABELS.includes(item.league);
+
+    let homeScore, awayScore, manualResult;
+
+    if (isFreeInput) {
+        const resultChoice = prompt(
+            `${item.home} vs ${item.away}\n盤口：${item.line}\n\n請輸入結果：\n1 = 命中\n2 = 未中\n3 = 半贏\n4 = 半輸\n5 = 和局（退款）`,
+            "1"
+        );
+        if (resultChoice === null) return;
+        const resultMap = { "1": "hit", "2": "miss", "3": "half_hit", "4": "half_miss", "5": "push" };
+        manualResult = resultMap[resultChoice.trim()];
+        if (!manualResult) { alert("無效選項"); return; }
+
+        const scoreInput = prompt("請輸入比分（格式：主隊-客隊，如 2-1），可留空", "");
+        if (scoreInput && scoreInput.includes("-")) {
+            const parts = scoreInput.split("-");
+            homeScore = toNum(parts[0]);
+            awayScore = toNum(parts[1]);
+        } else {
+            homeScore = 0;
+            awayScore = 0;
+        }
+    } else {
+        const homeScoreRaw = prompt(`請輸入主隊 ${item.home} 比分`, "0");
+        if (homeScoreRaw === null) return;
+        const awayScoreRaw = prompt(`請輸入客隊 ${item.away} 比分`, "0");
+        if (awayScoreRaw === null) return;
+        homeScore = toNum(homeScoreRaw);
+        awayScore = toNum(awayScoreRaw);
+        if (homeScore === null || awayScore === null) {
+            alert("賽果格式錯誤，請輸入數字");
+            return;
+        }
+    }
+
+    try {
+        const settled = await settleRecommendationGroupWithScores(item, homeScore, awayScore, manualResult);
+        alert(`已結算同場 ${settled.count} 筆，合計獲利 ${settled.totalProfit.toFixed(2)}`);
         await loadCloudRecommendations();
         await loadCloudSettledMatches();
     } catch (err) {
         console.error(err);
         alert("結算失敗：" + (err.message || "請檢查 matches/recommendations 權限設定"));
+    }
+}
+
+// ---------- API-Football 自動抓分 ----------
+const APISPORTS_KEY_STORAGE = "rs_apisports_key";
+const APISPORTS_BASE = "https://v3.football.api-sports.io";
+
+const API_FOOTBALL_LEAGUE_IDS = {
+  "英超": 39,
+  "西甲": 140,
+  "德甲": 78,
+  "法甲": 61,
+  "德乙": 79,
+  "美足": 253,
+  "墨超": 262,
+  "荷蘭甲": 88,
+  "歐冠": 2,
+  "歐洲超級盃": 556,
+  "聯賽盃": 1016
+};
+
+const TEAM_NAME_EN = {
+  "阿仙奴": "Arsenal", "阿士東維拉": "Aston Villa", "阿斯頓維拉": "Aston Villa",
+  "般尼茅夫": "Bournemouth", "賓福特": "Brentford", "白禮頓": "Brighton",
+  "考文垂": "Coventry", "車路士": "Chelsea", "水晶宮": "Crystal Palace",
+  "愛華頓": "Everton", "富咸": "Fulham", "侯城": "Hull City",
+  "伊普斯維奇": "Ipswich", "列斯聯": "Leeds", "利物浦": "Liverpool",
+  "曼城": "Manchester City", "曼聯": "Manchester United", "紐卡素": "Newcastle",
+  "諾定咸森林": "Nottingham Forest", "新特蘭": "Sunderland", "熱刺": "Tottenham",
+  "般尼": "Burnley", "韋斯咸": "West Ham", "狼隊": "Wolves",
+  "艾拉維斯": "Alaves", "畢爾包": "Athletic Club", "馬德里體育會": "Atletico Madrid",
+  "巴塞隆拿": "Barcelona", "切爾達": "Celta Vigo", "拉科魯尼亞": "Deportivo La Coruna",
+  "愛斯賓奴": "Espanyol", "艾爾切": "Elche", "赫塔費": "Getafe",
+  "利雲特": "Levante", "馬拉加": "Malaga", "奧沙辛拿": "Osasuna",
+  "巴列卡諾": "Rayo Vallecano", "皇家貝迪斯": "Real Betis", "皇家馬德里": "Real Madrid",
+  "皇家蘇斯達": "Real Sociedad", "桑坦德": "Racing Santander", "西維爾": "Sevilla",
+  "塞維利亞": "Sevilla", "華倫西亞": "Valencia", "維拉利爾": "Villarreal",
+  "赫羅納": "Girona", "馬略卡": "Mallorca", "皇家奧維多": "Real Oviedo",
+  "奧格斯堡": "Augsburg", "柏林聯": "Union Berlin", "艾爾弗斯貝格": "Elversberg",
+  "RB萊比錫": "RB Leipzig", "多蒙特": "Dortmund", "法蘭克福": "Eintracht Frankfurt",
+  "弗賴堡": "Freiburg", "賀芬咸": "Hoffenheim", "科隆": "FC Koln",
+  "利華古遜": "Bayer Leverkusen", "緬恩斯": "Mainz", "慕遜加柏": "Borussia Monchengladbach",
+  "拜仁慕尼黑": "Bayern Munich", "柏德博恩": "Paderborn", "漢堡": "Hamburger SV",
+  "沙爾克04": "Schalke 04", "史特加": "VfB Stuttgart", "斯圖加特": "VfB Stuttgart",
+  "雲達不萊梅": "Werder Bremen", "聖保利": "St. Pauli", "海登咸": "Heidenheim",
+  "沃夫斯堡": "Wolfsburg",
+  "歐塞爾": "Auxerre", "布雷斯特": "Brest", "勒哈弗爾": "Le Havre",
+  "朗斯": "Lens", "里爾": "Lille", "勒芒": "Le Mans", "洛里昂": "Lorient",
+  "里昂": "Lyon", "馬賽": "Marseille", "摩納哥": "Monaco", "奈斯": "Nice",
+  "巴黎聖日門": "Paris Saint Germain", "巴黎FC": "Paris FC", "雷恩": "Rennes",
+  "特魯瓦": "Troyes", "圖盧茲": "Toulouse", "斯特拉斯堡": "Strasbourg", "昂熱": "Angers",
+  "南特": "Nantes", "梅斯": "Metz",
+  "比勒費爾德": "Arminia Bielefeld", "波琴": "Bochum", "布倫瑞克": "Eintracht Braunschweig",
+  "科特布斯": "Energie Cottbus", "達斯泰特": "Darmstadt", "德累斯頓": "Dynamo Dresden",
+  "格雷特霍夫": "Greuther Furth", "漢諾威": "Hannover", "卡斯魯厄": "Karlsruher",
+  "凱沙羅頓": "Kaiserslautern", "基爾": "Holstein Kiel", "馬格德堡": "Magdeburg",
+  "紐倫堡": "Nurnberg", "奧斯納布呂克": "Osnabruck", "哈化柏林": "Hertha Berlin",
+  "杜塞爾多夫": "Fortuna Dusseldorf", "明斯特": "Preussen Munster",
+  "亞特蘭大聯": "Atlanta United", "奧斯汀FC": "Austin", "夏洛特FC": "Charlotte",
+  "芝加哥火燄": "Chicago Fire", "辛辛那提": "FC Cincinnati", "科羅拉多急流": "Colorado Rapids",
+  "哥倫布機員": "Columbus Crew", "FC達拉斯": "FC Dallas", "華盛頓聯": "DC United",
+  "侯斯頓戴拿模": "Houston Dynamo", "國際邁阿密": "Inter Miami", "肯薩斯體育會": "Sporting Kansas City",
+  "洛杉磯FC": "Los Angeles FC", "洛杉磯銀河": "LA Galaxy", "明尼蘇達聯": "Minnesota United",
+  "CF蒙特利爾": "CF Montreal", "拿舒維爾SC": "Nashville SC", "新英倫革命": "New England",
+  "紐約城": "New York City", "紐約紅牛": "New York Red Bulls", "奧蘭多城": "Orlando City",
+  "費城聯": "Philadelphia Union", "波特蘭伐木者": "Portland Timbers", "皇家鹽湖城": "Real Salt Lake",
+  "聖何塞地震": "San Jose Earthquakes", "西雅圖海灣者": "Seattle Sounders", "聖路易城": "St. Louis City",
+  "多倫多FC": "Toronto FC", "溫哥華白浪": "Vancouver Whitecaps", "聖地牙哥FC": "San Diego",
+  "美洲": "Club America", "瓜達拉哈拉": "Guadalajara", "蒙特雷": "Monterrey",
+  "老虎": "Tigres UANL", "藍十字": "Cruz Azul", "帕丘卡": "Pachuca", "托盧卡": "Toluca",
+  "桑托斯拉古納": "Santos Laguna", "萊昂": "Leon", "阿特拉斯": "Atlas", "普馬斯": "Pumas UNAM",
+  "內卡薩": "Necaxa", "普埃布拉": "Puebla", "克雷塔羅": "Queretaro", "馬薩特蘭": "Mazatlan",
+  "華雷斯": "Juarez", "蒂華納": "Club Tijuana", "聖路易斯": "Atletico San Luis",
+  "ADO海牙": "ADO Den Haag", "阿積士": "Ajax", "AZ艾克馬亞": "AZ Alkmaar",
+  "甘堡爾": "Cambuur", "精英隊": "Excelsior", "飛燕諾": "Feyenoord",
+  "福图納錫塔德": "Fortuna Sittard", "前進之鷹": "GO Ahead Eagles", "海倫芬": "Heerenveen",
+  "奈梅亨": "NEC Nijmegen", "鹿特丹斯巴達": "Sparta Rotterdam", "川迪": "Twente",
+  "烏德勒支": "Utrecht", "PSV燕豪芬": "PSV Eindhoven", "PEC施禾利": "PEC Zwolle",
+  "泰斯達": "Telstar", "威廉二世": "Willem II", "格羅寧根": "Groningen",
+  "禾寧丹": "Volendam", "NAC布雷達": "NAC Breda", "荷華高斯": "Heracles",
+  "國際米蘭": "Inter", "AC米蘭": "AC Milan", "祖雲達斯": "Juventus",
+  "賓菲加": "Benfica", "波圖": "Porto", "體育里斯本": "Sporting CP",
+  "布魯日": "Club Brugge", "凱爾特人": "Celtic", "薩爾斯堡": "Salzburg",
+  "薩格勒布迪納摩": "Dinamo Zagreb", "年輕人": "Young Boys", "布拉格斯拉維亞": "Slavia Praha",
+  "顿涅茨克矿工": "Shakhtar Donetsk", "加拉塔沙雷": "Galatasaray", "貝西克塔斯": "Besiktas",
+  "費倫巴切": "Fenerbahce", "史丹佳利斯克": "Bodø/Glimt", "博洛尼亞": "Bologna",
+  "基輔迪納摩": "Dynamo Kyiv", "亞特蘭大": "Atalanta"
+};
+
+function setApiSportsStatus(text) {
+    const el = document.getElementById("apiSportsStatus");
+    if (el) el.innerText = text;
+}
+
+function getApiSportsKey() {
+    try {
+        const stored = localStorage.getItem(APISPORTS_KEY_STORAGE);
+        if (stored) return stored.trim();
+    } catch (e) {}
+    if (typeof window.RS_APISPORTS_KEY === "string" && window.RS_APISPORTS_KEY.trim()) {
+        return window.RS_APISPORTS_KEY.trim();
+    }
+    const input = document.getElementById("apiSportsKey");
+    return input ? String(input.value || "").trim() : "";
+}
+
+function saveApiSportsKey() {
+    const input = document.getElementById("apiSportsKey");
+    const key = input ? String(input.value || "").trim() : "";
+    if (!key) {
+        alert("請先貼上 API Key");
+        return;
+    }
+    try {
+        localStorage.setItem(APISPORTS_KEY_STORAGE, key);
+    } catch (e) {}
+    setApiSportsStatus("Key 已儲存在本機");
+    alert("已儲存（只在本機瀏覽器，不會進 GitHub）");
+}
+
+function initApiSportsKeyUi() {
+    const input = document.getElementById("apiSportsKey");
+    const key = getApiSportsKey();
+    if (input && key) {
+        input.value = key;
+        setApiSportsStatus("已載入本機 Key（可重新貼上後按儲存）");
+    } else {
+        setApiSportsStatus("尚未設定 Key");
+    }
+}
+
+function normalizeTeamToken(name) {
+    return String(name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "");
+}
+
+function teamSearchNames(zhName) {
+    const mapped = TEAM_NAME_EN[zhName];
+    const list = [];
+    if (mapped) list.push(mapped);
+    list.push(String(zhName || ""));
+    return list;
+}
+
+function teamNameMatches(apiName, zhName) {
+    const apiNorm = normalizeTeamToken(apiName);
+    if (!apiNorm) return false;
+    return teamSearchNames(zhName).some((candidate) => {
+        const c = normalizeTeamToken(candidate);
+        if (!c) return false;
+        return apiNorm === c || apiNorm.includes(c) || c.includes(apiNorm);
+    });
+}
+
+function pickSeasonYear(dateStr, leagueLabel) {
+    const y = Number(String(dateStr || "").slice(0, 4));
+    const m = Number(String(dateStr || "").slice(5, 7));
+    if (!y) return new Date().getFullYear();
+    // 歐洲聯賽通常 7 月後算新球季
+    if (leagueLabel === "美足" || leagueLabel === "墨超" || leagueLabel === "聯賽盃") return y;
+    return m >= 7 ? y : y - 1;
+}
+
+function isFixtureFinished(fixture) {
+    const short = String((fixture && fixture.fixture && fixture.fixture.status && fixture.fixture.status.short) || "");
+    return short === "FT" || short === "AET" || short === "PEN";
+}
+
+async function fetchFixturesViaEdge(leagueId, dateStr, season) {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/fetch-football-fixtures`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+            date: dateStr,
+            league: leagueId,
+            season: season
+        })
+    });
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`Edge Function 回應不是 JSON：${text.slice(0, 180)}`);
+    }
+    if (!response.ok) {
+        throw new Error(data.error || `Edge Function HTTP ${response.status}`);
+    }
+    if (data && data.errors && Object.keys(data.errors).length) {
+        throw new Error("API-Football 錯誤：" + JSON.stringify(data.errors));
+    }
+    return data;
+}
+
+async function fetchFixturesDirect(leagueId, dateStr, season) {
+    const key = getApiSportsKey();
+    if (!key) throw new Error("尚未設定本機 API-Football Key");
+    const response = await fetch(
+        `${APISPORTS_BASE}/fixtures?date=${encodeURIComponent(dateStr)}&league=${leagueId}&season=${season}`,
+        {
+            method: "GET",
+            headers: { "x-apisports-key": key }
+        }
+    );
+    if (!response.ok) {
+        const msg = await response.text();
+        throw new Error(`API-Football HTTP ${response.status}: ${msg.slice(0, 180)}`);
+    }
+    const data = await response.json();
+    if (data && data.errors && Object.keys(data.errors).length) {
+        throw new Error("API-Football 錯誤：" + JSON.stringify(data.errors));
+    }
+    return data;
+}
+
+async function fetchFixturesForLeagueDate(leagueLabel, dateStr) {
+    const leagueId = API_FOOTBALL_LEAGUE_IDS[leagueLabel];
+    if (!leagueId) return [];
+    const season = pickSeasonYear(dateStr, leagueLabel);
+
+    // 優先走 Supabase Edge（網站線上可用、Key 在伺服器）
+    // 若尚未部署，再退回本機 Key 直連（方便本機測試）
+    try {
+        const data = await fetchFixturesViaEdge(leagueId, dateStr, season);
+        return Array.isArray(data.response) ? data.response : [];
+    } catch (edgeErr) {
+        console.warn("Edge Function 不可用，改嘗試本機 Key：", edgeErr);
+        if (!getApiSportsKey()) throw edgeErr;
+        const data = await fetchFixturesDirect(leagueId, dateStr, season);
+        return Array.isArray(data.response) ? data.response : [];
+    }
+}
+
+function findFixtureScore(fixtures, homeZh, awayZh) {
+    for (const fx of fixtures) {
+        const homeApi = fx.teams && fx.teams.home && fx.teams.home.name;
+        const awayApi = fx.teams && fx.teams.away && fx.teams.away.name;
+        const homeOk = teamNameMatches(homeApi, homeZh);
+        const awayOk = teamNameMatches(awayApi, awayZh);
+        if (!homeOk || !awayOk) continue;
+        if (!isFixtureFinished(fx)) {
+            return { pending: true, homeApi, awayApi, status: fx.fixture.status.short };
+        }
+        const hs = fx.goals && fx.goals.home;
+        const as = fx.goals && fx.goals.away;
+        if (hs == null || as == null) {
+            return { pending: true, homeApi, awayApi, status: fx.fixture.status.short };
+        }
+        return { homeScore: Number(hs), awayScore: Number(as), homeApi, awayApi };
+    }
+    return null;
+}
+
+async function syncSoccerScoresAndSettle() {
+    if (!cloudRecommendations.length) {
+        await loadCloudRecommendations();
+    }
+
+    const soccerItems = cloudRecommendations.filter((item) => {
+        const sport = String(item.sport || "").toLowerCase();
+        return sport === "soccer" || sport === "football" || API_FOOTBALL_LEAGUE_IDS[item.league];
+    });
+    if (!soccerItems.length) {
+        alert("目前沒有可同步的足球推薦");
+        return;
+    }
+
+    const groups = {};
+    soccerItems.forEach((item) => {
+        const key = getMatchGroupKey(item);
+        if (!groups[key]) groups[key] = item;
+    });
+
+    const fixturesCache = {};
+    let settledCount = 0;
+    let skipped = 0;
+    const logs = [];
+
+    setCloudStatus("同步足球比分中...");
+    setApiSportsStatus("正在查詢完場比分（優先 Edge Function）…");
+
+    try {
+        for (const item of Object.values(groups)) {
+            const leagueId = API_FOOTBALL_LEAGUE_IDS[item.league];
+            if (!leagueId) {
+                skipped += 1;
+                logs.push(`${item.league} ${item.home} vs ${item.away}：尚不支援此聯賽自動抓分`);
+                continue;
+            }
+
+            const cacheKey = item.league + "__" + item.date;
+            if (!fixturesCache[cacheKey]) {
+                fixturesCache[cacheKey] = await fetchFixturesForLeagueDate(item.league, item.date);
+            }
+            const fixtures = fixturesCache[cacheKey];
+            const matched = findFixtureScore(fixtures, item.home, item.away);
+            if (!matched) {
+                skipped += 1;
+                logs.push(`${item.date} ${item.home} vs ${item.away}：找不到對應賽事`);
+                continue;
+            }
+            if (matched.pending) {
+                skipped += 1;
+                logs.push(`${item.home} vs ${item.away}：尚未完場（${matched.status || "LIVE"}）`);
+                continue;
+            }
+
+            const result = await settleRecommendationGroupWithScores(item, matched.homeScore, matched.awayScore, null);
+            settledCount += result.count;
+            logs.push(`${item.home} ${matched.homeScore}-${matched.awayScore} ${item.away} → 結算 ${result.count} 筆，獲利 ${result.totalProfit.toFixed(2)}`);
+        }
+
+        await loadCloudRecommendations();
+        await loadCloudSettledMatches();
+        setCloudStatus(`同步完成：結算 ${settledCount} 筆，略過 ${skipped} 場`);
+        setApiSportsStatus(`上次同步：結算 ${settledCount} 筆／略過 ${skipped} 場`);
+        alert(`同步完成\n結算 ${settledCount} 筆\n略過 ${skipped} 場\n\n` + logs.slice(0, 12).join("\n") + (logs.length > 12 ? `\n…共 ${logs.length} 則` : ""));
+    } catch (err) {
+        console.error(err);
+        setCloudStatus("同步失敗");
+        setApiSportsStatus(err.message || "同步失敗");
+        alert("同步失敗：" + (err.message || "請先部署 Edge Function 並設定 APISPORTS_KEY"));
     }
 }
 
@@ -1860,6 +2206,7 @@ function del(i) {
 setSportFilter("basketball");
 render();
 initBankrollCompare();
+initApiSportsKeyUi();
 loadCloudRecommendations();
 loadCloudSettledMatches();
 

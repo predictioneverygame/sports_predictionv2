@@ -9,6 +9,7 @@
   var BANKROLL = 20;
   var monthlyMetric = 'roi';
   var cumulMetric = 'roi';
+  var cumulRangeMode = 'all'; // all = 一次看完整趨勢；window = 近10場可拖曳
   var chartSport = 'all';
   var leagueChartSport = 'all';
   var monthlySeriesCache = [];
@@ -529,9 +530,9 @@
     if (!canvas) return;
     if (charts.cumulative) charts.cumulative.destroy();
 
+    var showAll = cumulRangeMode !== 'window';
     var WINDOW = 10;
     var n = Math.max(points.length, 1);
-    // 預設看最新 10 筆
     cumulPanStart = Math.max(0, n - WINDOW);
 
     var opts = makeBaseOpts(function (chart, point) {
@@ -548,11 +549,25 @@
       ];
       return { text: lines.join('\n'), color: signedColor(row.matchRoi) };
     });
-    opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
-    if (n > WINDOW) {
-      opts.scales.x.min = cumulPanStart;
-      opts.scales.x.max = cumulPanStart + WINDOW - 1;
+
+    if (showAll) {
+      opts.scales.x.ticks = {
+        maxRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: Math.min(12, Math.max(4, Math.ceil(n / 8)))
+      };
+      delete opts.scales.x.min;
+      delete opts.scales.x.max;
+    } else {
+      opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
+      if (n > WINDOW) {
+        opts.scales.x.min = cumulPanStart;
+        opts.scales.x.max = cumulPanStart + WINDOW - 1;
+      }
     }
+
+    var pointRadius = showAll ? (n > 40 ? 1.5 : (n > 20 ? 2 : 3)) : 3;
+    var pointHoverRadius = showAll ? 4 : 5;
 
     charts.cumulative = new Chart(canvas, {
       type: 'line',
@@ -564,8 +579,8 @@
           backgroundColor: color + '18',
           fill: true,
           tension: 0.15,
-          pointRadius: 3,
-          pointHoverRadius: 5,
+          pointRadius: pointRadius,
+          pointHoverRadius: pointHoverRadius,
           pointBackgroundColor: color,
           pointBorderColor: color,
           borderWidth: 2
@@ -576,6 +591,12 @@
     });
     charts.cumulative.$sportsrsPoints = points;
     charts.cumulative.$sportsrsWindow = WINDOW;
+    charts.cumulative.$sportsrsShowAll = showAll;
+
+    if (panEl) {
+      panEl.classList.toggle('is-overview', showAll);
+      panEl.title = showAll ? '一次顯示全部場次趨勢' : '按住左右拖曳';
+    }
 
     if (panEl && !cumulPanBound) {
       cumulPanBound = true;
@@ -585,7 +606,7 @@
 
       function applyPan() {
         var chart = charts.cumulative;
-        if (!chart) return;
+        if (!chart || chart.$sportsrsShowAll) return;
         var total = (cumulPointsCache && cumulPointsCache.length) || 0;
         var win = chart.$sportsrsWindow || 10;
         if (total <= win) {
@@ -600,7 +621,7 @@
       }
 
       panEl.addEventListener('pointerdown', function (e) {
-        if (!charts.cumulative) return;
+        if (!charts.cumulative || charts.cumulative.$sportsrsShowAll) return;
         dragging = true;
         lastX = e.clientX;
         acc = 0;
@@ -608,13 +629,12 @@
         try { panEl.setPointerCapture(e.pointerId); } catch (err) {}
       });
       panEl.addEventListener('pointermove', function (e) {
-        if (!dragging || !charts.cumulative) return;
+        if (!dragging || !charts.cumulative || charts.cumulative.$sportsrsShowAll) return;
         var dx = e.clientX - lastX;
         lastX = e.clientX;
         acc += dx;
         var stepPx = Math.max(18, (panEl.clientWidth || 240) / 10);
         var changed = false;
-        // 往右拖／滑 → 看更早（圖往右移）；往左 → 看更新
         while (acc <= -stepPx) {
           acc += stepPx;
           cumulPanStart += 1;
@@ -642,6 +662,23 @@
         panEl.classList.remove('is-dragging');
       });
     }
+  }
+
+  function bindCumulRangeToggle() {
+    var box = qs('cumul-range-toggle');
+    if (!box || box.dataset.bound === '1') return;
+    box.dataset.bound = '1';
+    box.addEventListener('click', function (e) {
+      var btn = e.target.closest('.chart-toggle-btn');
+      if (!btn) return;
+      var mode = btn.getAttribute('data-range');
+      if (!mode || mode === cumulRangeMode) return;
+      cumulRangeMode = mode;
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-range') === mode);
+      });
+      renderCumulativeChart();
+    });
   }
 
   function bindMetricToggle(containerId, getMetric, setMetric, redraw) {
@@ -877,19 +914,19 @@
       return '<div class="chart-card">'
         + '<div class="chart-card-head"><h3>' + row.label + '</h3>'
         + '<span class="league-cumul-count">' + row.points.length + '場</span></div>'
-        + '<div class="chart-pan" id="league-cumul-pan-' + i + '" title="按住左右拖曳">'
+        + '<div class="chart-pan is-overview" id="league-cumul-pan-' + i + '" title="一次顯示全部場次趨勢">'
         + '<canvas id="league-cumul-canvas-' + i + '" height="160"></canvas>'
         + '</div></div>';
     }).join('');
 
     var isRoi = leagueCumulMetric === 'roi';
     var color = isRoi ? '#00E5FF' : '#7C3AED';
-    var WINDOW = 10;
 
     leagueCumulCache.forEach(function (row, i) {
       var canvas = qs('league-cumul-canvas-' + i);
       if (!canvas) return;
       var points = row.points;
+      var n = Math.max(points.length, 1);
       var labels = points.map(function (p) { return p.label; });
       var data = points.map(function (p) {
         return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
@@ -907,13 +944,13 @@
         ];
         return { text: lines.join('\n'), color: signedColor(p.matchRoi) };
       });
-      opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
-      var start = Math.max(0, points.length - WINDOW);
-      if (points.length > WINDOW) {
-        opts.scales.x.min = start;
-        opts.scales.x.max = start + WINDOW - 1;
-      }
+      opts.scales.x.ticks = {
+        maxRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: Math.min(10, Math.max(4, Math.ceil(n / 6)))
+      };
 
+      var pointRadius = n > 40 ? 1.5 : (n > 20 ? 2 : 3);
       var chart = new Chart(canvas, {
         type: 'line',
         data: {
@@ -924,8 +961,8 @@
             backgroundColor: color + '18',
             fill: true,
             tension: 0.15,
-            pointRadius: 3,
-            pointHoverRadius: 5,
+            pointRadius: pointRadius,
+            pointHoverRadius: 4,
             pointBackgroundColor: color,
             pointBorderColor: color,
             borderWidth: 2
@@ -935,14 +972,8 @@
         plugins: [zeroLinePlugin()]
       });
       chart.$sportsrsPoints = points;
-      chart.$sportsrsWindow = WINDOW;
-      chart.$sportsrsTotal = points.length;
-      chart.$panStart = start;
+      chart.$sportsrsShowAll = true;
       leagueCumulCharts[i] = chart;
-
-      attachChartPan(qs('league-cumul-pan-' + i), (function (key) {
-        return function () { return leagueCumulCharts[key]; };
-      })(i));
     });
   }
 
@@ -1066,6 +1097,7 @@
     chartDefaults();
     bindMetricToggle('monthly-metric-toggle', function () { return monthlyMetric; }, function (m) { monthlyMetric = m; }, renderMonthlyChart);
     bindMetricToggle('cumul-metric-toggle', function () { return cumulMetric; }, function (m) { cumulMetric = m; }, renderCumulativeChart);
+    bindCumulRangeToggle();
     bindSportToggle();
     rebuildChartDataAndRender();
   }

@@ -1,0 +1,4 @@
+# Supabase CLI config（TOML，不是 JSON）
+
+[functions.fetch-football-fixtures]
+verify_jwt = false

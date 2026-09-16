@@ -1,3 +1,9 @@
 .DS_Store
 Thumbs.db
 *.log
+.env
+.env.*
+compute-secrets.local.js
+api-football-test.json
+node_modules/
+supabase/.temp/
