@@ -1514,11 +1514,11 @@ function normalizeRecommendations(list, idPrefix) {
     var key = [m.date, m.time, m.league, m.sport, m.home.name, m.away.name].join('|');
     if (!grouped[key]) {
       grouped[key] = m;
-      grouped[key].__lines = [String(m.prediction.winner.value || '').replace('大3.0', '大3')];
+      grouped[key].__lines = [String(m.prediction.winner.value || '').replace('大3.0', '大3').replace('大4.0', '大4')];
       grouped[key].id = String(m.id || (idPrefix + '_group_' + idx));
       return;
     }
-    grouped[key].__lines.push(String(m.prediction.winner.value || '').replace('大3.0', '大3'));
+    grouped[key].__lines.push(String(m.prediction.winner.value || '').replace('大3.0', '大3').replace('大4.0', '大4'));
   });
 
   var mergedRegular = Object.values(grouped).map(function (m) {
@@ -1691,7 +1691,7 @@ function getTeamLogo(code, sport) {
 // ════════════════════════════════════════════
 /** 足球大小球：依比分重算顯示用結果（修正舊資料「全場大球」、合併盤口等） */
 function normalizeSoccerOverToken(token) {
-  var t = String(token || '').trim().replace(/^O/i, '大').replace('大3.0', '大3');
+  var t = String(token || '').trim().replace(/^O/i, '大').replace('大3.0', '大3').replace('大4.0', '大4');
   /* 「全場大球」與 大3 同邏輯；剛好 3 球為和局 */
   if (t === '全場大球') return '大3';
   return t;
@@ -1717,6 +1717,16 @@ function soccerOverUnderResultForToken(token, totalGoals) {
   if (line === '大3' || line === '大3.0') {
     if (totalGoals > 3) return 'hit';
     if (totalGoals === 3) return 'push';
+    return 'miss';
+  }
+  if (line === '大4.25') {
+    if (totalGoals >= 5) return 'hit';
+    if (totalGoals === 4) return 'half_miss';
+    return 'miss';
+  }
+  if (line === '大4' || line === '大4.0') {
+    if (totalGoals > 4) return 'hit';
+    if (totalGoals === 4) return 'push';
     return 'miss';
   }
   if (line === '全場進球數2-3' || line === '全場進球2-3') {

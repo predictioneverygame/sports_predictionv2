@@ -81,7 +81,7 @@ async function fetchSettledMatches() {
 }
 
 function normalizeSoccerOverToken(token) {
-  const text = String(token || "").trim().replace(/^O/i, "大").replace("大3.0", "大3");
+  const text = String(token || "").trim().replace(/^O/i, "大").replace("大3.0", "大3").replace("大4.0", "大4");
   if (text === "全場大球") return "大3";
   return text;
 }
@@ -106,6 +106,16 @@ function soccerOverUnderResultForToken(token, totalGoals) {
   if (line === "大3" || line === "大3.0") {
     if (totalGoals > 3) return "hit";
     if (totalGoals === 3) return "push";
+    return "miss";
+  }
+  if (line === "大4.25") {
+    if (totalGoals >= 5) return "hit";
+    if (totalGoals === 4) return "half_miss";
+    return "miss";
+  }
+  if (line === "大4" || line === "大4.0") {
+    if (totalGoals > 4) return "hit";
+    if (totalGoals === 4) return "push";
     return "miss";
   }
   const halfLine = line.match(/^大(\d+)\.5$/);
@@ -448,7 +458,7 @@ async function main() {
   } catch (err) {
     const widget = buildErrorWidget(String(err?.message || err));
     if (config.runsInWidget) {
-      Script.setWidget(widget);
+      Script.setWidget(widget); 
     } else {
       await widget.presentSmall();
     }

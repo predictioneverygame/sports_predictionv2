@@ -483,7 +483,10 @@ const LINE_OPTIONS = {
         { value: "大3.25", label: "大3.25" },
         { value: "大3.75", label: "大3.75" },
         { value: "大3", label: "大3" },
-        { value: "大3.5", label: "大3.5" }
+        { value: "大3.5", label: "大3.5" },
+        { value: "大4", label: "大4" },
+        { value: "大4.25", label: "大4.25" },
+        { value: "大4.5", label: "大4.5" }
     ],
     basketball: buildBasketballLineOptions()
 };
@@ -695,7 +698,7 @@ function buildMatchId(league, date, time, home, away) {
 }
 
 function getPredictionResultByLine(line, homeScore, awayScore, lineSide) {
-    let normalizedLine = String(line || "").trim().replace(/^O/i, "大").replace("大3.0", "大3");
+    let normalizedLine = String(line || "").trim().replace(/^O/i, "大").replace("大3.0", "大3").replace("大4.0", "大4");
     if (normalizedLine === "全場大球") {
         normalizedLine = "大3";
     }
@@ -718,6 +721,16 @@ function getPredictionResultByLine(line, homeScore, awayScore, lineSide) {
     if (normalizedLine === "大3" || normalizedLine === "大3.0") {
         if (total > 3) return "hit";
         if (total === 3) return "push";
+        return "miss";
+    }
+    if (normalizedLine === "大4.25") {
+        if (total >= 5) return "hit";
+        if (total === 4) return "half_miss";
+        return "miss";
+    }
+    if (normalizedLine === "大4" || normalizedLine === "大4.0") {
+        if (total > 4) return "hit";
+        if (total === 4) return "push";
         return "miss";
     }
 
@@ -763,7 +776,7 @@ function getProfitByResult(result, stake, odds) {
 }
 
 function parseStoredLine(rawLine, sport) {
-    const text = String(rawLine || "").trim().replace("大3.0", "大3");
+    const text = String(rawLine || "").trim().replace("大3.0", "大3").replace("大4.0", "大4");
     if (sport !== "basketball") {
         return { lineSide: "home", lineValue: text };
     }
@@ -777,7 +790,7 @@ function parseStoredLine(rawLine, sport) {
 }
 
 function formatLineText(line, lineSide, sport) {
-    const normalizedLine = String(line || "").trim().replace("大3.0", "大3");
+    const normalizedLine = String(line || "").trim().replace("大3.0", "大3").replace("大4.0", "大4");
     if (sport === "basketball") {
         return `${lineSide === "home" ? "主隊" : "客隊"} ${normalizedLine}`;
     }
@@ -1138,7 +1151,7 @@ function renderCloudRecommendations() {
             };
         }
         grouped[key].items.push(item);
-        grouped[key].lines.push(String(item.line || "").replace("大3.0", "大3"));
+        grouped[key].lines.push(String(item.line || "").replace("大3.0", "大3").replace("大4.0", "大4"));
     });
 
     Object.values(grouped).forEach((group) => {
