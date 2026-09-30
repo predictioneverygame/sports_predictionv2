@@ -1,6 +1,7 @@
 // Supabase Edge Function：新增推薦後推播 LINE 官方帳號追蹤者（Broadcast）
 // Secrets（Dashboard → Edge Functions → Secrets）：
 //   LINE_CHANNEL_ID、LINE_CHANNEL_SECRET、LINE_NOTIFY_SECRET
+//   可選 LINE_CHANNEL_ACCESS_TOKEN（Messaging API 頁面核發的長效 Token，較穩定）
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const SITE_URL = "https://sportsrs.com/";
@@ -21,10 +22,13 @@ type RecItem = {
 };
 
 async function getLineAccessToken(): Promise<string> {
+  const preset = (Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") || "").trim();
+  if (preset) return preset;
+
   const clientId = Deno.env.get("LINE_CHANNEL_ID") || "";
   const clientSecret = Deno.env.get("LINE_CHANNEL_SECRET") || "";
   if (!clientId || !clientSecret) {
-    throw new Error("伺服器尚未設定 LINE_CHANNEL_ID / LINE_CHANNEL_SECRET");
+    throw new Error("伺服器尚未設定 LINE_CHANNEL_ID / LINE_CHANNEL_SECRET（或 LINE_CHANNEL_ACCESS_TOKEN）");
   }
 
   const body = new URLSearchParams({
@@ -44,6 +48,20 @@ async function getLineAccessToken(): Promise<string> {
     throw new Error(String(data.error_description || data.error || "取得 LINE token 失敗"));
   }
   return String(data.access_token);
+}
+
+async function verifyLineBot(accessToken: string) {
+  const res = await fetch("https://api.line.me/v2/bot/info", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const hint = res.status === 404
+      ? "找不到 Bot：請確認這是 Messaging API Channel，且已在 LINE Official Account Manager 啟用並連結 Messaging API。"
+      : "";
+    throw new Error(`LINE Bot 驗證失敗 (${res.status})：${String(data.message || data.details || "unknown")}${hint ? " " + hint : ""}`);
+  }
+  return data;
 }
 
 function sportEmoji(sport?: string) {
@@ -93,7 +111,13 @@ async function lineBroadcast(accessToken: string, text: string) {
 
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(String(data.message || data.details || `LINE HTTP ${res.status}`));
+    const msg = String(data.message || data.details || `LINE HTTP ${res.status}`);
+    const hint = res.status === 404
+      ? "（常見原因：官方帳號尚未啟用 Messaging API，或 Channel 未正確連結到 @013dnjqw）"
+      : res.status === 403
+        ? "（常見原因：Broadcast 權限未開通或訊息額度不足）"
+        : "";
+    throw new Error(`${msg}${hint}`);
   }
   return data;
 }
@@ -129,6 +153,7 @@ Deno.serve(async (req) => {
     }
 
     const token = await getLineAccessToken();
+    await verifyLineBot(token);
     const text = buildBroadcastText(items);
     await lineBroadcast(token, text);
 
