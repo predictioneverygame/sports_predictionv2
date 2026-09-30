@@ -92,6 +92,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .divider{border:none;border-top:1px solid var(--border);margin:40px 0}
 /* 首頁主區：與 .container 同寬與左右內距，讓「每日推薦」與下方聯賽區垂直對齊、右欄不貼邊 */
 .home-main{max-width:1200px;margin:0 auto;padding:0 24px 40px;box-sizing:border-box}
+.daily-recs-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+.daily-recs-head .section-title{margin-bottom:0}
+.daily-recs-event-wrap .date-body{display:block;padding:0 12px 12px}
 /* DATE ACCORDION */
 .date-list{display:flex;flex-direction:column;gap:12px}
 /* 每日推薦列表內：推薦／已結算 分區標題（樣式對齊 .section-title） */
@@ -844,8 +847,12 @@ footer a{color:var(--accent);text-decoration:none}
           <div class="profit-sub" id="profit-sub-text-mobile-2526">已結算 0 場</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-        <div class="section-title" id="daily-recs-title" style="margin-bottom:0">每日推薦</div>
+      <div class="daily-recs-head">
+        <div class="section-title" id="daily-recs-title">每日推薦</div>
+        <div class="chart-toggle" id="daily-recs-group-toggle" role="group" aria-label="每日推薦分組方式">
+          <button type="button" class="chart-toggle-btn active" data-group="time">時間</button>
+          <button type="button" class="chart-toggle-btn" data-group="event">賽事</button>
+        </div>
       </div>
       <div id="daily-recs-skeleton" aria-hidden="true">
         <div class="skeleton sk-row"></div>
@@ -2920,20 +2927,51 @@ function localDateKey(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-function renderDateList() {
-  const ongoing = MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
-  const finals = MATCHES.filter(function (m) { return m.status === 'final' && !isWorldCupMatch(m); });
+var DAILY_RECS_GROUP_KEY = 'rs_daily_recs_group';
+var dailyRecsGroupMode = 'time';
 
-  const grouped = groupByDate(ongoing);
-  const dates = Object.keys(grouped).sort(function (a, b) { return a.localeCompare(b); });
-  const container = document.getElementById('date-list');
-  container.innerHTML = '';
+function getDailyRecsGroupMode() {
+  try {
+    var stored = localStorage.getItem(DAILY_RECS_GROUP_KEY);
+    if (stored === 'time' || stored === 'event') return stored;
+  } catch (e) {}
+  return dailyRecsGroupMode;
+}
 
-  /* 最上方：今天以前未結算的日期 + 最近一個即將到來的日期；更後面的收進「早盤預測」 */
-  const todayKey = localDateKey(new Date());
-  const nearestUpcoming = dates.filter(function (d) { return d >= todayKey; })[0];
-  const topDates = dates.filter(function (d) { return d < todayKey || d === nearestUpcoming; });
-  const earlyDates = dates.filter(function (d) { return topDates.indexOf(d) === -1; });
+function setDailyRecsGroupMode(mode) {
+  if (mode !== 'time' && mode !== 'event') return;
+  dailyRecsGroupMode = mode;
+  try { localStorage.setItem(DAILY_RECS_GROUP_KEY, mode); } catch (e) {}
+  var box = document.getElementById('daily-recs-group-toggle');
+  if (box) {
+    box.querySelectorAll('.chart-toggle-btn').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-group') === mode);
+    });
+  }
+  renderDateList();
+}
+
+function bindDailyRecsGroupToggle() {
+  var box = document.getElementById('daily-recs-group-toggle');
+  if (!box || box.dataset.bound === '1') return;
+  box.dataset.bound = '1';
+  box.querySelectorAll('.chart-toggle-btn').forEach(function (btn) {
+    btn.classList.toggle('active', btn.getAttribute('data-group') === dailyRecsGroupMode);
+  });
+  box.addEventListener('click', function (e) {
+    var btn = e.target.closest('.chart-toggle-btn');
+    if (!btn) return;
+    var mode = btn.getAttribute('data-group');
+    if (!mode || mode === dailyRecsGroupMode) return;
+    setDailyRecsGroupMode(mode);
+  });
+}
+
+function renderOngoingByTime(container, grouped, dates) {
+  var todayKey = localDateKey(new Date());
+  var nearestUpcoming = dates.filter(function (d) { return d >= todayKey; })[0];
+  var topDates = dates.filter(function (d) { return d < todayKey || d === nearestUpcoming; });
+  var earlyDates = dates.filter(function (d) { return topDates.indexOf(d) === -1; });
 
   topDates.slice().reverse().forEach(function (date) {
     container.appendChild(createRecommendationDateRow(date, grouped[date]));
@@ -2963,6 +3001,47 @@ function renderDateList() {
       earlyNested.appendChild(createRecommendationDateRow(date, grouped[date]));
     });
     container.appendChild(earlyRow);
+  }
+}
+
+function renderOngoingByEvent(container, ongoing) {
+  if (!ongoing.length) return;
+  var bb = ongoing.filter(function (m) { return m.sport === 'basketball'; }).length;
+  var sc = ongoing.filter(isSoccerMatch).length;
+  var row = document.createElement('div');
+  row.className = 'date-row open daily-recs-event-wrap';
+  row.innerHTML = `
+    <div class="date-header">
+      <div class="date-left">
+        <span class="date-pill">賽事</span>
+        <div>
+          <div class="date-title">依運動與聯賽瀏覽</div>
+          <div class="date-sub">共 ${ongoing.length} 場分析</div>
+        </div>
+      </div>
+      <div class="date-meta">
+        ${bb > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bb + '</span>' : ''}
+        ${sc > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + sc + '</span>' : ''}
+      </div>
+    </div>
+    <div class="date-body">${buildSportGroupedBodyHtml(ongoing)}</div>
+  `;
+  container.appendChild(row);
+}
+
+function renderDateList() {
+  const ongoing = MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
+  const finals = MATCHES.filter(function (m) { return m.status === 'final' && !isWorldCupMatch(m); });
+
+  const grouped = groupByDate(ongoing);
+  const dates = Object.keys(grouped).sort(function (a, b) { return a.localeCompare(b); });
+  const container = document.getElementById('date-list');
+  container.innerHTML = '';
+
+  if (dailyRecsGroupMode === 'event') {
+    renderOngoingByEvent(container, ongoing);
+  } else {
+    renderOngoingByTime(container, grouped, dates);
   }
 
   if (finals.length > 0 || MATCHES.some(isWorldCupMatch)) {
@@ -3859,6 +3938,8 @@ async function initApp() {
     console.error(err);
   }
 
+  dailyRecsGroupMode = getDailyRecsGroupMode();
+  bindDailyRecsGroupToggle();
   renderDateList();
   renderProfitSummary();
   renderPredictionStats();
