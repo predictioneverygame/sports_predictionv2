@@ -1,16 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<script type="text/javascript">
-(function(l) {
-  if (l.search.length > 1 && l.search.charAt(1) === '/') {
-    var decoded = l.search.slice(1).split('&').map(function(s) {
-      return s.replace(/~and~/g, '&');
-    }).join('?').replace(/^\//, '');
-    window.history.replaceState(null, null, l.pathname + decoded + l.hash);
-  }
-}(window.location));
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SportsRS — Professional Sports Analytics</title>
@@ -60,7 +50,6 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Microsoft JhengHei","Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 32px;height:64px;gap:8px}
-.nav-links a.active{color:var(--accent3);font-weight:800}
 .nav-logo{color:var(--accent);font-size:1.32rem;font-weight:900;letter-spacing:2px;text-decoration:none;margin-right:auto;cursor:pointer}
 .nav-logo span{color:var(--text)}
 .nav-links{display:flex;list-style:none;gap:4px}
@@ -159,7 +148,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .nest-league-body .match-card:last-child{margin-bottom:0}
 /* MATCH CARD - Main prediction card */
 .match-card{background:var(--bg2);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
-.match-card[data-match-id]{cursor:pointer}
 .match-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
 .match-league-badge{display:inline-flex;align-items:center;gap:5px;font-size:.75rem;font-weight:700;padding:3px 12px;border-radius:20px}
 .mb-b{background:rgba(0,212,255,.15);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
@@ -708,13 +696,13 @@ footer a{color:var(--accent);text-decoration:none}
 </head>
 <body>
 <nav id="site-nav">
-  <a class="nav-logo" href="/">
+  <a class="nav-logo" onclick="showPage('home')">
     <span class="brand-mark" aria-hidden="true"></span>
     <span>Sports<span class="brand-rs">RS</span></span>
   </a>
   <ul class="nav-links">
-    <li><a href="/" data-route="/">首頁</a></li>
-    <li><a href="/about" data-route="/about">關於</a></li>
+    <li><a onclick="showPage('home')">首頁</a></li>
+    <li><a onclick="showPage('about')">關於</a></li>
   </ul>
   <a class="nav-cta" href="https://www.instagram.com/rs_sports_analytics" target="_blank" rel="noopener noreferrer" title="Instagram">IG</a>
   <a class="nav-cta" href="mailto:predictioneverygame@gmail.com">聯絡</a>
@@ -729,7 +717,7 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="hero-sub">Professional Sports Analytics</div>
     <p class="hero-desc">Data-driven predictions.<br>Not gambling.</p>
     <div class="hero-cta-row">
-      <a class="btn-primary" href="/picks">查看今日推薦</a>
+      <a class="btn-primary" href="#daily-recs-title" onclick="(function(){ var el=document.getElementById('daily-recs-title'); if(!el) return false; var y=el.getBoundingClientRect().top+window.scrollY-80; window.scrollTo({top:y,behavior:'smooth'}); return false; })(); return false;">查看今日推薦</a>
     </div>
     <div class="hero-stats">
       <div class="stat"><div class="num" id="hero-stat-rec-count">0</div><div class="lbl">推薦</div></div>
@@ -810,7 +798,7 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
   </div>
   <div class="charts-more-row">
-    <a href="/performance" class="charts-more-link">更多</a>
+    <a href="#" class="charts-more-link" onclick="showPage('league-charts');return false;">更多</a>
   </div>
 </section>
 
@@ -956,16 +944,9 @@ footer a{color:var(--accent);text-decoration:none}
       </div>
 </div>
 
-<div id="page-match" class="page">
-<div class="container">
-  <div class="back-btn" onclick="SportsRSRouter.navigateBack()">← 返回</div>
-  <div id="match-content"></div>
-</div>
-</div>
-
 <div id="page-league" class="page">
 <div class="container">
-  <div class="back-btn" onclick="SportsRSRouter.navigateBack()">← 返回</div>
+  <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
   <div id="league-header" class="section-title"></div>
   <div id="league-content"></div>
 </div>
@@ -973,7 +954,7 @@ footer a{color:var(--accent);text-decoration:none}
 
 <div id="page-league-charts" class="page">
   <div class="league-charts-page">
-    <div class="back-btn" onclick="SportsRSRouter.navigateBack()">← 返回</div>
+    <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
     <div class="league-charts-head">
       <h1>各聯賽績效 · 2026–27</h1>
       <div class="chart-toggle charts-sport-toggle" id="league-charts-sport-toggle" role="group" aria-label="聯賽圖表運動篩選">
@@ -1015,7 +996,7 @@ footer a{color:var(--accent);text-decoration:none}
 
 <div id="page-worldcup" class="page">
 <div class="container">
-  <div class="back-btn" onclick="SportsRSRouter.navigateBack()">← 返回</div>
+  <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
   <div class="wc-page-head">
     <h1>⚽ 世足專區</h1>
     <p id="wc-page-subtitle">2026 世界盃 · 小組賽與淘汰賽賽程與預測（台灣時間 UTC+8）</p>
@@ -1062,7 +1043,7 @@ footer a{color:var(--accent);text-decoration:none}
 
 <div id="page-about" class="page">
 <div class="container">
-  <div class="back-btn" onclick="SportsRSRouter.navigateBack()">← 返回</div>
+  <div class="back-btn" onclick="showPage('home')">← 返回首頁</div>
   <div class="about-wrap">
     <div class="about-hero">
       <div class="about-title">關於 RS 運彩</div>
@@ -1099,15 +1080,14 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 
 <footer>
-  <p>© 2026 <a href="/">SportsRS</a> · Professional Sports Analytics · Data-driven. Not gambling.</p>
+  <p>© 2026 <a href="#" onclick="showPage('home');return false;">SportsRS</a> · Professional Sports Analytics · Data-driven. Not gambling.</p>
   <p style="margin-top:10px">聯絡：<a href="mailto:predictioneverygame@gmail.com">predictioneverygame@gmail.com</a></p>
 </footer>
 
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20261001a"></script>
-<script src="assets/sportsrs-router.js?v=20261001a"></script>
+<script src="assets/sportsrs-ui.js?v=20260930a"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -2107,7 +2087,7 @@ function renderMatchCard(m) {
   `).join('');
 
   return `
-    <div class="match-card" data-match-id="${escapeHtml(String(m.id || ''))}">
+    <div class="match-card">
       <div class="match-header">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           ${m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : ''}
@@ -3056,8 +3036,7 @@ function sortMatchesForLeague(league) {
   );
 }
 
-function showLeague(league, opts) {
-  opts = opts || {};
+function showLeague(league) {
   const matches = sortMatchesForLeague(league).filter(function (m) { return !isWorldCupMatch(m); });
   const leagueNames = {
     'BCL':'🌏 BCL Asia-East', 'SBL':'🏀 SBL 超級籃球聯賽',
@@ -3073,31 +3052,7 @@ function showLeague(league, opts) {
   } else {
     content.innerHTML = matches.map(m => renderMatchCard(m)).join('');
   }
-  _applyPage('league');
-  if (!opts.fromRouter && window.SportsRSRouter && typeof window.SportsRSRouter.syncUrl === 'function') {
-    window.SportsRSRouter.syncUrl(window.SportsRSRouter.leagueToPath(league));
-  }
-}
-
-function showMatch(matchId, opts) {
-  opts = opts || {};
-  var id = String(matchId || '');
-  var m = MATCHES.find(function (x) { return String(x.id) === id; });
-  var content = document.getElementById('match-content');
-  if (!content) return;
-  if (!m) {
-    content.innerHTML = '<div class="empty-state"><div class="big">🔍</div><p>找不到這場比賽，可能尚未載入或 ID 不正確。</p></div>';
-  } else {
-    content.innerHTML = renderMatchCard(m);
-    var title = 'SportsRS — ' + (m.home && m.home.name ? m.home.name : '') + ' vs ' + (m.away && m.away.name ? m.away.name : '');
-    document.title = title;
-    var ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', title);
-  }
-  _applyPage('match');
-  if (!opts.fromRouter && window.SportsRSRouter && typeof window.SportsRSRouter.syncUrl === 'function') {
-    window.SportsRSRouter.syncUrl('/match/' + encodeURIComponent(id));
-  }
+  showPage('league');
 }
 
 // ════════════════════════════════════════════
@@ -3810,7 +3765,7 @@ function renderWorldCupPage() {
 // ════════════════════════════════════════════
 // PAGE NAV
 // ════════════════════════════════════════════
-function _applyPage(name) {
+function showPage(name) {
   document.querySelectorAll('.page').forEach(function (p) {
     p.classList.remove('active');
   });
@@ -3824,28 +3779,34 @@ function _applyPage(name) {
     }
     return;
   }
-  document.getElementById('page-home').classList.add('active');
-  window.scrollTo(0, 0);
-}
-
-function showPage(name) {
-  if (window.SportsRSRouter && typeof window.SportsRSRouter.isApplying === 'function' && window.SportsRSRouter.isApplying()) {
-    _applyPage(name);
-    return;
-  }
   if (name === 'basketball') {
-    if (window.SportsRSRouter) window.SportsRSRouter.navigate('/basketball');
+    var homeB = document.getElementById('page-home');
+    homeB.classList.add('active');
+    var secBb = document.getElementById('section-basketball');
+    if (secBb) {
+      setTimeout(function () {
+        secBb.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    } else {
+      window.scrollTo(0, 0);
+    }
     return;
   }
   if (name === 'football') {
-    if (window.SportsRSRouter) window.SportsRSRouter.navigate('/football');
+    var home = document.getElementById('page-home');
+    home.classList.add('active');
+    var target = document.getElementById('section-football');
+    if (target) {
+      setTimeout(function () {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    } else {
+      window.scrollTo(0, 0);
+    }
     return;
   }
-  if (window.SportsRSRouter && typeof window.SportsRSRouter.pageNameToPath === 'function') {
-    window.SportsRSRouter.navigate(window.SportsRSRouter.pageNameToPath(name));
-    return;
-  }
-  _applyPage(name);
+  document.getElementById('page-home').classList.add('active');
+  window.scrollTo(0, 0);
 }
 
 function updateHeroRecCount() {
@@ -3855,9 +3816,6 @@ function updateHeroRecCount() {
 
 // INIT
 async function initApp() {
-  if (window.SportsRSRouter && typeof window.SportsRSRouter.init === 'function') {
-    window.SportsRSRouter.init();
-  }
   replaceMatchesBase([]);
 
   try {
@@ -3883,9 +3841,6 @@ async function initApp() {
   renderWorldCupPage();
   if (window.SportsRSUI && typeof window.SportsRSUI.refresh === 'function') {
     window.SportsRSUI.refresh();
-  }
-  if (window.SportsRSRouter && typeof window.SportsRSRouter.onDataReady === 'function') {
-    window.SportsRSRouter.onDataReady();
   }
 }
 
