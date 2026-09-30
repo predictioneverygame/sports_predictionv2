@@ -729,13 +729,16 @@
     return ordered;
   }
 
-  /** 足球正規聯賽；盃賽／單場賽事（歐超盃、聯賽盃、明星賽等）不納入各聯賽績效圖 */
-  var SOCCER_LEAGUE_KEYS = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲'];
+  /** 足球正規聯賽＋歐冠、歐國聯；其餘盃賽／單場賽事（歐超盃、聯賽盃、明星賽等）不納入各聯賽績效圖 */
+  var SOCCER_LEAGUE_KEYS = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐國聯賽A'];
   var BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+  /* 歐國聯經「其他賽事」手動輸入，B／C 級等其他分級也一併納入 */
+  var NATIONS_LEAGUE_PATTERN = /^歐國聯/;
 
   function isSoccerCupOrOneOffLeague(lg) {
     if (SOCCER_LEAGUE_KEYS.indexOf(lg) !== -1) return false;
     if (BASKETBALL_LEAGUE_KEYS.indexOf(lg) !== -1) return false;
+    if (NATIONS_LEAGUE_PATTERN.test(lg)) return false;
     if (typeof PRED_CUP_LEAGUES !== 'undefined' && PRED_CUP_LEAGUES.indexOf(lg) !== -1) return true;
     if (/盃|明星/.test(lg)) return true;
     // 足球「其他」單場／盃賽（非正規聯賽）
@@ -1153,10 +1156,45 @@
     initLucide();
   }
 
+  var CLICKABLE_DIV_SELECTOR = '[onclick]:not(a):not(button):not(input):not(select):not(textarea)'
+    + ':not(.wc-modal-overlay):not(.wc-modal-box)';
+
+  function enhanceClickableDivs(root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll(CLICKABLE_DIV_SELECTOR).forEach(function (el) {
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    });
+  }
+
+  /** 讓用 div + onclick 做的按鈕也能用 Tab 聚焦、Enter／空白鍵觸發 */
+  function setupKeyboardClickables() {
+    enhanceClickableDivs(document);
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      var el = e.target;
+      if (!el || !el.matches || el.getAttribute('role') !== 'button') return;
+      if (!el.matches(CLICKABLE_DIV_SELECTOR)) return;
+      e.preventDefault();
+      el.click();
+    });
+    if (!('MutationObserver' in window)) return;
+    var pending = false;
+    new MutationObserver(function () {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(function () {
+        pending = false;
+        enhanceClickableDivs(document);
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+
   function boot() {
     setupNavBlur();
     setupBackToTop();
     setupReveal();
+    setupKeyboardClickables();
     initLucide();
   }
 

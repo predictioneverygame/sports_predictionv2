@@ -366,6 +366,11 @@ nav.scrolled {
   text-decoration: underline;
   outline: none;
 }
+[role="button"][onclick]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
 .league-charts-page {
   max-width: 1200px;
   margin: 0 auto;

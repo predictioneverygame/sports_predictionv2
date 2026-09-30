@@ -31,8 +31,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
-<script src="https://unpkg.com/lucide@0.469.0" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous" defer></script>
 <style>
 :root{
   --bg:#ffffff;
@@ -115,6 +114,10 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .season-archive-nested{padding:0 12px 14px;display:none;flex-direction:column;gap:10px}
 .date-row.season-archive.open .season-archive-nested{display:flex}
 .date-row.season-archive .season-archive-nested .date-row{border-radius:10px}
+.date-row.season-2526 .date-header{background:rgba(20,184,166,.07)}
+.date-row.season-2526 .date-header:hover{background:rgba(20,184,166,.11)}
+.date-row.season-2526.open{border-color:rgba(20,184,166,.38)}
+.date-row.season-2526 .date-pill{background:linear-gradient(135deg,#14b8a6,#0e7490)}
 .date-row.wc-settled-entry .date-header{background:rgba(234,88,12,.08);cursor:pointer}
 .date-row.wc-settled-entry .date-header:hover{background:rgba(234,88,12,.12)}
 .date-row.wc-settled-entry .date-pill{background:linear-gradient(135deg,#f59e0b,#dc2626);font-size:.72rem;padding:4px 10px}
@@ -689,7 +692,7 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20260917a">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20260926a">
 </head>
 <body>
 <nav id="site-nav">
@@ -1084,7 +1087,7 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20260917b"></script>
+<script src="assets/sportsrs-ui.js?v=20260930a"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -1691,6 +1694,15 @@ function getTeamLogo(code, sport) {
 // ════════════════════════════════════════════
 // RENDER HELPERS
 // ════════════════════════════════════════════
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /** 足球大小球：依比分重算顯示用結果（修正舊資料「全場大球」、合併盤口等） */
 function normalizeSoccerOverToken(token) {
   var t = String(token || '').trim().replace(/^O/i, '大').replace('大3.0', '大3').replace('大4.0', '大4');
@@ -1921,7 +1933,7 @@ function renderOpeningScorePredictionHtml(m, opening, scores) {
     var valueClass = result !== 'pending' ? result : 'pending';
     return (
       '<div class="pred-combined-row">' +
-        '<span class="pred-combined-text ' + valueClass + '">' + label + ':' + value + '</span>' +
+        '<span class="pred-combined-text ' + valueClass + '">' + label + ':' + escapeHtml(value) + '</span>' +
         (showTags && result !== 'pending' ? predictionResultTagHtml(result) : '') +
       '</div>'
     );
@@ -1947,9 +1959,9 @@ function buildMatchPredictionItemsHtml(m) {
     var valueClass = m.status === 'final' ? displayResult : 'pending';
     return (
       '<div class="pred-item">' +
-        '<div class="pred-label">' + p.label + '</div>' +
+        '<div class="pred-label">' + escapeHtml(p.label) + '</div>' +
         '<div class="pred-value ' + valueClass + '">' +
-          p.value +
+          escapeHtml(p.value) +
           (m.status === 'final' ? predictionResultTagHtml(displayResult) : '') +
         '</div>' +
       '</div>'
@@ -2063,14 +2075,14 @@ function renderMatchCard(m) {
   const statusMap = { final:'已結束', live:'進行中', preview:'即將開始' };
   const statusClass = { final:'match-status-fin', live:'match-status-live', preview:'match-status-pre' };
   const sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
-  const sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
+  const sportLabel = (m.sport === 'basketball' ? '🏀 ' : '⚽ ') + escapeHtml(m.league);
 
   const predHTML = m.prediction ? buildMatchPredictionItemsHtml(m) : '';
 
   const mvpHTML = (m.mvps || []).map(mv => `
     <div class="mvp-card">
-      <div class="mvp-icon">${mv.icon}</div>
-      <div><div class="mvp-name">${mv.name}</div><div class="mvp-stat">${mv.stats}</div></div>
+      <div class="mvp-icon">${escapeHtml(mv.icon)}</div>
+      <div><div class="mvp-name">${escapeHtml(mv.name)}</div><div class="mvp-stat">${escapeHtml(mv.stats)}</div></div>
     </div>
   `).join('');
 
@@ -2080,15 +2092,15 @@ function renderMatchCard(m) {
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           ${m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : ''}
           <span class="match-league-badge ${sportClass}">${sportLabel}</span>
-                      <span class="match-date">📅 ${m.date.slice(5).replace('-','/')}</span>
-          <span class="match-time">🕖 ${m.time}</span>
+                      <span class="match-date">📅 ${escapeHtml(m.date.slice(5).replace('-','/'))}</span>
+          <span class="match-time">🕖 ${escapeHtml(m.time)}</span>
         </div>
         <span class="${statusClass[m.status]}">${statusMap[m.status]}</span>
       </div>
       <div class="scoreboard">
         <div class="team-block">
           <div class="team-logo">${getTeamLogo(m.home.logo, m.sport)}</div>
-          <div class="team-name">${m.home.name}</div>
+          <div class="team-name">${escapeHtml(m.home.name)}</div>
           <div class="team-short">主場</div>
           <div class="team-score ${m.status==='preview'?'score-pre':isDraw?'score-draw':isHome?'score-win':'score-lose'}">
             ${m.status==='preview'?'—':m.home.score}
@@ -2099,7 +2111,7 @@ function renderMatchCard(m) {
         </div>
         <div class="team-block">
           <div class="team-logo">${getTeamLogo(m.away.logo, m.sport)}</div>
-          <div class="team-name">${m.away.name}</div>
+          <div class="team-name">${escapeHtml(m.away.name)}</div>
           <div class="team-short">客場</div>
           <div class="team-score ${m.status==='preview'?'score-pre':isDraw?'score-draw':!isHome?'score-win':'score-lose'}">
             ${m.status==='preview'?'—':m.away.score}
@@ -2111,7 +2123,7 @@ function renderMatchCard(m) {
         <div class="pred-items">${predHTML}</div>
       </div>` : ''}
       ${m.mvps && m.status==='final' ? `<div class="mvp-row">${mvpHTML}</div>` : ''}
-      ${m.summary && !String(m.summary).trim().startsWith('{') ? `<div class="analysis-box"><p>${m.summary}</p></div>` : ''}
+      ${m.summary && !String(m.summary).trim().startsWith('{') ? `<div class="analysis-box"><p>${escapeHtml(m.summary)}</p></div>` : ''}
     </div>
   `;
 }
@@ -2848,7 +2860,7 @@ function createWorldCupSettledEntry() {
       <div class="date-left">
         <span class="date-pill">⚽</span>
         <div>
-          <div class="date-title">世足專區</div>
+          <div class="date-title">2026世足</div>
           <div class="date-sub">小組賽與淘汰賽${settledCount > 0 ? ' · 已結算 ' + settledCount + ' 場' : ''}</div>
         </div>
       </div>
@@ -2860,43 +2872,83 @@ function createWorldCupSettledEntry() {
   return row;
 }
 
+function createRecommendationDateRow(date, dayMatches) {
+  const matches = sortMatchesByTimeAsc(dayMatches);
+  const fd = formatDate(date);
+  const bCnt = matches.filter(function (m) { return m.sport === 'basketball'; }).length;
+  const fCnt = matches.filter(function (m) { return m.sport === 'soccer' || m.sport === 'football'; }).length;
+  const row = document.createElement('div');
+  row.className = 'date-row';
+  row.innerHTML = `
+    <div class="date-header" onclick="this.parentElement.classList.toggle('open')">
+      <div class="date-left">
+        <span class="date-pill">${fd.pill}</span>
+        <div>
+          <div class="date-title">${fd.full} 賽事推薦</div>
+          <div class="date-sub">共 ${matches.length} 場分析</div>
+        </div>
+      </div>
+      <div class="date-meta">
+        ${bCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bCnt + '</span>' : ''}
+        ${fCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + fCnt + '</span>' : ''}
+        <span class="chevron">▼</span>
+      </div>
+    </div>
+    <div class="date-body">
+      ${buildSportGroupedBodyHtml(matches)}
+    </div>
+  `;
+  return row;
+}
+
+function localDateKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 function renderDateList() {
   const ongoing = MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
   const finals = MATCHES.filter(function (m) { return m.status === 'final' && !isWorldCupMatch(m); });
 
   const grouped = groupByDate(ongoing);
-  const dates = Object.keys(grouped).sort(function (a, b) { return b.localeCompare(a); });
+  const dates = Object.keys(grouped).sort(function (a, b) { return a.localeCompare(b); });
   const container = document.getElementById('date-list');
   container.innerHTML = '';
 
-  dates.forEach(function (date, idx) {
-    const matches = sortMatchesByTimeAsc(grouped[date]);
-    const fd = formatDate(date);
-    const bCnt = matches.filter(function (m) { return m.sport === 'basketball'; }).length;
-    const fCnt = matches.filter(function (m) { return m.sport === 'soccer' || m.sport === 'football'; }).length;
-    const row = document.createElement('div');
-    row.className = 'date-row';
-    row.innerHTML = `
+  /* 最上方：今天以前未結算的日期 + 最近一個即將到來的日期；更後面的收進「早盤預測」 */
+  const todayKey = localDateKey(new Date());
+  const nearestUpcoming = dates.filter(function (d) { return d >= todayKey; })[0];
+  const topDates = dates.filter(function (d) { return d < todayKey || d === nearestUpcoming; });
+  const earlyDates = dates.filter(function (d) { return topDates.indexOf(d) === -1; });
+
+  topDates.slice().reverse().forEach(function (date) {
+    container.appendChild(createRecommendationDateRow(date, grouped[date]));
+  });
+
+  if (earlyDates.length > 0) {
+    var earlyCount = earlyDates.reduce(function (s, d) { return s + grouped[d].length; }, 0);
+    var earlyRow = document.createElement('div');
+    earlyRow.className = 'date-row season-archive early-picks';
+    earlyRow.innerHTML = `
       <div class="date-header" onclick="this.parentElement.classList.toggle('open')">
         <div class="date-left">
-          <span class="date-pill">${fd.pill}</span>
+          <span class="date-pill">早盤</span>
           <div>
-            <div class="date-title">${fd.full} 賽事推薦</div>
-            <div class="date-sub">共 ${matches.length} 場分析</div>
+            <div class="date-title">早盤預測</div>
+            <div class="date-sub">${formatDate(earlyDates[0]).pill}–${formatDate(earlyDates[earlyDates.length - 1]).pill} · 共 ${earlyCount} 場分析</div>
           </div>
         </div>
         <div class="date-meta">
-          ${bCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bCnt + '</span>' : ''}
-          ${fCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + fCnt + '</span>' : ''}
           <span class="chevron">▼</span>
         </div>
       </div>
-      <div class="date-body">
-        ${buildSportGroupedBodyHtml(matches)}
-      </div>
+      <div class="date-body season-archive-nested"></div>
     `;
-    container.appendChild(row);
-  });
+    var earlyNested = earlyRow.querySelector('.season-archive-nested');
+    earlyDates.forEach(function (date) {
+      earlyNested.appendChild(createRecommendationDateRow(date, grouped[date]));
+    });
+    container.appendChild(earlyRow);
+  }
 
   if (finals.length > 0 || MATCHES.some(isWorldCupMatch)) {
     const finals2526 = finals.filter(function (m) { return String(m.date) < SEASON_SPLIT_DATE; });
@@ -2944,7 +2996,7 @@ function renderDateList() {
 
     if (finalDates2526.length > 0) {
       var archiveRow = document.createElement('div');
-      archiveRow.className = 'date-row season-archive';
+      archiveRow.className = 'date-row season-archive season-2526';
       archiveRow.innerHTML = `
         <div class="date-header" onclick="this.parentElement.classList.toggle('open')">
           <div class="date-left">
