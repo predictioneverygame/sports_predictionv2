@@ -330,7 +330,12 @@ input[type="text"] {
   <input id="lineNotifyOnAdd" type="checkbox">
   匯入成功後推播 LINE 追蹤者（官方帳號 Broadcast）
 </label>
-<div class="hint" id="lineNotifyStatus">需在 Supabase Secrets 設定 LINE 憑證，且本機需有 compute-secrets.local.js</div>
+<div class="field-label">LINE 推播授權碼（與 Supabase Secrets 的 LINE_NOTIFY_SECRET 相同）</div>
+<input id="lineNotifySecret" type="password" placeholder="貼上後按儲存，僅存在此瀏覽器" autocomplete="off">
+<div class="action-row">
+  <button class="smallBtn" type="button" onclick="saveLineNotifySecret()">儲存推播授權碼</button>
+</div>
+<div class="hint" id="lineNotifyStatus">本機 compute-secrets.local.js 或上方授權碼擇一設定即可</div>
 
 <button onclick="addRecommendation()">匯入到推薦網站</button>
 
@@ -1454,6 +1459,7 @@ async function settleCloudRecommendation(id) {
 
 // ---------- API-Football 自動抓分 ----------
 const APISPORTS_KEY_STORAGE = "rs_apisports_key";
+const LINE_NOTIFY_SECRET_STORAGE = "rs_line_notify_secret";
 const APISPORTS_BASE = "https://v3.football.api-sports.io";
 
 const API_FOOTBALL_LEAGUE_IDS = {
@@ -1552,13 +1558,43 @@ function getLineNotifySecret() {
     if (typeof window.RS_LINE_NOTIFY_SECRET === "string" && window.RS_LINE_NOTIFY_SECRET.trim()) {
         return window.RS_LINE_NOTIFY_SECRET.trim();
     }
-    return "";
+    try {
+        const stored = localStorage.getItem(LINE_NOTIFY_SECRET_STORAGE);
+        if (stored) return stored.trim();
+    } catch (e) {}
+    const input = document.getElementById("lineNotifySecret");
+    return input ? String(input.value || "").trim() : "";
+}
+
+function saveLineNotifySecret() {
+    const input = document.getElementById("lineNotifySecret");
+    const secret = input ? String(input.value || "").trim() : "";
+    if (!secret) {
+        alert("請先貼上 LINE 推播授權碼");
+        return;
+    }
+    try {
+        localStorage.setItem(LINE_NOTIFY_SECRET_STORAGE, secret);
+    } catch (e) {
+        alert("無法寫入本機儲存");
+        return;
+    }
+    setLineNotifyStatus("已儲存推播授權碼（僅此瀏覽器）");
+}
+
+function initLineNotifySecretUi() {
+    const input = document.getElementById("lineNotifySecret");
+    const secret = getLineNotifySecret();
+    if (input && secret && !input.value) input.value = secret;
+    if (secret) {
+        setLineNotifyStatus("已載入推播授權碼，可勾選匯入後推播");
+    }
 }
 
 async function notifyLineFollowers(items) {
     const secret = getLineNotifySecret();
     if (!secret) {
-        throw new Error("缺少 RS_LINE_NOTIFY_SECRET（請在 compute-secrets.local.js 設定，並同步到 Supabase Secrets 的 LINE_NOTIFY_SECRET）");
+        throw new Error("缺少推播授權碼：請在上方貼上 LINE_NOTIFY_SECRET 並按「儲存推播授權碼」，或在本機使用 compute-secrets.local.js");
     }
     setLineNotifyStatus("正在推播 LINE…");
     const response = await fetch(`${SUPABASE_URL}/functions/v1/notify-line-recommendation`, {
@@ -2305,6 +2341,7 @@ setSportFilter("basketball");
 render();
 initBankrollCompare();
 initApiSportsKeyUi();
+initLineNotifySecretUi();
 loadCloudRecommendations();
 loadCloudSettledMatches();
 
