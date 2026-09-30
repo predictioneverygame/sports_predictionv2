@@ -423,6 +423,7 @@
   }
 
   function renderWinRateChart() {
+    if (!window.Chart) return;
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
     if (!labels.length) {
@@ -700,6 +701,7 @@
   }
 
   function rebuildChartDataAndRender() {
+    if (!window.Chart) return;
     monthlySeriesCache = buildMonthlySeries();
     cumulPointsCache = buildCumulativePoints();
     renderWinRateChart();
@@ -1125,12 +1127,39 @@
       if (!btn) return;
       var sport = btn.getAttribute('data-sport');
       if (!sport || sport === chartSport) return;
-      chartSport = sport;
-      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
-        b.classList.toggle('active', b.getAttribute('data-sport') === sport);
-      });
-      rebuildChartDataAndRender();
+      setChartSport(sport);
+      if (window.SportsRSRouter && typeof window.SportsRSRouter.isApplying === 'function' && !window.SportsRSRouter.isApplying()) {
+        if (sport === 'basketball') window.SportsRSRouter.navigate('/basketball');
+        else if (sport === 'soccer') window.SportsRSRouter.navigate('/football');
+        else window.SportsRSRouter.navigate('/');
+      }
     });
+  }
+
+  function setChartSport(sport, opts) {
+    opts = opts || {};
+    chartSport = sport || 'all';
+    var box = qs('charts-sport-toggle');
+    if (box) {
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === chartSport);
+      });
+    }
+    if (opts.safe && !window.Chart) return;
+    rebuildChartDataAndRender();
+  }
+
+  function setLeagueChartSport(sport, opts) {
+    opts = opts || {};
+    leagueChartSport = sport || 'all';
+    var box = qs('league-charts-sport-toggle');
+    if (box) {
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === leagueChartSport);
+      });
+    }
+    if (opts.safe && !window.Chart) return;
+    renderLeagueCharts();
   }
 
   function renderCharts() {
@@ -1208,6 +1237,8 @@
     refresh: refresh,
     showToast: showToast,
     hideSkeleton: hideSkeleton,
-    renderLeagueCharts: renderLeagueCharts
+    renderLeagueCharts: renderLeagueCharts,
+    setChartSport: setChartSport,
+    setLeagueChartSport: setLeagueChartSport
   };
 })();
