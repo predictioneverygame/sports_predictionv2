@@ -90,7 +90,7 @@ function buildBroadcastText(items: RecItem[]) {
     return formatRecBlock(item, i, items.length);
   }).join("\n");
   return (
-    "SportsRS 新推薦" +
+    "新賽事推薦\n" +
     blocks +
     "\n\n👉 查看詳情\n" +
     SITE_URL
