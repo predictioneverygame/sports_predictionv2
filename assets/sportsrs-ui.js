@@ -1130,7 +1130,34 @@
         b.classList.toggle('active', b.getAttribute('data-sport') === sport);
       });
       rebuildChartDataAndRender();
+      if (window.SportsRSRouter && typeof window.SportsRSRouter.isApplying === 'function' && !window.SportsRSRouter.isApplying()) {
+        if (sport === 'basketball') window.SportsRSRouter.syncUrl('/basketball');
+        else if (sport === 'soccer') window.SportsRSRouter.syncUrl('/football');
+        else window.SportsRSRouter.syncUrl('/');
+      }
     });
+  }
+
+  function setChartSport(sport) {
+    chartSport = sport || 'all';
+    var box = qs('charts-sport-toggle');
+    if (box) {
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === chartSport);
+      });
+    }
+    rebuildChartDataAndRender();
+  }
+
+  function setLeagueChartSport(sport) {
+    leagueChartSport = sport || 'all';
+    var box = qs('league-charts-sport-toggle');
+    if (box) {
+      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('data-sport') === leagueChartSport);
+      });
+    }
+    renderLeagueCharts();
   }
 
   function renderCharts() {
@@ -1208,6 +1235,8 @@
     refresh: refresh,
     showToast: showToast,
     hideSkeleton: hideSkeleton,
-    renderLeagueCharts: renderLeagueCharts
+    renderLeagueCharts: renderLeagueCharts,
+    setChartSport: setChartSport,
+    setLeagueChartSport: setLeagueChartSport
   };
 })();
