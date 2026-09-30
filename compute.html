@@ -80,6 +80,20 @@ td, th {
     margin-top:6px;
 }
 
+.line-notify-opt {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:10px 0 4px;
+    font-size:14px;
+    cursor:pointer;
+}
+
+.line-notify-opt input {
+    width:auto;
+    margin:0;
+}
+
 .action-row {
     display:flex;
     gap:8px;
@@ -311,6 +325,12 @@ input[type="text"] {
 
 <input id="homeScore" type="number" placeholder="主隊比分">
 <input id="awayScore" type="number" placeholder="客隊比分">
+
+<label class="line-notify-opt">
+  <input id="lineNotifyOnAdd" type="checkbox">
+  匯入成功後推播 LINE 追蹤者（官方帳號 Broadcast）
+</label>
+<div class="hint" id="lineNotifyStatus">需在 Supabase Secrets 設定 LINE 憑證，且本機需有 compute-secrets.local.js</div>
 
 <button onclick="addRecommendation()">匯入到推薦網站</button>
 
@@ -1523,6 +1543,60 @@ function setApiSportsStatus(text) {
     if (el) el.innerText = text;
 }
 
+function setLineNotifyStatus(text) {
+    const el = document.getElementById("lineNotifyStatus");
+    if (el) el.innerText = text;
+}
+
+function getLineNotifySecret() {
+    if (typeof window.RS_LINE_NOTIFY_SECRET === "string" && window.RS_LINE_NOTIFY_SECRET.trim()) {
+        return window.RS_LINE_NOTIFY_SECRET.trim();
+    }
+    return "";
+}
+
+async function notifyLineFollowers(items) {
+    const secret = getLineNotifySecret();
+    if (!secret) {
+        throw new Error("缺少 RS_LINE_NOTIFY_SECRET（請在 compute-secrets.local.js 設定，並同步到 Supabase Secrets 的 LINE_NOTIFY_SECRET）");
+    }
+    setLineNotifyStatus("正在推播 LINE…");
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/notify-line-recommendation`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+            notifySecret: secret,
+            items: items.map(function (entry) {
+                return {
+                    league: entry.league,
+                    home: entry.home,
+                    away: entry.away,
+                    line: entry.line,
+                    date: entry.date,
+                    time: entry.time,
+                    sport: entry.sport
+                };
+            })
+        })
+    });
+    const text = await response.text();
+    let data;
+    try {
+        data = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`Edge Function 回應不是 JSON：${text.slice(0, 180)}`);
+    }
+    if (!response.ok) {
+        throw new Error(data.error || `LINE 推播 HTTP ${response.status}`);
+    }
+    setLineNotifyStatus("LINE 推播成功");
+    return data;
+}
+
 function getApiSportsKey() {
     try {
         const stored = localStorage.getItem(APISPORTS_KEY_STORAGE);
@@ -1998,7 +2072,18 @@ async function addRecommendation() {
             throw new Error(msg || "Supabase 寫入失敗");
         }
 
-        alert("已成功匯入到雲端推薦資料");
+        const notifyOnAdd = document.getElementById("lineNotifyOnAdd");
+        if (notifyOnAdd && notifyOnAdd.checked) {
+            try {
+                await notifyLineFollowers(itemsToInsert);
+                alert("已成功匯入到雲端推薦資料，並已推播 LINE 追蹤者");
+            } catch (lineErr) {
+                console.error(lineErr);
+                alert("雲端已匯入，但 LINE 推播失敗：" + (lineErr.message || lineErr));
+            }
+        } else {
+            alert("已成功匯入到雲端推薦資料");
+        }
         await loadCloudRecommendations();
     } catch (err) {
         console.error(err);

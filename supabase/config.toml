@@ -2,3 +2,6 @@
 
 [functions.fetch-football-fixtures]
 verify_jwt = false
+
+[functions.notify-line-recommendation]
+verify_jwt = false
