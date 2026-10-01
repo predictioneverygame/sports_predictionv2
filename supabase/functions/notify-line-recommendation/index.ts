@@ -21,6 +21,60 @@ type RecItem = {
   sport?: string;
 };
 
+type MergedRecItem = {
+  league?: string;
+  home?: string;
+  away?: string;
+  lines: string[];
+  date?: string;
+  time?: string;
+  sport?: string;
+};
+
+function matchKey(item: RecItem) {
+  return [
+    String(item.sport || "").toLowerCase(),
+    String(item.league || "").trim(),
+    String(item.home || "").trim(),
+    String(item.away || "").trim(),
+    String(item.date || "").trim(),
+    String(item.time || "").trim(),
+  ].join("\0");
+}
+
+/** 同一場（聯賽、對手、日期時間相同）的多個盤口合併為一則 */
+function mergeRecItems(items: RecItem[]): MergedRecItem[] {
+  const merged: MergedRecItem[] = [];
+  const indexByKey = new Map<string, number>();
+
+  for (const item of items) {
+    const key = matchKey(item);
+    const line = String(item.line || "").trim();
+    const existingIdx = indexByKey.get(key);
+
+    if (existingIdx === undefined) {
+      indexByKey.set(key, merged.length);
+      merged.push({
+        league: item.league,
+        home: item.home,
+        away: item.away,
+        lines: line ? [line] : [],
+        date: item.date,
+        time: item.time,
+        sport: item.sport,
+      });
+      continue;
+    }
+
+    const group = merged[existingIdx];
+    if (line && !group.lines.includes(line)) {
+      group.lines.push(line);
+    }
+  }
+
+  return merged;
+}
+
 async function getLineAccessToken(): Promise<string> {
   const preset = (Deno.env.get("LINE_CHANNEL_ACCESS_TOKEN") || "").trim();
   if (preset) return preset;
@@ -71,23 +125,25 @@ function sportEmoji(sport?: string) {
   return "📊";
 }
 
-function formatRecBlock(item: RecItem, index: number, total: number) {
+function formatRecBlock(item: MergedRecItem, index: number, total: number) {
   const league = String(item.league || "賽事").trim();
   const home = String(item.home || "").trim();
   const away = String(item.away || "").trim();
-  const line = String(item.line || "").trim();
   const date = String(item.date || "").trim();
   const time = String(item.time || "").trim();
   const head = total > 1 ? `\n【${index + 1}】${sportEmoji(item.sport)} ${league}` : `${sportEmoji(item.sport)} ${league}`;
   const matchup = home && away ? `\n${home} vs ${away}` : "";
-  const pick = line ? `\n初盤：${line}` : "";
+  const pick = item.lines.length
+    ? `\n初盤：${item.lines.join("、")}`
+    : "";
   const when = date ? `\n📅 ${date.slice(5).replace("-", "/")}${time ? " " + time : ""}` : "";
   return head + matchup + pick + when;
 }
 
 function buildBroadcastText(items: RecItem[]) {
-  const blocks = items.map(function (item, i) {
-    return formatRecBlock(item, i, items.length);
+  const merged = mergeRecItems(items);
+  const blocks = merged.map(function (item, i) {
+    return formatRecBlock(item, i, merged.length);
   }).join("\n");
   return (
     "新賽事推薦\n" +
@@ -154,10 +210,11 @@ Deno.serve(async (req) => {
 
     const token = await getLineAccessToken();
     await verifyLineBot(token);
+    const merged = mergeRecItems(items);
     const text = buildBroadcastText(items);
     await lineBroadcast(token, text);
 
-    return new Response(JSON.stringify({ ok: true, count: items.length }), {
+    return new Response(JSON.stringify({ ok: true, count: merged.length, items: items.length }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
