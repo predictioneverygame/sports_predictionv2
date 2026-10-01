@@ -21,6 +21,17 @@
   var leagueCumulCache = [];
   var leagueCumulCharts = {};
 
+  var CHART_COLORS = {
+    primary: '#0b5fad',
+    secondary: '#374151',
+    win: '#15803d',
+    loss: '#b91c1c',
+    neutral: '#6b7280',
+    grid: '#eef0f3',
+    axis: '#6b7280',
+    zero: '#9ca3af'
+  };
+
   function qs(id) { return document.getElementById(id); }
 
   function showToast(msg) {
@@ -36,40 +47,43 @@
     }, 2800);
   }
 
-  function countUp(el, target, opts) {
+  function setNumber(el, value, opts) {
     if (!el) return;
     opts = opts || {};
     var decimals = opts.decimals != null ? opts.decimals : 0;
-    var suffix = opts.suffix || '';
-    var prefix = opts.prefix || '';
-    var duration = opts.duration || 900;
-    var start = performance.now();
-    var from = 0;
-
-    function frame(now) {
-      var t = Math.min(1, (now - start) / duration);
-      var eased = 1 - Math.pow(1 - t, 3);
-      var val = from + (target - from) * eased;
-      if (decimals > 0) {
-        el.textContent = prefix + val.toFixed(decimals) + suffix;
-      } else {
-        el.textContent = prefix + Math.round(val) + suffix;
-      }
-      if (t < 1) requestAnimationFrame(frame);
-    }
-    requestAnimationFrame(frame);
+    var text = decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+    el.textContent = (opts.prefix || '') + text + (opts.suffix || '');
   }
 
   function setupNavBlur() {
     var nav = qs('site-nav');
     if (!nav) return;
     function onScroll() {
-      nav.classList.toggle('scrolled', window.scrollY > 12);
       var btn = qs('back-to-top');
       if (btn) btn.classList.toggle('visible', window.scrollY > 480);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
+  }
+
+  function setupNavToggle() {
+    var nav = qs('site-nav');
+    var btn = qs('nav-toggle');
+    if (!nav || !btn) return;
+    function setOpen(open) {
+      nav.classList.toggle('nav-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.setAttribute('aria-label', open ? '關閉選單' : '開啟選單');
+    }
+    btn.addEventListener('click', function () {
+      setOpen(!nav.classList.contains('nav-open'));
+    });
+    nav.addEventListener('click', function (e) {
+      if (e.target.closest('.nav-menu a')) setOpen(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') setOpen(false);
+    });
   }
 
   function setupBackToTop() {
@@ -183,11 +197,11 @@
     var roiEl = qs('kpi-roi');
     var unitsEl = qs('kpi-units');
 
-    countUp(picksEl, k.totalPicks, { decimals: 0 });
+    setNumber(picksEl, k.totalPicks, { decimals: 0 });
     if (wrEl) {
       wrEl.classList.remove('pos', 'neg');
       wrEl.classList.add(k.winRate < 52 ? 'neg' : 'pos');
-      countUp(wrEl, k.winRate, { decimals: 1, suffix: '%' });
+      setNumber(wrEl, k.winRate, { decimals: 1, suffix: '%' });
     }
 
     if (roiEl) {
@@ -195,14 +209,14 @@
       if (k.roi > 0) roiEl.classList.add('pos');
       else if (k.roi < 0) roiEl.classList.add('neg');
       var prefix = k.roi > 0 ? '+' : '';
-      countUp(roiEl, k.roi, { decimals: 2, suffix: '%', prefix: prefix });
+      setNumber(roiEl, k.roi, { decimals: 2, suffix: '%', prefix: prefix });
     }
     if (unitsEl) {
       unitsEl.classList.remove('pos', 'neg');
       if (k.units > 0) unitsEl.classList.add('pos');
       else if (k.units < 0) unitsEl.classList.add('neg');
       var up = k.units > 0 ? '+' : '';
-      countUp(unitsEl, k.units, { decimals: 2, prefix: up });
+      setNumber(unitsEl, k.units, { decimals: 2, prefix: up });
     }
   }
 
@@ -304,9 +318,11 @@
 
   function chartDefaults() {
     if (!window.Chart) return;
-    Chart.defaults.color = '#BFC8D6';
-    Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
-    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.color = CHART_COLORS.axis;
+    Chart.defaults.borderColor = CHART_COLORS.grid;
+    Chart.defaults.font.family = 'Inter, "Noto Sans TC", sans-serif';
+    Chart.defaults.font.size = 11;
+    Chart.defaults.animation = { duration: 250 };
   }
 
   function ensureTooltipEl() {
@@ -318,16 +334,18 @@
         'position:absolute',
         'pointer-events:none',
         'z-index:50',
-        'transform:translate(-50%,-120%)',
-        'font-family:Inter,sans-serif',
+        'transform:translate(-50%,calc(-100% - 10px))',
+        'font-family:Inter,"Noto Sans TC",sans-serif',
         'font-size:12px',
-        'font-weight:700',
-        'letter-spacing:0.01em',
+        'font-weight:600',
         'line-height:1.45',
         'white-space:pre-line',
-        'text-align:center',
-        'padding:2px 0',
-        'text-shadow:0 0 6px #05070B,0 0 10px #05070B,0 1px 2px #05070B,0 -1px 2px #05070B',
+        'text-align:left',
+        'padding:6px 9px',
+        'background:#fff',
+        'border:1px solid #d1d5db',
+        'border-radius:6px',
+        'box-shadow:0 2px 8px rgba(17,24,39,0.08)',
         'transition:opacity .12s ease',
         'opacity:0'
       ].join(';');
@@ -350,9 +368,9 @@
   }
 
   function signedColor(v) {
-    if (v < 0) return '#FF5D73';
-    if (v > 0) return '#32D583';
-    return '#BFC8D6';
+    if (v < 0) return CHART_COLORS.loss;
+    if (v > 0) return CHART_COLORS.win;
+    return CHART_COLORS.neutral;
   }
 
   function zeroLinePlugin() {
@@ -369,9 +387,9 @@
         var ctx = chart.ctx;
         ctx.save();
         ctx.beginPath();
-        ctx.setLineDash([6, 4]);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = CHART_COLORS.zero;
         ctx.moveTo(chart.chartArea.left, y);
         ctx.lineTo(chart.chartArea.right, y);
         ctx.stroke();
@@ -404,19 +422,21 @@
               return;
             }
             tooltipEl.textContent = info.text;
-            tooltipEl.style.color = info.color || '#fff';
+            tooltipEl.style.color = info.color || '#111827';
             positionTooltip(tooltipEl, context, tooltip);
           }
         }
       },
       scales: {
         x: {
-          grid: { color: 'rgba(255,255,255,0.04)' },
+          grid: { display: false },
+          border: { color: '#d1d5db' },
           ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
         },
         y: {
           grace: '8%',
-          grid: { color: 'rgba(255,255,255,0.06)' }
+          grid: { color: CHART_COLORS.grid },
+          border: { display: false }
         }
       }
     };
@@ -441,14 +461,14 @@
         labels: labels,
         datasets: [{
           data: data,
-          borderColor: '#00E5FF',
-          backgroundColor: '#00E5FF22',
-          fill: true,
-          tension: 0.35,
+          borderColor: CHART_COLORS.primary,
+          backgroundColor: CHART_COLORS.primary,
+          fill: false,
+          tension: 0,
           pointRadius: 3,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#00E5FF',
-          pointBorderColor: '#00E5FF',
+          pointHoverRadius: 4,
+          pointBackgroundColor: CHART_COLORS.primary,
+          pointBorderColor: CHART_COLORS.primary,
           borderWidth: 2
         }]
       },
@@ -457,7 +477,7 @@
         if (isNaN(v)) return null;
         return {
           text: v.toFixed(1) + '%',
-          color: v < 52 ? '#FF5D73' : '#32D583'
+          color: v < 52 ? CHART_COLORS.loss : CHART_COLORS.win
         };
       }),
       plugins: []
@@ -478,7 +498,7 @@
     var data = series.map(function (s) {
       return Number((isRoi ? s.roi : s.profitUnits).toFixed(2));
     });
-    var color = isRoi ? '#5B8CFF' : '#7C3AED';
+    var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-monthly');
     if (!canvas) return;
     if (charts.monthly) charts.monthly.destroy();
@@ -490,11 +510,11 @@
         datasets: [{
           data: data,
           borderColor: color,
-          backgroundColor: color + '22',
-          fill: true,
-          tension: 0.35,
+          backgroundColor: color,
+          fill: false,
+          tension: 0,
           pointRadius: 3,
-          pointHoverRadius: 5,
+          pointHoverRadius: 4,
           pointBackgroundColor: color,
           pointBorderColor: color,
           borderWidth: 2
@@ -526,7 +546,7 @@
     var data = points.map(function (p) {
       return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
     });
-    var color = isRoi ? '#00E5FF' : '#7C3AED';
+    var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-cumulative');
     var panEl = qs('chart-cumulative-pan');
     if (!canvas) return;
@@ -568,8 +588,8 @@
       }
     }
 
-    var pointRadius = showAll ? (n > 40 ? 1.5 : (n > 20 ? 2 : 3)) : 3;
-    var pointHoverRadius = showAll ? 4 : 5;
+    var pointRadius = showAll ? (n > 40 ? 0 : (n > 20 ? 1.5 : 2.5)) : 2.5;
+    var pointHoverRadius = 4;
 
     charts.cumulative = new Chart(canvas, {
       type: 'line',
@@ -578,9 +598,9 @@
         datasets: [{
           data: data,
           borderColor: color,
-          backgroundColor: color + '18',
-          fill: true,
-          tension: 0.15,
+          backgroundColor: color,
+          fill: false,
+          tension: 0,
           pointRadius: pointRadius,
           pointHoverRadius: pointHoverRadius,
           pointBackgroundColor: color,
@@ -948,7 +968,7 @@
     }).join('');
 
     var isRoi = leagueCumulMetric === 'roi';
-    var color = isRoi ? '#00E5FF' : '#7C3AED';
+    var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
 
     leagueCumulCache.forEach(function (row, i) {
       var canvas = qs('league-cumul-canvas-' + i);
@@ -991,7 +1011,7 @@
         }
       }
 
-      var pointRadius = showAll ? (n > 40 ? 1.5 : (n > 20 ? 2 : 3)) : 3;
+      var pointRadius = showAll ? (n > 40 ? 0 : (n > 20 ? 1.5 : 2.5)) : 2.5;
       var chart = new Chart(canvas, {
         type: 'line',
         data: {
@@ -999,11 +1019,11 @@
           datasets: [{
             data: data,
             borderColor: color,
-            backgroundColor: color + '18',
-            fill: true,
-            tension: 0.15,
+            backgroundColor: color,
+            fill: false,
+            tension: 0,
             pointRadius: pointRadius,
-            pointHoverRadius: showAll ? 4 : 5,
+            pointHoverRadius: 4,
             pointBackgroundColor: color,
             pointBorderColor: color,
             borderWidth: 2
@@ -1024,10 +1044,10 @@
 
   function barColorsForValues(values, mode) {
     return values.map(function (v) {
-      if (mode === 'winrate') return Number(v) < 52 ? '#FF5D73' : '#32D583';
-      if (v > 0) return '#32D583';
-      if (v < 0) return '#FF5D73';
-      return '#7C8AA5';
+      if (mode === 'winrate') return Number(v) < 52 ? CHART_COLORS.loss : CHART_COLORS.win;
+      if (v > 0) return CHART_COLORS.win;
+      if (v < 0) return CHART_COLORS.loss;
+      return CHART_COLORS.neutral;
     });
   }
 
@@ -1069,10 +1089,10 @@
         labels: labels,
         datasets: [{
           data: data,
-          backgroundColor: colors.map(function (c) { return c + 'CC'; }),
+          backgroundColor: colors,
           borderColor: colors,
-          borderWidth: 1,
-          borderRadius: 4,
+          borderWidth: 0,
+          borderRadius: 0,
           maxBarThickness: 28
         }]
       },
@@ -1221,6 +1241,7 @@
 
   function boot() {
     setupNavBlur();
+    setupNavToggle();
     setupBackToTop();
     setupReveal();
     setupKeyboardClickables();

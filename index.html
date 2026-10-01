@@ -707,162 +707,74 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261001b">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261001c">
 </head>
 <body>
 <nav id="site-nav">
-  <a class="nav-logo" href="/">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <span>Sports<span class="brand-rs">RS</span></span>
-  </a>
-  <ul class="nav-links">
-    <li><a href="/" data-route="/">首頁</a></li>
-    <li><a href="/about" data-route="/about">關於</a></li>
-  </ul>
-  <a class="nav-cta nav-cta-ig" href="https://www.instagram.com/rs_sports_analytics" target="_blank" rel="noopener noreferrer" title="Instagram">IG</a>
-  <a class="nav-cta nav-cta-line" href="https://line.me/R/ti/p/@013dnjqw" target="_blank" rel="noopener noreferrer" title="加入 LINE 好友">LINE</a>
-  <a class="nav-cta" href="mailto:predictioneverygame@gmail.com">聯絡</a>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">
+      <span class="nav-logo-name">Sports<span class="brand-rs">RS</span></span>
+      <span class="nav-logo-sub">Professional Sports Analytics</span>
+    </a>
+    <button type="button" class="nav-toggle" id="nav-toggle" aria-label="開啟選單" aria-expanded="false" aria-controls="nav-menu">
+      <span></span><span></span><span></span>
+    </button>
+    <div class="nav-menu" id="nav-menu">
+      <ul class="nav-links">
+        <li><a href="/" data-route="/">首頁</a></li>
+        <li><a href="/picks" data-route="/picks">推薦</a></li>
+        <li><a href="/performance" data-route="/performance">戰績</a></li>
+        <li><a href="/leagues" data-route="/leagues">聯賽</a></li>
+        <li><a href="/about" data-route="/about">關於</a></li>
+      </ul>
+      <div class="nav-actions">
+        <a class="nav-cta nav-cta-ig" href="https://www.instagram.com/rs_sports_analytics" target="_blank" rel="noopener noreferrer" title="Instagram">IG</a>
+        <a class="nav-cta nav-cta-line" href="https://line.me/R/ti/p/@013dnjqw" target="_blank" rel="noopener noreferrer" title="加入 LINE 好友">LINE</a>
+        <a class="nav-cta nav-cta-mail" href="mailto:predictioneverygame@gmail.com">聯絡</a>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <!-- HOME PAGE -->
 <div id="page-home" class="page active">
-<div class="hero">
+<header class="hero">
   <div class="hero-inner">
-    <div class="hero-tag">Professional Sports Analytics</div>
-    <div class="hero-brand-row">
-      <h1 class="hero-brand">Sports<span class="accent">RS</span></h1>
-      <a class="line-promo" href="https://line.me/R/ti/p/@013dnjqw" target="_blank" rel="noopener noreferrer" title="加入 SportsRS LINE 官方帳號">
-        <span class="line-promo-new">NEW</span>
-        <span class="line-promo-icon" aria-hidden="true">LINE</span>
-        <span class="line-promo-text">
-          <strong>新增 LINE 推播功能</strong>
-          <span>趕緊加好友！</span>
-        </span>
+    <div class="hero-main">
+      <p class="hero-eyebrow">Professional Sports Analytics</p>
+      <h1 class="hero-brand">Sports RS</h1>
+      <p class="hero-desc">每日更新籃球與足球賽事推薦，並公開記錄歷史戰績與盤口表現。</p>
+      <div class="hero-cta-row">
+        <a class="btn-primary" href="/picks">查看今日推薦</a>
+        <a class="btn-ghost" href="/records">查看歷史戰績</a>
+      </div>
+    </div>
+    <aside class="hero-aside">
+      <dl class="hero-facts">
+        <div><dt>累計推薦</dt><dd><span data-rec-count>0</span> 場</dd></div>
+        <div><dt>涵蓋聯賽</dt><dd>12+</dd></div>
+        <div><dt>分析經驗</dt><dd>3+ 年</dd></div>
+        <div><dt>更新頻率</dt><dd>每日</dd></div>
+      </dl>
+      <a class="hero-line" href="https://line.me/R/ti/p/@013dnjqw" target="_blank" rel="noopener noreferrer">
+        <span class="hero-line-badge">LINE</span>
+        <span class="hero-line-text"><strong>LINE 推播上線</strong>新推薦發布時會直接通知，加入好友即可收到。</span>
       </a>
-    </div>
-    <div class="hero-sub">Professional Sports Analytics</div>
-    <p class="hero-desc">Data-driven predictions.<br>Not gambling.</p>
-    <div class="hero-cta-row">
-      <a class="btn-primary" href="/picks">查看今日推薦</a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat"><div class="num" id="hero-stat-rec-count">0</div><div class="lbl">推薦</div></div>
-      <div class="stat"><div class="num">12+</div><div class="lbl">涵蓋聯賽</div></div>
-      <div class="stat"><div class="num">3+</div><div class="lbl">年分析經驗</div></div>
-      <div class="stat"><div class="num">每日</div><div class="lbl">更新推薦</div></div>
-    </div>
+    </aside>
   </div>
-</div>
+</header>
 
-<section class="dash-section reveal" id="dash-kpi">
-  <div class="dash-grid">
-    <div class="kpi-card stagger-1">
-      <div class="kpi-label">Total Picks</div>
-      <div class="kpi-value" id="kpi-total-picks" data-count="0">0</div>
-      <div class="kpi-hint">已結算場次</div>
-    </div>
-    <div class="kpi-card stagger-2">
-      <div class="kpi-label">Win Rate</div>
-      <div class="kpi-value" id="kpi-win-rate" data-count="0">0%</div>
-      <div class="kpi-hint">命中率</div>
-    </div>
-    <div class="kpi-card stagger-3">
-      <div class="kpi-label">ROI</div>
-      <div class="kpi-value" id="kpi-roi" data-count="0">0.00%</div>
-      <div class="kpi-hint">2026–27 合計</div>
-    </div>
-    <div class="kpi-card stagger-4">
-      <div class="kpi-label">Units</div>
-      <div class="kpi-value" id="kpi-units" data-count="0">0.00</div>
-      <div class="kpi-hint">單位獲利</div>
-    </div>
-  </div>
-</section>
-
-<section class="charts-section reveal">
-  <div class="charts-sport-bar">
-    <div class="chart-toggle charts-sport-toggle" id="charts-sport-toggle" role="group" aria-label="圖表運動篩選">
-      <button type="button" class="chart-toggle-btn active" data-sport="all">全部</button>
-      <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
-      <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
-    </div>
-  </div>
-  <div class="charts-grid">
-    <div class="chart-card stagger-1">
-      <div class="chart-card-head">
-        <h3>Win Rate</h3>
-      </div>
-      <canvas id="chart-winrate" height="160"></canvas>
-    </div>
-    <div class="chart-card stagger-2">
-      <div class="chart-card-head">
-        <h3>月度績效</h3>
-        <div class="chart-toggle" id="monthly-metric-toggle" role="group" aria-label="月度指標">
-          <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
-          <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
-        </div>
-      </div>
-      <canvas id="chart-monthly" height="160"></canvas>
-    </div>
-    <div class="chart-card stagger-3">
-      <div class="chart-card-head">
-        <h3>逐場累積</h3>
-        <div class="chart-card-toggles">
-          <div class="chart-toggle" id="cumul-range-toggle" role="group" aria-label="累積範圍">
-            <button type="button" class="chart-toggle-btn active" data-range="all">全部</button>
-            <button type="button" class="chart-toggle-btn" data-range="window">近10場</button>
-          </div>
-          <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
-            <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
-            <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
-          </div>
-        </div>
-      </div>
-      <div class="chart-pan is-overview" id="chart-cumulative-pan" title="一次顯示全部場次趨勢">
-        <canvas id="chart-cumulative" height="160"></canvas>
-      </div>
-    </div>
-  </div>
-  <div class="charts-more-row">
-    <a href="/performance" class="charts-more-link">更多</a>
-  </div>
-</section>
-
-  <div class="home-main" id="daily-recs">
-  <!-- 每日推薦 + 側欄 -->
+  <section class="home-main" id="daily-recs">
   <div class="layout">
-    <div>
-      <div class="sb-card stats-card profit-card mobile-only-profit" id="profit-summary-card-mobile">
-        <div class="profit-title">獲利</div>
-        <div class="profit-season" id="profit-season-mobile-2627">
-          <div class="profit-season-head expandable" onclick="this.parentElement.classList.toggle('open')">
-            <span class="profit-season-label">2026–2027 <span class="profit-chev">▼</span></span>
-            <span class="profit-main zero" id="profit-main-value-mobile-2627">0.00%</span>
-          </div>
-          <div class="profit-sub" id="profit-sub-text-mobile-2627">已結算 0 場</div>
-          <div class="profit-detail">
-            <div class="profit-detail-group">⚽ 足球</div>
-            <div class="profit-detail-row"><span>聯賽</span><span class="profit-detail-val zero" id="profit-detail-mobile-sc-league">0.00%</span></div>
-            <div class="profit-detail-row"><span>歐冠</span><span class="profit-detail-val zero" id="profit-detail-mobile-sc-ucl">0.00%</span></div>
-            <div class="profit-detail-row"><span>其他賽事</span><span class="profit-detail-val zero" id="profit-detail-mobile-sc-other">0.00%</span></div>
-            <div class="profit-detail-group">🏀 籃球</div>
-            <div class="profit-detail-row"><span>聯賽</span><span class="profit-detail-val zero" id="profit-detail-mobile-bb-league">0.00%</span></div>
-            <div class="profit-detail-row"><span>其他賽事</span><span class="profit-detail-val zero" id="profit-detail-mobile-bb-other">0.00%</span></div>
-          </div>
-        </div>
-        <div class="profit-season">
-          <div class="profit-season-head">
-            <span class="profit-season-label">2025–2026</span>
-            <span class="profit-main zero" id="profit-main-value-mobile-2526">0.00%</span>
-          </div>
-          <div class="profit-sub" id="profit-sub-text-mobile-2526">已結算 0 場</div>
-        </div>
-      </div>
+    <div class="layout-main">
       <div class="daily-recs-head">
-        <div class="section-title" id="daily-recs-title">每日推薦</div>
+        <div class="section-head-text">
+          <h2 class="section-title" id="daily-recs-title">今日推薦</h2>
+          <p class="section-note">尚未開賽與進行中的推薦，依開賽時間排列。</p>
+        </div>
         <div class="chart-toggle" id="daily-recs-group-toggle" role="group" aria-label="每日推薦分組方式">
-          <button type="button" class="chart-toggle-btn active" data-group="time">時間</button>
-          <button type="button" class="chart-toggle-btn" data-group="event">賽事</button>
+          <button type="button" class="chart-toggle-btn active" data-group="time">依日期</button>
+          <button type="button" class="chart-toggle-btn" data-group="event">依聯賽</button>
         </div>
       </div>
       <div id="daily-recs-skeleton" aria-hidden="true">
@@ -874,7 +786,7 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
     <div class="sidebar">
       <div class="sb-card stats-card profit-card" id="profit-summary-card">
-        <div class="profit-title">獲利</div>
+        <div class="profit-title">賽季 ROI</div>
         <div class="profit-season" id="profit-season-2627">
           <div class="profit-season-head expandable" onclick="this.parentElement.classList.toggle('open')">
             <span class="profit-season-label">2026–2027 <span class="profit-chev">▼</span></span>
@@ -882,11 +794,11 @@ footer a{color:var(--accent);text-decoration:none}
           </div>
           <div class="profit-sub" id="profit-sub-text-2627">已結算 0 場</div>
           <div class="profit-detail">
-            <div class="profit-detail-group">⚽ 足球</div>
+            <div class="profit-detail-group">足球</div>
             <div class="profit-detail-row"><span>聯賽</span><span class="profit-detail-val zero" id="profit-detail-sc-league">0.00%</span></div>
             <div class="profit-detail-row"><span>歐冠</span><span class="profit-detail-val zero" id="profit-detail-sc-ucl">0.00%</span></div>
             <div class="profit-detail-row"><span>其他賽事</span><span class="profit-detail-val zero" id="profit-detail-sc-other">0.00%</span></div>
-            <div class="profit-detail-group">🏀 籃球</div>
+            <div class="profit-detail-group">籃球</div>
             <div class="profit-detail-row"><span>聯賽</span><span class="profit-detail-val zero" id="profit-detail-bb-league">0.00%</span></div>
             <div class="profit-detail-row"><span>其他賽事</span><span class="profit-detail-val zero" id="profit-detail-bb-other">0.00%</span></div>
           </div>
@@ -919,59 +831,184 @@ footer a{color:var(--accent);text-decoration:none}
         </div>
       </div>
       <div class="sb-card stats-card week-summary-card" id="week-summary-card"></div>
-      <div class="sb-card"><input type="text" class="sb-search" placeholder="搜尋文章…"></div>
-      <div class="analyst-card">
-        <div class="analyst-avatar">RS</div>
-        <div class="analyst-name">Analyst</div>
-        <div class="analyst-legend" aria-label="預測結果符號說明">
-          <div class="analyst-legend-row"><span class="analyst-legend-sym sym-hit">✓</span><span>贏</span></div>
-          <div class="analyst-legend-row"><span class="analyst-legend-sym sym-miss">✗</span><span>輸</span></div>
-          <div class="analyst-legend-row"><span class="analyst-legend-sym sym-push">💧</span><span>喝水</span></div>
+      <div class="sb-card legend-card" aria-label="預測結果符號說明">
+        <h3>符號說明</h3>
+        <ul class="legend-list">
+          <li><span class="analyst-legend-sym sym-hit">✓</span>贏</li>
+          <li><span class="analyst-legend-sym sym-miss">✗</span>輸</li>
+          <li><span class="analyst-legend-sym sym-push">💧</span>走水</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  </section>
+
+  <section class="home-section" id="season-summary">
+    <div class="section-head">
+      <h2 class="section-title">本季戰績摘要</h2>
+      <p class="section-note">2026–27 賽季已結算場次，不含世足。</p>
+    </div>
+    <div class="dash-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">累計推薦</div>
+        <div class="kpi-value" data-rec-count>0</div>
+        <div class="kpi-hint">全部賽季</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">已結算</div>
+        <div class="kpi-value" id="kpi-total-picks">0</div>
+        <div class="kpi-hint">本季場次</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">命中率</div>
+        <div class="kpi-value" id="kpi-win-rate">0%</div>
+        <div class="kpi-hint">走水不計</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">ROI</div>
+        <div class="kpi-value" id="kpi-roi">0.00%</div>
+        <div class="kpi-hint">以 20 Units 本金計</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Units</div>
+        <div class="kpi-value" id="kpi-units">0.00</div>
+        <div class="kpi-hint">單位損益</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section charts-section" id="charts">
+    <div class="section-head">
+      <div class="section-head-text">
+        <h2 class="section-title">戰績走勢</h2>
+        <p class="section-note">月度命中率、月度績效與逐場累積。</p>
+      </div>
+      <div class="chart-toggle charts-sport-toggle" id="charts-sport-toggle" role="group" aria-label="圖表運動篩選">
+        <button type="button" class="chart-toggle-btn active" data-sport="all">全部</button>
+        <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
+        <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>月度命中率</h3>
+        </div>
+        <canvas id="chart-winrate" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>月度績效</h3>
+          <div class="chart-toggle" id="monthly-metric-toggle" role="group" aria-label="月度指標">
+            <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
+            <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+          </div>
+        </div>
+        <canvas id="chart-monthly" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3>逐場累積</h3>
+          <div class="chart-card-toggles">
+            <div class="chart-toggle" id="cumul-range-toggle" role="group" aria-label="累積範圍">
+              <button type="button" class="chart-toggle-btn active" data-range="all">全部</button>
+              <button type="button" class="chart-toggle-btn" data-range="window">近10場</button>
+            </div>
+            <div class="chart-toggle" id="cumul-metric-toggle" role="group" aria-label="累積指標">
+              <button type="button" class="chart-toggle-btn active" data-metric="roi">ROI</button>
+              <button type="button" class="chart-toggle-btn" data-metric="units">Unit</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-pan is-overview" id="chart-cumulative-pan" title="一次顯示全部場次趨勢">
+          <canvas id="chart-cumulative" height="160"></canvas>
         </div>
       </div>
-      <!-- <div class="sb-card">
-        <h3>聯賽分類</h3>
-        <ul class="sb-list">
-          <li><a onclick="showLeague('BCL')">🌏 BCL Asia-East <span class="sb-cnt">(2)</span></a></li>
-          <li><a onclick="showLeague('SBL')">🏀 SBL <span class="sb-cnt">(0)</span></a></li>
-          <li><a onclick="showLeague('TPBL')">🏀 TPBL <span class="sb-cnt">(0)</span></a></li>
-          <li><a onclick="showLeague('PLG')">🏀 PLG <span class="sb-cnt">(0)</span></a></li>
-          <li><a onclick="showLeague('五大聯賽')">⚽ 五大聯賽 <span class="sb-cnt">(0)</span></a></li>
-        </ul>
-      </div> -->
     </div>
-  </div>
-  </div>
+    <div class="charts-more-row">
+      <a href="/performance" class="charts-more-link">各聯賽績效 →</a>
+    </div>
+  </section>
 
-      <div class="container">
-  <!-- 籃球 -->
-  <div id="section-basketball" class="leagues-section">
-    <div class="section-title">籃球聯賽</div>
-    <div class="league-grid">
-      <div class="league-card" onclick="showLeague('SBL')"><div class="lg-name">SBL</div><div class="lg-sub">超級籃球聯賽</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('TPBL')"><div class="lg-name">TPBL</div><div class="lg-sub">台灣職籃</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('PLG')"><div class="lg-name">PLG</div><div class="lg-sub">P. LEAGUE+</div><span class="badge-b">台灣</span></div>
-      <div class="league-card" onclick="showLeague('BCL')"><div class="lg-name">BCL</div><div class="lg-sub">Asia-East</div><span class="badge-b">亞洲</span></div>
-    </div>
-  </div>
-  <!-- 足球 -->
-  <div id="section-football" class="leagues-section">
-    <div class="section-title">足球聯賽</div>
-    <div class="league-grid">
-      <div class="league-card football" onclick="showLeague('英超')"><div class="lg-name">英超</div><div class="lg-sub">Premier League</div><span class="badge-f">英格蘭</span></div>
-      <div class="league-card football" onclick="showLeague('西甲')"><div class="lg-name">西甲</div><div class="lg-sub">LaLiga</div><span class="badge-f">西班牙</span></div>
-      <div class="league-card football" onclick="showLeague('德甲')"><div class="lg-name">德甲</div><div class="lg-sub">Bundesliga</div><span class="badge-f">德國</span></div>
-      <div class="league-card football" onclick="showLeague('法甲')"><div class="lg-name">法甲</div><div class="lg-sub">Ligue 1</div><span class="badge-f">法國</span></div>
-      <div class="league-card football" onclick="showLeague('德乙')"><div class="lg-name">德乙</div><div class="lg-sub">Bundesliga 2</div><span class="badge-f">德國</span></div>
-      <div class="league-card football" onclick="showLeague('美足')"><div class="lg-name">美足 MLS</div><div class="lg-sub">Major League Soccer</div><span class="badge-f">美國</span></div>
-      <div class="league-card football" onclick="showLeague('墨超')"><div class="lg-name">墨超</div><div class="lg-sub">Liga MX</div><span class="badge-f">墨西哥</span></div>
-      <div class="league-card football" onclick="showLeague('荷蘭甲')"><div class="lg-name">荷蘭甲</div><div class="lg-sub">Eredivisie</div><span class="badge-f">荷蘭</span></div>
-      <div class="league-card football" onclick="showLeague('歐冠')"><div class="lg-name">歐冠</div><div class="lg-sub">Champions League</div><span class="badge-f">歐洲</span></div>
-      <div class="league-card football" onclick="showLeague('歐洲超級盃')"><div class="lg-name">歐超盃</div><div class="lg-sub">UEFA Super Cup</div><span class="badge-f">歐洲</span></div>
-      <div class="league-card football" onclick="showLeague('聯賽盃')"><div class="lg-name">聯賽盃</div><div class="lg-sub">Leagues Cup</div><span class="badge-f">北美</span></div>
-    </div>
-  </div>
+  <section class="home-section" id="recent-records">
+    <div class="section-head">
+      <div class="section-head-text">
+        <h2 class="section-title">最近推薦紀錄</h2>
+        <p class="section-note">最近結算的 15 場，完整紀錄請見下方歷史戰績。</p>
       </div>
+    </div>
+    <div class="records-table-wrap">
+      <table class="records-table">
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>聯賽</th>
+            <th>比賽</th>
+            <th>推薦</th>
+            <th class="num">賠率</th>
+            <th class="num">比分</th>
+            <th class="center">結果</th>
+            <th class="num">Units</th>
+            <th class="num">ROI</th>
+          </tr>
+        </thead>
+        <tbody id="recent-records-body">
+          <tr><td colspan="9" class="records-empty">載入中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="home-section" id="settled-history">
+    <div class="section-head">
+      <div class="section-head-text">
+        <h2 class="section-title">歷史戰績</h2>
+        <p class="section-note">依日期整理的已結算賽事，點開可看每場推薦與結果。</p>
+      </div>
+    </div>
+    <div class="date-list" id="settled-list"></div>
+  </section>
+
+  <section class="home-section" id="leagues">
+    <div class="section-head">
+      <h2 class="section-title">聯賽分類</h2>
+    </div>
+    <div class="league-index">
+      <div id="section-basketball" class="leagues-section">
+        <h3 class="league-index-title">籃球</h3>
+        <ul class="league-list">
+          <li><a href="/basketball/sbl"><span class="lg-name">SBL</span><span class="lg-sub">超級籃球聯賽 · 台灣</span></a></li>
+          <li><a href="/basketball/tpbl"><span class="lg-name">TPBL</span><span class="lg-sub">台灣職籃 · 台灣</span></a></li>
+          <li><a href="/basketball/plg"><span class="lg-name">PLG</span><span class="lg-sub">P. LEAGUE+ · 台灣</span></a></li>
+          <li><a href="/basketball/bcl"><span class="lg-name">BCL</span><span class="lg-sub">Asia-East · 亞洲</span></a></li>
+        </ul>
+      </div>
+      <div id="section-football" class="leagues-section">
+        <h3 class="league-index-title">足球</h3>
+        <ul class="league-list league-list-cols">
+          <li><a href="/football/premier-league"><span class="lg-name">英超</span><span class="lg-sub">Premier League · 英格蘭</span></a></li>
+          <li><a href="/football/la-liga"><span class="lg-name">西甲</span><span class="lg-sub">LaLiga · 西班牙</span></a></li>
+          <li><a href="/football/bundesliga"><span class="lg-name">德甲</span><span class="lg-sub">Bundesliga · 德國</span></a></li>
+          <li><a href="/football/ligue-1"><span class="lg-name">法甲</span><span class="lg-sub">Ligue 1 · 法國</span></a></li>
+          <li><a href="/football/bundesliga-2"><span class="lg-name">德乙</span><span class="lg-sub">Bundesliga 2 · 德國</span></a></li>
+          <li><a href="/football/mls"><span class="lg-name">美足 MLS</span><span class="lg-sub">Major League Soccer · 美國</span></a></li>
+          <li><a href="/football/liga-mx"><span class="lg-name">墨超</span><span class="lg-sub">Liga MX · 墨西哥</span></a></li>
+          <li><a href="/football/eredivisie"><span class="lg-name">荷蘭甲</span><span class="lg-sub">Eredivisie · 荷蘭</span></a></li>
+          <li><a href="/football/champions-league"><span class="lg-name">歐冠</span><span class="lg-sub">Champions League · 歐洲</span></a></li>
+          <li><a href="/football/uefa-super-cup"><span class="lg-name">歐超盃</span><span class="lg-sub">UEFA Super Cup · 歐洲</span></a></li>
+          <li><a href="/football/leagues-cup"><span class="lg-name">聯賽盃</span><span class="lg-sub">Leagues Cup · 北美</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-section home-about">
+    <div class="section-head">
+      <h2 class="section-title">關於 Sports RS</h2>
+    </div>
+    <p>Sports RS 整理籃球（SBL、TPBL、PLG、BCL）與足球（歐洲主要聯賽、歐冠、美足）的賽事觀察與盤口推薦，內容每日更新。每場推薦都會在賽後結算並保留紀錄，戰績、Units 與 ROI 全部公開。</p>
+    <p class="home-about-links"><a href="/about">推薦方式與資金控管說明 →</a></p>
+  </section>
 </div>
 
 <div id="page-match" class="page">
@@ -1031,7 +1068,7 @@ footer a{color:var(--accent);text-decoration:none}
 <div id="page-worldcup" class="page">
 <div class="container">
   <div class="wc-page-head">
-    <h1>⚽ 世足專區</h1>
+    <h1>2026 世界盃</h1>
     <p id="wc-page-subtitle">2026 世界盃 · 小組賽與淘汰賽賽程與預測（台灣時間 UTC+8）</p>
   </div>
   <div class="wc-phase-bar" id="wc-phase-bar">
@@ -1086,13 +1123,13 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
     <div class="about-grid">
       <div class="about-box">
-        <h4>📌 內容方向</h4>
+        <h4>內容方向</h4>
         <p>每日推薦、已結算賽事、聯賽分區瀏覽與當周戰績整理，重點放在一致的紀錄方式與清楚呈現。
           其中各聯賽除了SBL是0.5 Units之外，其他皆為1 Units。
         </p>
       </div>
       <div class="about-box">
-        <h4>🎯 推薦方式</h4>
+        <h4>推薦方式</h4>
         <p>
           本網站建議使用者採用「固定單位投注（Flat Betting）」進行資金控管，以降低風險並維持長期穩定表現。建議將自身總本金劃分為 20 個單位（Units），每一單位約為總資金的 5%。每場投注皆使用固定 1 Unit 進行，不因單場信心或預測結果而調整下注金額。<br><br>
           <strong>◆ 建議投注方式</strong><br>
@@ -1112,15 +1149,29 @@ footer a{color:var(--accent);text-decoration:none}
 </div>
 
 <footer>
-  <p>© 2026 <a href="/">SportsRS</a> · Professional Sports Analytics · Data-driven. Not gambling.</p>
-  <p style="margin-top:10px">聯絡：<a href="mailto:predictioneverygame@gmail.com">predictioneverygame@gmail.com</a></p>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <strong>Sports RS</strong>
+      <span>每日推薦 · 歷史戰績 · 盤口紀錄</span>
+    </div>
+    <nav class="footer-links" aria-label="頁尾連結">
+      <a href="/picks">今日推薦</a>
+      <a href="/performance">各聯賽績效</a>
+      <a href="/leagues">聯賽分類</a>
+      <a href="/about">關於</a>
+      <a href="https://www.instagram.com/rs_sports_analytics" target="_blank" rel="noopener noreferrer">Instagram</a>
+      <a href="https://line.me/R/ti/p/@013dnjqw" target="_blank" rel="noopener noreferrer">LINE</a>
+    </nav>
+    <p class="footer-meta">© 2026 SportsRS · 聯絡：<a href="mailto:predictioneverygame@gmail.com">predictioneverygame@gmail.com</a></p>
+    <p class="footer-meta">本站內容僅供參考，不構成任何投注或獲利保證，請理性評估自身風險。</p>
+  </div>
 </footer>
 
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20261001b"></script>
-<script src="assets/sportsrs-router.js?v=20261001b"></script>
+<script src="assets/sportsrs-ui.js?v=20261001c"></script>
+<script src="assets/sportsrs-router.js?v=20261001d"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -2061,18 +2112,18 @@ function renderWorldCupMatchCard(m) {
   var statusMap = { final: '已結束', live: '進行中', preview: '即將開始' };
   var statusClass = { final: 'match-status-fin', live: 'match-status-live', preview: 'match-status-pre' };
   var sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
-  var sportLabel = m.sport === 'basketball' ? '🏀 ' + m.league : '⚽ ' + m.league;
+  var sportLabel = escapeHtml(m.league);
 
   var predHTML = m.prediction ? buildMatchPredictionItemsHtml(m) : '';
 
   return (
     '<div class="match-card wc-match-card">' +
       '<div class="match-header">' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<div class="match-header-meta">' +
           (m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : '') +
           '<span class="match-league-badge ' + sportClass + '">' + sportLabel + '</span>' +
-          '<span class="match-date">📅 ' + m.date.slice(5).replace('-', '/') + '</span>' +
-          '<span class="match-time">🕖 ' + m.time + '</span>' +
+          '<span class="match-date">' + m.date.slice(5).replace('-', '/') + '</span>' +
+          '<span class="match-time">' + m.time + '</span>' +
         '</div>' +
         '<span class="' + statusClass[m.status] + '">' + statusMap[m.status] + '</span>' +
       '</div>' +
@@ -2095,8 +2146,8 @@ function renderWorldCupMatchCard(m) {
           '</div>' +
         '</div>' +
         (m.prediction
-          ? '<div class="prediction-box"><div class="pred-title">🎯 本場推薦預測</div><div class="pred-items">' + predHTML + '</div></div>'
-          : '<div class="wc-no-pred">📋 預測待更新</div>') +
+          ? '<div class="prediction-box"><div class="pred-title">推薦內容</div><div class="pred-items">' + predHTML + '</div></div>'
+          : '<div class="wc-no-pred">預測待更新</div>') +
       '</div>' +
     '</div>'
   );
@@ -2108,7 +2159,7 @@ function renderMatchCard(m) {
   const statusMap = { final:'已結束', live:'進行中', preview:'即將開始' };
   const statusClass = { final:'match-status-fin', live:'match-status-live', preview:'match-status-pre' };
   const sportClass = m.sport === 'basketball' ? 'mb-b' : 'mb-f';
-  const sportLabel = (m.sport === 'basketball' ? '🏀 ' : '⚽ ') + escapeHtml(m.league);
+  const sportLabel = escapeHtml(m.league);
 
   const predHTML = m.prediction ? buildMatchPredictionItemsHtml(m) : '';
 
@@ -2122,11 +2173,11 @@ function renderMatchCard(m) {
   return `
     <div class="match-card" data-match-id="${escapeHtml(String(m.id || ''))}">
       <div class="match-header">
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="match-header-meta">
           ${m.wcRound ? '<span class="wc-round-pill">第' + m.wcRound + '輪</span>' : ''}
           <span class="match-league-badge ${sportClass}">${sportLabel}</span>
-                      <span class="match-date">📅 ${escapeHtml(m.date.slice(5).replace('-','/'))}</span>
-          <span class="match-time">🕖 ${escapeHtml(m.time)}</span>
+          <span class="match-date">${escapeHtml(m.date.slice(5).replace('-','/'))}</span>
+          <span class="match-time">${escapeHtml(m.time)}</span>
         </div>
         <span class="${statusClass[m.status]}">${statusMap[m.status]}</span>
       </div>
@@ -2152,7 +2203,7 @@ function renderMatchCard(m) {
         </div>
       </div>
       ${m.prediction ? `<div class="prediction-box">
-        <div class="pred-title">🎯 本場推薦預測</div>
+        <div class="pred-title">推薦內容</div>
         <div class="pred-items">${predHTML}</div>
       </div>` : ''}
       ${m.mvps && m.status==='final' ? `<div class="mvp-row">${mvpHTML}</div>` : ''}
@@ -2165,22 +2216,22 @@ function renderMatchCard(m) {
 // PREDICTION STATS（依聯賽：命中 / 未中加總；淨值 = 命中 − 未中；SBL 每滿贏+0.5、每滿輸+0.5 計欄位）
 // ════════════════════════════════════════════
 const LEAGUE_STATS_LABEL = {
-  BCL: '🌏 BCL',
-  SBL: '🏀 SBL',
-  TPBL: '🏀 TPBL',
-  PLG: '🏀 PLG',
-  英超: '⚽ 英超',
-  西甲: '⚽ 西甲',
-  德甲: '⚽ 德甲',
-  法甲: '⚽ 法甲',
-  德乙: '⚽ 德乙',
-  澳甲: '⚽ 澳甲',
-  美足: '⚽ MLS',
-  墨超: '⚽ 墨超',
-  荷蘭甲: '⚽ 荷甲',
-  歐冠: '🏆 歐冠',
-  歐洲超級盃: '🏆 歐超盃',
-  聯賽盃: '🏆 聯賽盃',
+  BCL: 'BCL',
+  SBL: 'SBL',
+  TPBL: 'TPBL',
+  PLG: 'PLG',
+  英超: '英超',
+  西甲: '西甲',
+  德甲: '德甲',
+  法甲: '法甲',
+  德乙: '德乙',
+  澳甲: '澳甲',
+  美足: 'MLS',
+  墨超: '墨超',
+  荷蘭甲: '荷甲',
+  歐冠: '歐冠',
+  歐洲超級盃: '歐超盃',
+  聯賽盃: '聯賽盃',
 };
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
@@ -2531,7 +2582,7 @@ function renderPredictionStats() {
     return (
       '<div class="pred-stat-sport-group">' +
         '<div class="pred-stat-row pred-stat-grid pred-stat-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
-          '<span class="pred-stat-col-league pred-stat-sport-label">' + icon + ' ' + name + ' <span class="pred-sport-chev">▼</span></span>' +
+          '<span class="pred-stat-col-league pred-stat-sport-label">' + (icon ? icon + ' ' : '') + name + ' <span class="pred-sport-chev">▼</span></span>' +
           '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(sum.hit) + '</span>' +
           '<span class="pred-stat-sep">·</span>' +
           '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(sum.miss) + '</span>' +
@@ -2542,7 +2593,7 @@ function renderPredictionStats() {
     );
   }
 
-  rowsEl.innerHTML = buildSportGroup('🏀', '籃球', bbLeagues) + buildSportGroup('⚽', '足球', scLeagues);
+  rowsEl.innerHTML = buildSportGroup('', '籃球', bbLeagues) + buildSportGroup('', '足球', scLeagues);
 
   var groupUnits = sumGroup(bbLeagues.concat(scLeagues)).units;
   totalEl.innerHTML = `
@@ -2708,8 +2759,8 @@ function buildWeekSummaryItemHtml(range) {
           <span class="pred-stat-col-roi">%</span>
         </div>
         <div class="week-summary-rows">
-          ${rowHtml('🏀 籃球', unitsBb)}
-          ${rowHtml('⚽ 足球', unitsSc)}
+          ${rowHtml('籃球', unitsBb)}
+          ${rowHtml('足球', unitsSc)}
         </div>
         <details class="week-league-breakdown">
           <summary>查看當周各聯賽狀況</summary>
@@ -2738,7 +2789,7 @@ function renderWeekSummary() {
 
   containerEl.innerHTML = `
     <div class="week-summary-head">
-      <h3>當周總累積 · 2026–2027</h3>
+      <h3>每週累積 · 2026–2027</h3>
     </div>
     ${currentWeeksHtml}
   `;
@@ -2771,9 +2822,9 @@ const BB_LEAGUE_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
 const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 /* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
-  SBL: '🏀 SBL', TPBL: '🏀 TPBL', PLG: '🏀 PLG', BCL: '🌏 BCL',
-  英超: '⚽ 英超', 西甲: '⚽ 西甲', 德甲: '⚽ 德甲', 法甲: '⚽ 法甲', 德乙: '⚽ 德乙', 澳甲: '⚽ 澳甲', 美足: '⚽ 美足', 墨超: '⚽ 墨超', 荷蘭甲: '⚽ 荷蘭甲',
-  歐冠: '🏆 歐冠', 歐洲超級盃: '🏆 歐超盃', 聯賽盃: '🏆 聯賽盃',
+  SBL: 'SBL', TPBL: 'TPBL', PLG: 'PLG', BCL: 'BCL',
+  英超: '英超', 西甲: '西甲', 德甲: '德甲', 法甲: '法甲', 德乙: '德乙', 澳甲: '澳甲', 美足: '美足', 墨超: '墨超', 荷蘭甲: '荷蘭甲',
+  歐冠: '歐冠', 歐洲超級盃: '歐超盃', 聯賽盃: '聯賽盃',
 };
 function sortLeagueKeys(keys, order) {
   return keys.slice().sort(function (a, b) {
@@ -2818,7 +2869,7 @@ function buildSportGroupedNestedHtml(matches, sortPerLeague) {
     parts.push(
       '<div class="date-sport-group bb">' +
         '<div class="date-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
-          '<span>🏀 籃球 · ' + bb.length + ' 場</span><span class="sport-chev">▼</span>' +
+          '<span>籃球 · ' + bb.length + ' 場</span><span class="sport-chev">▼</span>' +
         '</div>' +
         '<div class="date-sport-body">' + buildNestLeagueAccordions(bb, BB_LEAGUE_ORDER, 'bb', sortPerLeague) + '</div>' +
       '</div>'
@@ -2828,7 +2879,7 @@ function buildSportGroupedNestedHtml(matches, sortPerLeague) {
     parts.push(
       '<div class="date-sport-group foot">' +
         '<div class="date-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
-          '<span>⚽ 足球 · ' + sc.length + ' 場</span><span class="sport-chev">▼</span>' +
+          '<span>足球 · ' + sc.length + ' 場</span><span class="sport-chev">▼</span>' +
         '</div>' +
         '<div class="date-sport-body">' + buildNestLeagueAccordions(sc, SC_LEAGUE_ORDER, 'foot', sortPerLeague) + '</div>' +
       '</div>'
@@ -2847,6 +2898,12 @@ function formatDate(d) {
   const dt = new Date(d+'T00:00:00');
   return { pill: (dt.getMonth()+1)+'/'+ dt.getDate(), full: dt.getFullYear()+'年'+(dt.getMonth()+1)+'月'+dt.getDate()+'日' };
 }
+function sportCountsHtml(bbCount, fbCount) {
+  var parts = [];
+  if (bbCount > 0) parts.push('籃球 ' + bbCount);
+  if (fbCount > 0) parts.push('足球 ' + fbCount);
+  return parts.length ? '<span class="date-counts">' + parts.join(' · ') + '</span>' : '';
+}
 
 function createSettledDateRow(date, sortedDay, openByDefault) {
   const fd = formatDate(date);
@@ -2864,8 +2921,7 @@ function createSettledDateRow(date, sortedDay, openByDefault) {
         </div>
       </div>
       <div class="date-meta">
-        ${bCntF > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bCntF + '</span>' : ''}
-        ${fCntF > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + fCntF + '</span>' : ''}
+        ${sportCountsHtml(bCntF, fCntF)}
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -2891,9 +2947,9 @@ function createWorldCupSettledEntry() {
   row.innerHTML = `
     <div class="date-header" onclick="showPage('worldcup')">
       <div class="date-left">
-        <span class="date-pill">⚽</span>
+        <span class="date-pill">世足</span>
         <div>
-          <div class="date-title">2026世足</div>
+          <div class="date-title">2026 世界盃</div>
           <div class="date-sub">小組賽與淘汰賽${settledCount > 0 ? ' · 已結算 ' + settledCount + ' 場' : ''}</div>
         </div>
       </div>
@@ -2922,8 +2978,7 @@ function createRecommendationDateRow(date, dayMatches) {
         </div>
       </div>
       <div class="date-meta">
-        ${bCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bCnt + '</span>' : ''}
-        ${fCnt > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + fCnt + '</span>' : ''}
+        ${sportCountsHtml(bCnt, fCnt)}
         <span class="chevron">▼</span>
       </div>
     </div>
@@ -3031,8 +3086,7 @@ function renderOngoingByEvent(container, ongoing) {
         </div>
       </div>
       <div class="date-meta">
-        ${bb > 0 ? '<span style="font-size:.76rem;color:var(--accent)">🏀 ' + bb + '</span>' : ''}
-        ${sc > 0 ? '<span style="font-size:.76rem;color:var(--accent3);margin-left:6px">⚽ ' + sc + '</span>' : ''}
+        ${sportCountsHtml(bb, sc)}
       </div>
     </div>
     <div class="date-body">${buildSportGroupedBodyHtml(ongoing)}</div>
@@ -3048,11 +3102,17 @@ function renderDateList() {
   const dates = Object.keys(grouped).sort(function (a, b) { return a.localeCompare(b); });
   const container = document.getElementById('date-list');
   container.innerHTML = '';
+  const settledContainer = document.getElementById('settled-list') || container;
+  if (settledContainer !== container) settledContainer.innerHTML = '';
 
   if (dailyRecsGroupMode === 'event') {
     renderOngoingByEvent(container, ongoing);
   } else {
     renderOngoingByTime(container, grouped, dates);
+  }
+
+  if (!container.children.length) {
+    container.innerHTML = '<div class="empty-state"><p>目前沒有待開賽的推薦，新推薦發布後會顯示在這裡。</p></div>';
   }
 
   if (finals.length > 0 || MATCHES.some(isWorldCupMatch)) {
@@ -3063,10 +3123,12 @@ function renderDateList() {
     const finalDates2526 = Object.keys(groupedFinals2526).sort(function (a, b) { return b.localeCompare(a); });
     const finalDates2627 = Object.keys(groupedFinals2627).sort(function (a, b) { return b.localeCompare(a); });
 
-    var headFinals = document.createElement('div');
-    headFinals.className = 'date-list-section-title' + (dates.length > 0 ? ' date-list-section-settled' : '');
-    headFinals.innerHTML = '<span>📅 已結算賽事</span>';
-    container.appendChild(headFinals);
+    if (settledContainer === container) {
+      var headFinals = document.createElement('div');
+      headFinals.className = 'date-list-section-title' + (dates.length > 0 ? ' date-list-section-settled' : '');
+      headFinals.innerHTML = '<span>已結算賽事</span>';
+      container.appendChild(headFinals);
+    }
 
     var today = new Date();
     var sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
@@ -3074,7 +3136,7 @@ function renderDateList() {
     var recentDates2627 = finalDates2627.filter(function (d) { return d >= cutoff7; });
     var olderDates2627 = finalDates2627.filter(function (d) { return d < cutoff7; });
 
-    appendSettledDateRows(container, recentDates2627, groupedFinals2627, dates.length === 0);
+    appendSettledDateRows(settledContainer, recentDates2627, groupedFinals2627, dates.length === 0);
 
     if (olderDates2627.length > 0) {
       var olderCount = olderDates2627.reduce(function (s, d) { return s + groupedFinals2627[d].length; }, 0);
@@ -3096,7 +3158,7 @@ function renderDateList() {
         <div class="date-body season-archive-nested"></div>
       `;
       appendSettledDateRows(olderRow.querySelector('.season-archive-nested'), olderDates2627, groupedFinals2627, false);
-      container.appendChild(olderRow);
+      settledContainer.appendChild(olderRow);
     }
 
     if (finalDates2526.length > 0) {
@@ -3118,11 +3180,60 @@ function renderDateList() {
         <div class="date-body season-archive-nested"></div>
       `;
       appendSettledDateRows(archiveRow.querySelector('.season-archive-nested'), finalDates2526, groupedFinals2526, false);
-      container.appendChild(archiveRow);
+      settledContainer.appendChild(archiveRow);
     }
 
-    container.appendChild(createWorldCupSettledEntry());
+    settledContainer.appendChild(createWorldCupSettledEntry());
   }
+}
+
+function renderRecentRecords() {
+  var body = document.getElementById('recent-records-body');
+  if (!body) return;
+  var finals = MATCHES.filter(function (m) {
+    return m.status === 'final' && m.prediction && !isWorldCupRelated(m);
+  }).sort(function (a, b) {
+    var dc = String(b.date).localeCompare(String(a.date));
+    if (dc !== 0) return dc;
+    return String(b.time).localeCompare(String(a.time));
+  }).slice(0, 15);
+
+  if (!finals.length) {
+    body.innerHTML = '<tr><td colspan="9" class="records-empty">尚無已結算紀錄</td></tr>';
+    return;
+  }
+
+  var resultText = { hit: '贏', half_hit: '贏半', miss: '輸', half_miss: '輸半', push: '走水' };
+  var table = body.closest('table');
+  if (table) {
+    table.classList.toggle('records-no-odds', !finals.some(function (m) { return Number(m.odds || 0) > 0; }));
+  }
+
+  body.innerHTML = finals.map(function (m) {
+    var p = m.prediction.winner || Object.values(m.prediction)[0] || {};
+    var result = derivePredictionDisplayResult(m, p);
+    var seasonKey = String(m.date) < SEASON_SPLIT_DATE ? '2526' : '2627';
+    var stake = unitStakeForLeague(m.league, seasonKey);
+    var units = stake > 0 ? calcProfitForMatch(m) / stake : 0;
+    var unitsClass = signedMetricClass(units);
+    var odds = Number(m.odds || 0);
+    var resultCell = resultText[result]
+      ? predictionResultTagHtml(result) + '<span class="records-result-text">' + resultText[result] + '</span>'
+      : '<span class="records-muted">—</span>';
+    return (
+      '<tr class="records-row" data-match-id="' + escapeHtml(String(m.id || '')) + '">' +
+        '<td class="records-date">' + escapeHtml(String(m.date).slice(5).replace('-', '/')) + '</td>' +
+        '<td>' + escapeHtml(LEAGUE_STATS_LABEL[m.league] || m.league) + '</td>' +
+        '<td class="records-match">' + escapeHtml(m.home.name) + ' <span class="records-muted">vs</span> ' + escapeHtml(m.away.name) + '</td>' +
+        '<td class="records-pick">' + escapeHtml(p.value || '—') + '</td>' +
+        '<td class="num">' + (odds > 0 ? odds.toFixed(2) : '<span class="records-muted">—</span>') + '</td>' +
+        '<td class="num">' + Number(m.home.score || 0) + '–' + Number(m.away.score || 0) + '</td>' +
+        '<td class="center records-result">' + resultCell + '</td>' +
+        '<td class="num ' + unitsClass + '">' + formatUnitsDisplay(units) + '</td>' +
+        '<td class="num ' + unitsClass + '">' + formatRoiDisplay(units) + '</td>' +
+      '</tr>'
+    );
+  }).join('');
 }
 
 // ════════════════════════════════════════════
@@ -3145,16 +3256,16 @@ function showLeague(league, opts) {
   opts = opts || {};
   const matches = sortMatchesForLeague(league).filter(function (m) { return !isWorldCupMatch(m); });
   const leagueNames = {
-    'BCL':'🌏 BCL Asia-East', 'SBL':'🏀 SBL 超級籃球聯賽',
-    'TPBL':'🏀 TPBL', 'PLG':'🏀 PLG P.LEAGUE+',
-    '英超':'⚽ 英超', '西甲':'⚽ 西甲', '德甲':'⚽ 德甲', '法甲':'⚽ 法甲', '德乙':'⚽ 德乙',
-    '美足':'⚽ 美足 MLS', '墨超':'⚽ 墨超 Liga MX', '荷蘭甲':'⚽ 荷蘭甲',
-    '歐冠':'🏆 歐冠 Champions League', '歐洲超級盃':'🏆 歐洲超級盃', '聯賽盃':'🏆 聯賽盃 Leagues Cup'
+    'BCL':'BCL Asia-East', 'SBL':'SBL 超級籃球聯賽',
+    'TPBL':'TPBL', 'PLG':'PLG P.LEAGUE+',
+    '英超':'英超 Premier League', '西甲':'西甲 LaLiga', '德甲':'德甲 Bundesliga', '法甲':'法甲 Ligue 1', '德乙':'德乙 Bundesliga 2',
+    '美足':'美足 MLS', '墨超':'墨超 Liga MX', '荷蘭甲':'荷蘭甲 Eredivisie',
+    '歐冠':'歐冠 Champions League', '歐洲超級盃':'歐洲超級盃', '聯賽盃':'聯賽盃 Leagues Cup'
   };
   document.getElementById('league-header').textContent = leagueNames[league] || league;
   const content = document.getElementById('league-content');
   if (matches.length === 0) {
-    content.innerHTML = '<div class="empty-state"><div class="big">📋</div><p>此聯賽暫無分析文章，請繼續關注！</p></div>';
+    content.innerHTML = '<div class="empty-state"><p>這個聯賽目前沒有推薦紀錄。</p></div>';
   } else {
     content.innerHTML = matches.map(m => renderMatchCard(m)).join('');
   }
@@ -3171,7 +3282,7 @@ function showMatch(matchId, opts) {
   var content = document.getElementById('match-content');
   if (!content) return;
   if (!m) {
-    content.innerHTML = '<div class="empty-state"><div class="big">🔍</div><p>找不到這場比賽，可能尚未載入或 ID 不正確。</p></div>';
+    content.innerHTML = '<div class="empty-state"><p>找不到這場比賽，可能尚未載入或 ID 不正確。</p></div>';
   } else {
     content.innerHTML = renderMatchCard(m);
     var title = 'SportsRS — ' + (m.home && m.home.name ? m.home.name : '') + ' vs ' + (m.away && m.away.name ? m.away.name : '');
@@ -3261,11 +3372,11 @@ function renderWorldCupScheduleCard(group, fx) {
   return (
     '<div class="match-card wc-match-card wc-schedule-card">' +
       '<div class="match-header">' +
-        '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+        '<div class="match-header-meta">' +
           '<span class="wc-round-pill">第' + round + '輪</span>' +
-          '<span class="match-league-badge mb-f">⚽ 世足 ' + group + '組</span>' +
-          '<span class="match-date">📅 ' + displayDate + '</span>' +
-          '<span class="match-time">🕖 ' + time + '</span>' +
+          '<span class="match-league-badge mb-f">世足 ' + group + '組</span>' +
+          '<span class="match-date">' + displayDate + '</span>' +
+          '<span class="match-time">' + time + '</span>' +
         '</div>' +
         '<span class="match-status-pre">即將開始</span>' +
       '</div>' +
@@ -3283,7 +3394,7 @@ function renderWorldCupScheduleCard(group, fx) {
             '<div class="team-score score-pre">—</div>' +
           '</div>' +
         '</div>' +
-        '<div class="wc-no-pred">📋 預測待更新</div>' +
+        '<div class="wc-no-pred">預測待更新</div>' +
       '</div>' +
     '</div>'
   );
@@ -3391,8 +3502,8 @@ function formatKnockoutScheduleHtml(date, time) {
   var displayDate = date.slice(5).replace('-', '/');
   return (
     '<span class="wc-brkt-datetime">' +
-      '<span class="wc-brkt-date">📅 ' + displayDate + '</span>' +
-      '<span class="wc-brkt-time">🕖 ' + time + '</span>' +
+      '<span class="wc-brkt-date">' + displayDate + '</span>' +
+      '<span class="wc-brkt-time">' + time + '</span>' +
     '</span>'
   );
 }
@@ -3578,7 +3689,7 @@ function renderWorldCupKnockoutBracket() {
       '<div class="wc-bracket-finals">' +
         '<div class="wc-bracket-final-label">WORLD CHAMPION</div>' +
         renderKnockoutMatchBtn(resolveKnockoutSlot('final'), 'final') +
-        '<div class="wc-bracket-trophy">🏆</div>' +
+        '<div class="wc-bracket-trophy">FINAL</div>' +
         '<div class="wc-bracket-final-label">BRONZE FINAL</div>' +
         renderKnockoutMatchBtn(resolveKnockoutSlot('bronze'), 'bronze') +
       '</div>' +
@@ -3602,10 +3713,10 @@ function openWcKnockoutModal(slotId) {
   var roundLabel = WC_KNOCKOUT_ROUND_LABELS[slot.round || 'r32'] || '32 強';
   var predHtml = '';
   if (match && match.prediction) {
-    predHtml = '<div class="wc-modal-pred"><div class="prediction-box"><div class="pred-title">🎯 本場推薦預測</div><div class="pred-items">' +
+    predHtml = '<div class="wc-modal-pred"><div class="prediction-box"><div class="pred-title">推薦內容</div><div class="pred-items">' +
       buildMatchPredictionItemsHtml(match) + '</div></div></div>';
   } else {
-    predHtml = '<div class="wc-modal-empty">📋 此場尚無推薦資料<br><span style="font-size:.78rem;margin-top:6px;display:block">可於 compute 匯入後同步顯示</span></div>';
+    predHtml = '<div class="wc-modal-empty">此場尚無推薦資料<br><span style="font-size:.78rem;margin-top:6px;display:block">可於 compute 匯入後同步顯示</span></div>';
   }
 
   var statusText = match && match.status === 'final'
@@ -3614,7 +3725,7 @@ function openWcKnockoutModal(slotId) {
   var displayDate = slot.date || (match && match.date) || '';
   var displayTime = slot.time || (match && match.time) || '';
   var schedText = displayDate && displayTime
-    ? ('📅 ' + displayDate.slice(5).replace('-', '/') + ' · 🕖 ' + displayTime + ' · ')
+    ? (displayDate.slice(5).replace('-', '/') + ' ' + displayTime + ' · ')
     : '';
 
   body.innerHTML =
@@ -3652,7 +3763,7 @@ function renderWorldCupGroupsView() {
 
   var fixtures = WC_GROUP_FIXTURES[selectedWorldCupGroup] || [];
   if (!fixtures.length) {
-    contentEl.innerHTML = '<div class="empty-state"><div class="big">⚽</div><p>此組別尚無賽程資料</p></div>';
+    contentEl.innerHTML = '<div class="empty-state"><p>此組別尚無賽程資料</p></div>';
     return;
   }
 
@@ -3845,7 +3956,7 @@ function renderWorldCupGroupStatsHtml() {
   var stats = tallyAllWorldCupStats();
   return buildWorldCupStatsBlocksHtml(
     stats,
-    '📊 全部預測戰績',
+    '全部預測戰績',
     '小組賽＋淘汰賽已結算 ' + stats.settled + ' 場有預測資料'
   );
 }
@@ -3926,8 +4037,9 @@ function showPage(name) {
 }
 
 function updateHeroRecCount() {
-  var el = document.getElementById('hero-stat-rec-count');
-  if (el) el.textContent = String(MATCHES.length);
+  document.querySelectorAll('[data-rec-count]').forEach(function (el) {
+    el.textContent = String(MATCHES.length);
+  });
 }
 
 // INIT
@@ -3952,6 +4064,7 @@ async function initApp() {
   dailyRecsGroupMode = getDailyRecsGroupMode();
   bindDailyRecsGroupToggle();
   renderDateList();
+  renderRecentRecords();
   renderProfitSummary();
   renderPredictionStats();
   renderWeekSummary();

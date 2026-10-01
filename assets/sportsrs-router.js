@@ -33,6 +33,8 @@
   var PAGE_TITLES = {
     home: 'SportsRS — Professional Sports Analytics',
     picks: 'SportsRS — 每日推薦',
+    leagues: 'SportsRS — 聯賽分類',
+    records: 'SportsRS — 歷史戰績',
     basketball: 'SportsRS — Basketball Picks & Analytics',
     football: 'SportsRS — Football Picks & Analytics',
     performance: 'SportsRS — 各聯賽績效',
@@ -85,6 +87,8 @@
 
     if (parts.length === 0) return { type: 'home', query: query };
     if (parts[0] === 'picks') return { type: 'picks', query: query };
+    if (parts[0] === 'leagues') return { type: 'leagues', query: query };
+    if (parts[0] === 'records') return { type: 'records', query: query };
     if (parts[0] === 'about') return { type: 'about', query: query };
     if (parts[0] === 'performance') return { type: 'performance', query: query };
     if (parts[0] === 'worldcup') return { type: 'worldcup', query: query };
@@ -115,6 +119,8 @@
     switch (route.type) {
       case 'home': return '/';
       case 'picks': return '/picks';
+      case 'leagues': return '/leagues';
+      case 'records': return '/records';
       case 'about': return '/about';
       case 'performance': return '/performance';
       case 'worldcup': return '/worldcup';
@@ -151,16 +157,19 @@
     if (ogUrl) ogUrl.setAttribute('content', 'https://sportsrs.com' + buildPath(route));
   }
 
+  var NAV_ROUTE_TYPES = {
+    '/': ['home', 'match', 'worldcup'],
+    '/picks': ['picks'],
+    '/performance': ['performance'],
+    '/leagues': ['leagues', 'league', 'sport'],
+    '/about': ['about']
+  };
+
   function updateNavActive(route) {
+    var type = route ? route.type : 'home';
     document.querySelectorAll('.nav-links a[data-route]').forEach(function (a) {
-      var r = a.getAttribute('data-route') || '/';
-      var active = false;
-      if (r === '/about') {
-        active = !!(route && route.type === 'about');
-      } else if (r === '/') {
-        active = !route || route.type !== 'about';
-      }
-      a.classList.toggle('active', active);
+      var types = NAV_ROUTE_TYPES[a.getAttribute('data-route') || '/'] || [];
+      a.classList.toggle('active', types.indexOf(type) !== -1);
     });
   }
 
@@ -208,6 +217,18 @@
           if (typeof window._applyPage === 'function') window._applyPage('home');
           setHomeChartSport('all');
           scrollToId('daily-recs-title', 80);
+          break;
+
+        case 'leagues':
+          if (typeof window._applyPage === 'function') window._applyPage('home');
+          setHomeChartSport('all');
+          scrollToId('leagues', 80);
+          break;
+
+        case 'records':
+          if (typeof window._applyPage === 'function') window._applyPage('home');
+          setHomeChartSport('all');
+          scrollToId('recent-records', 80);
           break;
 
         case 'sport':
@@ -278,7 +299,7 @@
   function bindMatchCardNavigation() {
     document.addEventListener('click', function (e) {
       if (applying || !ready) return;
-      var card = e.target.closest('.match-card[data-match-id]');
+      var card = e.target.closest('.match-card[data-match-id], .records-row[data-match-id]');
       if (!card) return;
       if (e.target.closest('a, button, input, select, textarea')) return;
       var id = card.getAttribute('data-match-id');
