@@ -14,6 +14,20 @@
   --border-strong: #d1d5db;
   --row-line: #f0f1f3;
 
+  /* 每日推薦巢狀層級色（參考運彩分析站分區） */
+  --rec-date-bg: #eef4fb;
+  --rec-date-border: #0b5fad;
+  --rec-sport-foot-bg: #b7dfb9;
+  --rec-sport-foot-text: #1a4d2e;
+  --rec-sport-bb-bg: #a8cce8;
+  --rec-sport-bb-text: #1e3a5f;
+  --rec-league-foot-bg: #e6dcf5;
+  --rec-league-foot-text: #4c1d95;
+  --rec-league-bb-bg: #fdecc8;
+  --rec-league-bb-text: #78350f;
+  --rec-match-a: #eceff3;
+  --rec-match-b: #f8f9fb;
+
   --primary: #0b5fad;
   --primary-hover: #094d8d;
   --primary-weak: #eef4fb;
@@ -542,8 +556,16 @@ nav {
 .date-row:last-child { border-bottom: 0; }
 .date-row.open { border-color: var(--border); box-shadow: none; }
 .date-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; cursor: pointer; }
-.date-header:hover { background: var(--surface-alt); }
-.date-row.open > .date-header { background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+.date-row:not(.season-archive):not(.season-2526):not(.wc-settled-entry):not(.early-picks):not(.daily-recs-event-wrap) > .date-header {
+  background: var(--rec-date-bg);
+  border-left: 4px solid var(--rec-date-border);
+  padding-left: 12px;
+}
+.date-header:hover { filter: brightness(0.98); }
+.date-row.open > .date-header { border-bottom: 1px solid var(--border); }
+.date-row:not(.season-archive):not(.season-2526):not(.wc-settled-entry):not(.early-picks):not(.daily-recs-event-wrap).open > .date-header {
+  background: var(--rec-date-bg);
+}
 .date-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .date-pill,
 .date-row.season-archive .date-pill,
@@ -565,7 +587,7 @@ nav {
 .date-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .date-counts { font-size: .78rem; color: var(--muted); white-space: nowrap; }
 .chevron { font-size: .68rem; color: var(--muted); transition: transform .2s; }
-.date-body { padding: 14px 16px 16px; }
+.date-body { padding: 14px 16px 16px; background: #fafbfc; }
 .date-row.season-archive .date-header,
 .date-row.season-2526 .date-header,
 .date-row.wc-settled-entry .date-header { background: none; }
@@ -579,55 +601,91 @@ nav {
 .date-row.season-archive.open .season-archive-nested { display: flex; padding: 0; }
 .date-row.season-archive .season-archive-nested .date-row { border-radius: 0; }
 .date-row.wc-settled-entry .wc-entry-arrow { color: var(--muted); font-size: 1.1rem; }
-.daily-recs-event-wrap .date-body { padding: 14px 16px 16px; }
+.daily-recs-event-wrap .date-body { padding: 14px 16px 16px; background: #fafbfc; }
 .date-list-section-title { margin: 0; padding: 12px 16px; font-size: .95rem; font-weight: 700; border-bottom: 1px solid var(--border); }
 .date-list-section-title::before { content: none; display: none; }
 
-.date-sport-group,
-.nest-league-group { background: none; }
 .date-sport-group {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   border: 0;
-  border-radius: 0;
-  overflow: visible;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, .04);
 }
 .date-sport-group:last-child { margin-bottom: 0; }
-.date-sport-head,
-.date-sport-group.bb .date-sport-head,
-.date-sport-group.foot .date-sport-head {
-  padding: 4px 0 6px;
-  background: none;
-  color: var(--text);
-  font-size: .84rem;
+.date-sport-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: .86rem;
   font-weight: 700;
-  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
 }
-.date-sport-head:hover { filter: none; color: var(--primary); }
-.date-sport-body { padding: 10px 0 0; }
+.date-sport-group.foot .date-sport-head {
+  background: var(--rec-sport-foot-bg);
+  color: var(--rec-sport-foot-text);
+}
+.date-sport-group.bb .date-sport-head {
+  background: var(--rec-sport-bb-bg);
+  color: var(--rec-sport-bb-text);
+}
+.date-sport-head:hover { filter: brightness(0.97); }
+.date-sport-body {
+  padding: 10px 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+}
+.date-sport-group.open .date-sport-head .sport-chev { transform: rotate(180deg); }
+
 .nest-league-group {
   margin-bottom: 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border: 1px solid rgba(0, 0, 0, .06);
+  border-radius: 6px;
+  overflow: hidden;
   background: #fff;
 }
-.nest-league-head,
-.nest-league-group.bb .nest-league-head,
-.nest-league-group.foot .nest-league-head {
-  padding: 8px 12px;
-  background: var(--surface-alt);
-  color: var(--text-2);
+.nest-league-group:last-child { margin-bottom: 0; }
+.nest-league-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
   font-size: .82rem;
-  font-weight: 600;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
 }
-.nest-league-head:hover { filter: none; color: var(--text); }
-.nest-league-group.open > .nest-league-head { border-bottom: 1px solid var(--border); }
-.nest-league-body { padding: 8px; }
+.nest-league-group.foot .nest-league-head {
+  background: var(--rec-league-foot-bg);
+  color: var(--rec-league-foot-text);
+}
+.nest-league-group.bb .nest-league-head {
+  background: var(--rec-league-bb-bg);
+  color: var(--rec-league-bb-text);
+}
+.nest-league-head:hover { filter: brightness(0.98); }
+.nest-league-group.open > .nest-league-head { border-bottom: 1px solid rgba(0, 0, 0, .06); }
+.nest-league-group.open .nest-league-chev { transform: rotate(180deg); }
+.nest-league-body { padding: 6px; background: #fff; }
 .sport-chev,
-.nest-league-chev { font-size: .66rem; color: var(--muted); }
+.nest-league-chev { font-size: .66rem; opacity: .75; transition: transform .2s; }
 
 /* ─── MATCH CARD ─── */
+.nest-league-body .match-card:nth-child(odd) { background: var(--rec-match-a); }
+.nest-league-body .match-card:nth-child(even) { background: var(--rec-match-b); }
+.date-sport-body > .match-card:nth-child(odd),
+.date-body > .match-card:nth-child(odd) { background: var(--rec-match-a); }
+.date-sport-body > .match-card:nth-child(even),
+.date-body > .match-card:nth-child(even) { background: var(--rec-match-b); }
+
 .match-card {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   overflow: hidden;
   background: #fff;
   border: 1px solid var(--border);
@@ -636,6 +694,7 @@ nav {
   backdrop-filter: none;
   transition: border-color .15s;
 }
+.match-card:last-child { margin-bottom: 0; }
 .match-card:hover { border-color: var(--border-strong); transform: none; box-shadow: none; }
 .match-header {
   display: flex;
@@ -644,7 +703,7 @@ nav {
   flex-wrap: wrap;
   gap: 8px;
   padding: 7px 12px;
-  background: var(--surface-alt);
+  background: rgba(255, 255, 255, .45);
   border-bottom: 1px solid var(--border);
 }
 .match-header-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -708,9 +767,17 @@ nav {
   position: static;
   margin: 0 12px 12px;
   padding: 10px 12px;
-  background: var(--surface-alt);
+  background: rgba(255, 255, 255, .72);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+}
+.nest-league-group.foot .prediction-box {
+  background: #f5f0fb;
+  border-color: #ddd6fe;
+}
+.nest-league-group.bb .prediction-box {
+  background: #fffbeb;
+  border-color: #fde68a;
 }
 .pred-title {
   margin-bottom: 6px;
