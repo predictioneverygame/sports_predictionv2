@@ -463,6 +463,17 @@ nav {
   border-bottom: 2px solid var(--text);
 }
 .league-charts-head h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--text); }
+.league-charts-pick-hint {
+  margin: 24px 0 0;
+  padding: 20px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: .95rem;
+  background: #f8f9fa;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+.league-charts-body[hidden] { display: none !important; }
 .league-charts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .league-charts-grid .chart-card { min-height: 280px; }
 .league-charts-grid .chart-card canvas { max-height: 240px; height: 240px !important; }

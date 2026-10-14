@@ -11,7 +11,7 @@
   var cumulMetric = 'roi';
   var cumulRangeMode = 'all'; // all = 一次看完整趨勢；window = 近10場可拖曳
   var chartSport = 'all';
-  var leagueChartSport = 'all';
+  var leagueChartSport = null;
   var monthlySeriesCache = [];
   var cumulPointsCache = [];
   var chartRenderSeq = 0;
@@ -21,6 +21,10 @@
   var leagueCumulRangeMode = 'all'; // all = 一次看完整趨勢；window = 近10場可拖曳
   var leagueCumulCache = [];
   var leagueCumulCharts = {};
+  var leagueCumulRenderSeq = 0;
+  var leagueChartsUiBound = false;
+  var LEAGUE_CUMUL_BATCH = 2;
+  var LEAGUE_CUMUL_MAX_POINTS = 72;
 
   var CHART_COLORS = {
     primary: '#0b5fad',
@@ -844,10 +848,59 @@
     return true;
   }
 
+  function leagueSportSelected(sport) {
+    var s = sport != null ? sport : leagueChartSport;
+    return s === 'basketball' || s === 'soccer';
+  }
+
+  function syncLeagueSportToggleUi() {
+    var box = qs('league-charts-sport-toggle');
+    if (!box) return;
+    box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-sport') === leagueChartSport);
+    });
+  }
+
+  function updateLeagueChartsVisibility() {
+    var hint = qs('league-charts-pick-hint');
+    var body = qs('league-charts-body');
+    var selected = leagueSportSelected();
+    if (hint) hint.hidden = selected;
+    if (body) body.hidden = !selected;
+  }
+
+  function clearLeagueChartsContent() {
+    hideChartTooltip();
+    leagueCumulRenderSeq += 1;
+    Object.keys(leagueCumulCharts).forEach(function (key) {
+      var c = leagueCumulCharts[key];
+      if (c && c.canvas) destroyChartOnCanvas(c.canvas, c);
+    });
+    leagueCumulCharts = {};
+    leagueCumulCache = [];
+    leagueCompareCache = [];
+    ['leagueWr', 'leagueRoi', 'leagueUnits'].forEach(function (key) {
+      var canvasId = key === 'leagueWr' ? 'chart-league-winrate'
+        : key === 'leagueRoi' ? 'chart-league-roi' : 'chart-league-units';
+      var canvas = qs(canvasId);
+      if (canvas) destroyChartOnCanvas(canvas, charts[key]);
+      charts[key] = null;
+    });
+    var grid = qs('league-cumul-grid');
+    if (grid) grid.innerHTML = '';
+  }
+
+  function showLeagueChartsPickState() {
+    clearLeagueChartsContent();
+    updateLeagueChartsVisibility();
+    syncLeagueSportToggleUi();
+  }
+
   /** 各聯賽績效頁共用：2026–27 起、依球種篩選、且排除足球盃賽／單場賽事 */
   function getLeagueScopedFinals(sportFilter) {
+    if (!leagueSportSelected(sportFilter)) return [];
     var prev = chartSport;
-    chartSport = sportFilter || 'all';
+    chartSport = sportFilter;
     var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
     var finals = filterByChartSport(getChartFinals()).filter(function (m) {
       return String(m.date || '') >= split;
@@ -999,6 +1052,137 @@
     panEl.addEventListener('lostpointercapture', endDrag);
   }
 
+  function sampleCumulPoints(points, maxCount) {
+    if (!points || points.length <= maxCount) return points || [];
+    var last = points.length - 1;
+    var out = [];
+    for (var i = 0; i < maxCount; i++) {
+      var idx = Math.round(i * last / (maxCount - 1));
+      out.push(points[idx]);
+    }
+    return out;
+  }
+
+  function ensureLeagueChartsUiBound() {
+    if (leagueChartsUiBound) return;
+    leagueChartsUiBound = true;
+    bindLeagueChartsSportToggle();
+    bindLeagueCumulRangeToggle();
+    bindMetricToggle('league-cumul-metric-toggle',
+      function () { return leagueCumulMetric; },
+      function (m) { leagueCumulMetric = m; },
+      renderLeagueCumulCharts);
+  }
+
+  function refreshLeagueChartData() {
+    if (!window.Chart || !qs('page-league-charts')) return;
+    if (!leagueSportSelected()) {
+      showLeagueChartsPickState();
+      return;
+    }
+    updateLeagueChartsVisibility();
+    syncLeagueSportToggleUi();
+    leagueCompareCache = buildLeagueCompareSeries(leagueChartSport);
+    scheduleChartFrame(function () {
+      renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
+      renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
+      renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
+      renderLeagueCumulCharts();
+    });
+  }
+
+  function createSingleLeagueCumulChart(i, seq) {
+    if (seq !== leagueCumulRenderSeq) return;
+    var row = leagueCumulCache[i];
+    if (!row) return;
+    var canvas = qs('league-cumul-canvas-' + i);
+    var panEl = qs('league-cumul-pan-' + i);
+    if (!canvas) return;
+    destroyChartOnCanvas(canvas, leagueCumulCharts[i]);
+
+    var showAll = leagueCumulRangeMode !== 'window';
+    var WINDOW = 10;
+    var points = row.points;
+    if (showAll && points.length > LEAGUE_CUMUL_MAX_POINTS) {
+      points = sampleCumulPoints(points, LEAGUE_CUMUL_MAX_POINTS);
+    }
+    var n = Math.max(points.length, 1);
+    var labels = points.map(function (p) { return p.label; });
+    var isRoi = leagueCumulMetric === 'roi';
+    var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
+    var data = points.map(function (p) {
+      return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
+    });
+    var panStart = Math.max(0, n - WINDOW);
+
+    var opts = makeBaseOpts(function (chart, point) {
+      var src = chart.$sportsrsPoints || [];
+      var p = src[point.dataIndex];
+      if (!p) return null;
+      var lines = [
+        p.title,
+        (p.date || '') + (p.league ? ' · ' + p.league : ''),
+        '該場 ' + signedText(p.matchRoi, 2, '%') + ' · ' + signedText(p.matchUnits, 2, ' Unit'),
+        '累積 ' + (isRoi ? signedText(p.cumulRoi, 2, '%') : signedText(p.cumulUnits, 2, ' Unit'))
+      ];
+      return { text: lines.join('\n'), color: signedColor(p.matchRoi) };
+    });
+
+    if (showAll) {
+      opts.scales.x.ticks = {
+        maxRotation: 0,
+        autoSkip: true,
+        maxTicksLimit: Math.min(10, Math.max(4, Math.ceil(n / 6)))
+      };
+      delete opts.scales.x.min;
+      delete opts.scales.x.max;
+    } else {
+      opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
+      if (n > WINDOW) {
+        opts.scales.x.min = panStart;
+        opts.scales.x.max = panStart + WINDOW - 1;
+      }
+    }
+
+    var chart = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          borderColor: color,
+          backgroundColor: color,
+          fill: false,
+          tension: 0,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointBackgroundColor: color,
+          pointBorderColor: color,
+          borderWidth: 2
+        }]
+      },
+      options: opts,
+      plugins: [zeroLinePlugin()]
+    });
+    try { chart.resize(); } catch (_) {}
+    chart.$sportsrsPoints = points;
+    chart.$sportsrsTotal = n;
+    chart.$sportsrsWindow = WINDOW;
+    chart.$sportsrsShowAll = showAll;
+    chart.$panStart = panStart;
+    leagueCumulCharts[i] = chart;
+    if (panEl) attachChartPan(panEl, function () { return leagueCumulCharts[i]; });
+  }
+
+  function runLeagueCumulBatch(start, seq) {
+    if (seq !== leagueCumulRenderSeq) return;
+    var end = Math.min(start + LEAGUE_CUMUL_BATCH, leagueCumulCache.length);
+    for (var i = start; i < end; i++) createSingleLeagueCumulChart(i, seq);
+    if (end < leagueCumulCache.length) {
+      requestAnimationFrame(function () { runLeagueCumulBatch(end, seq); });
+    }
+  }
+
   function bindLeagueCumulRangeToggle() {
     var box = qs('league-cumul-range-toggle');
     if (!box || box.dataset.bound === '1') return;
@@ -1021,6 +1205,7 @@
     var grid = qs('league-cumul-grid');
     if (!grid) return;
 
+    var seq = ++leagueCumulRenderSeq;
     hideChartTooltip();
     Object.keys(leagueCumulCharts).forEach(function (key) {
       var c = leagueCumulCharts[key];
@@ -1035,7 +1220,6 @@
     }
 
     var showAll = leagueCumulRangeMode !== 'window';
-    var WINDOW = 10;
 
     grid.innerHTML = leagueCumulCache.map(function (row, i) {
       return '<div class="chart-card">'
@@ -1047,80 +1231,9 @@
         + '</div></div>';
     }).join('');
 
-    var isRoi = leagueCumulMetric === 'roi';
-    var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
-
     scheduleChartFrame(function () {
-    leagueCumulCache.forEach(function (row, i) {
-      var canvas = qs('league-cumul-canvas-' + i);
-      var panEl = qs('league-cumul-pan-' + i);
-      if (!canvas) return;
-      destroyChartOnCanvas(canvas, leagueCumulCharts[i]);
-      var points = row.points;
-      var n = Math.max(points.length, 1);
-      var labels = points.map(function (p) { return p.label; });
-      var data = points.map(function (p) {
-        return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
-      });
-      var panStart = Math.max(0, n - WINDOW);
-
-      var opts = makeBaseOpts(function (chart, point) {
-        var src = chart.$sportsrsPoints || [];
-        var p = src[point.dataIndex];
-        if (!p) return null;
-        var lines = [
-          p.title,
-          (p.date || '') + (p.league ? ' · ' + p.league : ''),
-          '該場 ' + signedText(p.matchRoi, 2, '%') + ' · ' + signedText(p.matchUnits, 2, ' Unit'),
-          '累積 ' + (isRoi ? signedText(p.cumulRoi, 2, '%') : signedText(p.cumulUnits, 2, ' Unit'))
-        ];
-        return { text: lines.join('\n'), color: signedColor(p.matchRoi) };
-      });
-
-      if (showAll) {
-        opts.scales.x.ticks = {
-          maxRotation: 0,
-          autoSkip: true,
-          maxTicksLimit: Math.min(10, Math.max(4, Math.ceil(n / 6)))
-        };
-        delete opts.scales.x.min;
-        delete opts.scales.x.max;
-      } else {
-        opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
-        if (n > WINDOW) {
-          opts.scales.x.min = panStart;
-          opts.scales.x.max = panStart + WINDOW - 1;
-        }
-      }
-
-      var chart = finalizeChart(new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            data: data,
-            borderColor: color,
-            backgroundColor: color,
-            fill: false,
-            tension: 0,
-            pointRadius: 0,
-            pointHoverRadius: 4,
-            pointBackgroundColor: color,
-            pointBorderColor: color,
-            borderWidth: 2
-          }]
-        },
-        options: opts,
-        plugins: [zeroLinePlugin()]
-      }), canvas);
-      chart.$sportsrsPoints = points;
-      chart.$sportsrsTotal = n;
-      chart.$sportsrsWindow = WINDOW;
-      chart.$sportsrsShowAll = showAll;
-      chart.$panStart = panStart;
-      leagueCumulCharts[i] = chart;
-      if (panEl) attachChartPan(panEl, function () { return leagueCumulCharts[i]; });
-    });
+      if (seq !== leagueCumulRenderSeq) return;
+      runLeagueCumulBatch(0, seq);
     });
   }
 
@@ -1191,19 +1304,9 @@
     }
     if (!qs('page-league-charts')) return;
     chartDefaults();
-    leagueCompareCache = buildLeagueCompareSeries(leagueChartSport);
-    bindLeagueChartsSportToggle();
-    bindLeagueCumulRangeToggle();
-    bindMetricToggle('league-cumul-metric-toggle',
-      function () { return leagueCumulMetric; },
-      function (m) { leagueCumulMetric = m; },
-      renderLeagueCumulCharts);
-    scheduleChartFrame(function () {
-      renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
-      renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
-      renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
-      renderLeagueCumulCharts();
-    });
+    ensureLeagueChartsUiBound();
+    if (leagueSportSelected()) refreshLeagueChartData();
+    else showLeagueChartsPickState();
   }
 
   function bindLeagueChartsSportToggle() {
@@ -1220,7 +1323,7 @@
       box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
         b.classList.toggle('active', b.getAttribute('data-sport') === sport);
       });
-      renderLeagueCharts();
+      refreshLeagueChartData();
     });
   }
 
@@ -1253,15 +1356,9 @@
 
   function setLeagueChartSport(sport, opts) {
     opts = opts || {};
-    leagueChartSport = sport || 'all';
-    var box = qs('league-charts-sport-toggle');
-    if (box) {
-      box.querySelectorAll('.chart-toggle-btn').forEach(function (b) {
-        b.classList.toggle('active', b.getAttribute('data-sport') === leagueChartSport);
-      });
-    }
+    leagueChartSport = (sport === 'basketball' || sport === 'soccer') ? sport : null;
     if (opts.safe && !window.Chart) return;
-    renderLeagueCharts();
+    refreshLeagueChartData();
   }
 
   function renderCharts() {

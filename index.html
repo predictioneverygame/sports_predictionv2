@@ -1030,11 +1030,12 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="league-charts-head">
       <h1>各聯賽績效 · 2026–27</h1>
       <div class="chart-toggle charts-sport-toggle" id="league-charts-sport-toggle" role="group" aria-label="聯賽圖表運動篩選">
-        <button type="button" class="chart-toggle-btn active" data-sport="all">全部</button>
         <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
         <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
       </div>
     </div>
+    <p class="league-charts-pick-hint" id="league-charts-pick-hint">請先選擇上方「籃球」或「足球」查看各聯賽績效。</p>
+    <div class="league-charts-body" id="league-charts-body" hidden>
     <div class="league-charts-grid">
       <div class="chart-card">
         <div class="chart-card-head"><h3>勝率</h3></div>
@@ -1063,6 +1064,7 @@ footer a{color:var(--accent);text-decoration:none}
       </div>
     </div>
     <div class="league-cumul-grid" id="league-cumul-grid"></div>
+    </div>
   </div>
 </div>
 
