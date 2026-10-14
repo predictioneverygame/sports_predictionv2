@@ -14,6 +14,7 @@
   var leagueChartSport = 'all';
   var monthlySeriesCache = [];
   var cumulPointsCache = [];
+  var chartRenderSeq = 0;
   var leagueCompareCache = [];
   var leagueChartsSportBound = false;
   var leagueCumulMetric = 'roi';
@@ -330,24 +331,39 @@
     if (tooltipEl) tooltipEl.style.opacity = '0';
   }
 
-  /** 同一 canvas 重繪前先清掉舊實例，避免 destroy 後留白 */
+  /** 同一 canvas 只 destroy 一次，避免重複 destroy 導致 canvas 異常 */
   function destroyChartOnCanvas(canvas, stored) {
     hideChartTooltip();
-    if (window.Chart && canvas) {
-      var existing = Chart.getChart(canvas);
-      if (existing) {
-        try { existing.destroy(); } catch (_) {}
-      }
-    }
-    if (stored && typeof stored.destroy === 'function') {
-      try { stored.destroy(); } catch (_) {}
+    if (!window.Chart || !canvas) return;
+    var inst = Chart.getChart(canvas);
+    if (!inst && stored && typeof stored.destroy === 'function') inst = stored;
+    if (inst) {
+      try { inst.destroy(); } catch (_) {}
     }
   }
 
-  function finalizeChart(chart) {
+  function canvasHasLayout(canvas) {
+    if (!canvas || !canvas.parentElement) return false;
+    var rect = canvas.parentElement.getBoundingClientRect();
+    return rect.width >= 2 && rect.height >= 2;
+  }
+
+  function finalizeChart(chart, canvas) {
     if (!chart) return chart;
-    try { chart.resize(); } catch (_) {}
+    function resizeIfReady() {
+      if (!chart || (canvas && chart.canvas !== canvas)) return;
+      if (canvas && !canvasHasLayout(canvas)) return;
+      try { chart.resize(); } catch (_) {}
+    }
+    resizeIfReady();
+    requestAnimationFrame(resizeIfReady);
     return chart;
+  }
+
+  function scheduleChartFrame(fn) {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(fn);
+    });
   }
 
   function ensureTooltipEl() {
@@ -427,6 +443,7 @@
     return {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
       interaction: { mode: 'nearest', intersect: false, axis: 'x' },
       plugins: {
         legend: { display: false },
@@ -467,7 +484,22 @@
     };
   }
 
+  function deferChartUntilReady(canvas, drawFn) {
+    if (canvasHasLayout(canvas)) {
+      drawFn();
+      return;
+    }
+    scheduleChartFrame(drawFn);
+  }
+
   function renderWinRateChart() {
+    if (!window.Chart) return;
+    var canvas = qs('chart-winrate');
+    if (!canvas) return;
+    deferChartUntilReady(canvas, renderWinRateChartNow);
+  }
+
+  function renderWinRateChartNow() {
     if (!window.Chart) return;
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
@@ -477,7 +509,7 @@
     }
     var data = series.map(function (s) { return Number((s.winRate || 0).toFixed(2)); });
     var canvas = qs('chart-winrate');
-    if (!canvas) return;
+    if (!canvas || !canvasHasLayout(canvas)) return;
     destroyChartOnCanvas(canvas, charts.winrate);
     charts.winrate = null;
 
@@ -491,7 +523,7 @@
           backgroundColor: CHART_COLORS.primary,
           fill: false,
           tension: 0,
-          pointRadius: 3,
+          pointRadius: 0,
           pointHoverRadius: 4,
           pointBackgroundColor: CHART_COLORS.primary,
           pointBorderColor: CHART_COLORS.primary,
@@ -507,13 +539,19 @@
         };
       }),
       plugins: []
-    }));
+    }), canvas);
     if (charts.winrate.options.plugins) {
       charts.winrate.options.plugins.sportsrsZeroLine = { enabled: false };
     }
   }
 
   function renderMonthlyChart() {
+    var canvas = qs('chart-monthly');
+    if (!canvas) return;
+    deferChartUntilReady(canvas, renderMonthlyChartNow);
+  }
+
+  function renderMonthlyChartNow() {
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
     if (!labels.length) {
@@ -526,7 +564,7 @@
     });
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-monthly');
-    if (!canvas) return;
+    if (!canvas || !canvasHasLayout(canvas)) return;
     destroyChartOnCanvas(canvas, charts.monthly);
     charts.monthly = null;
 
@@ -540,7 +578,7 @@
           backgroundColor: color,
           fill: false,
           tension: 0,
-          pointRadius: 3,
+          pointRadius: 0,
           pointHoverRadius: 4,
           pointBackgroundColor: color,
           pointBorderColor: color,
@@ -556,13 +594,19 @@
         return { text: signedText(v, 2, ' Unit'), color: signedColor(v) };
       }),
       plugins: [zeroLinePlugin()]
-    }));
+    }), canvas);
   }
 
   var cumulPanStart = 0;
   var cumulPanBound = false;
 
   function renderCumulativeChart() {
+    var canvas = qs('chart-cumulative');
+    if (!canvas) return;
+    deferChartUntilReady(canvas, renderCumulativeChartNow);
+  }
+
+  function renderCumulativeChartNow() {
     var points = cumulPointsCache;
     var labels = points.map(function (p) { return p.label; });
     if (!labels.length) {
@@ -576,7 +620,7 @@
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-cumulative');
     var panEl = qs('chart-cumulative-pan');
-    if (!canvas) return;
+    if (!canvas || !canvasHasLayout(canvas)) return;
     destroyChartOnCanvas(canvas, charts.cumulative);
     charts.cumulative = null;
 
@@ -616,7 +660,6 @@
       }
     }
 
-    var pointRadius = showAll ? (n > 40 ? 0 : (n > 20 ? 1.5 : 2.5)) : 2.5;
     var pointHoverRadius = 4;
 
     charts.cumulative = finalizeChart(new Chart(canvas, {
@@ -629,7 +672,7 @@
           backgroundColor: color,
           fill: false,
           tension: 0,
-          pointRadius: pointRadius,
+          pointRadius: 0,
           pointHoverRadius: pointHoverRadius,
           pointBackgroundColor: color,
           pointBorderColor: color,
@@ -638,7 +681,7 @@
       },
       options: opts,
       plugins: [zeroLinePlugin()]
-    }));
+    }), canvas);
     charts.cumulative.$sportsrsPoints = points;
     charts.cumulative.$sportsrsWindow = WINDOW;
     charts.cumulative.$sportsrsShowAll = showAll;
@@ -752,11 +795,15 @@
 
   function rebuildChartDataAndRender() {
     if (!window.Chart) return;
+    var seq = ++chartRenderSeq;
     monthlySeriesCache = buildMonthlySeries();
     cumulPointsCache = buildCumulativePoints();
-    renderWinRateChart();
-    renderMonthlyChart();
-    renderCumulativeChart();
+    scheduleChartFrame(function () {
+      if (seq !== chartRenderSeq) return;
+      renderWinRateChart();
+      renderMonthlyChart();
+      renderCumulativeChart();
+    });
   }
 
   function leagueDisplayLabel(lg) {
@@ -974,8 +1021,10 @@
     var grid = qs('league-cumul-grid');
     if (!grid) return;
 
+    hideChartTooltip();
     Object.keys(leagueCumulCharts).forEach(function (key) {
-      if (leagueCumulCharts[key]) leagueCumulCharts[key].destroy();
+      var c = leagueCumulCharts[key];
+      if (c && c.canvas) destroyChartOnCanvas(c.canvas, c);
     });
     leagueCumulCharts = {};
 
@@ -1001,10 +1050,12 @@
     var isRoi = leagueCumulMetric === 'roi';
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
 
+    scheduleChartFrame(function () {
     leagueCumulCache.forEach(function (row, i) {
       var canvas = qs('league-cumul-canvas-' + i);
       var panEl = qs('league-cumul-pan-' + i);
       if (!canvas) return;
+      destroyChartOnCanvas(canvas, leagueCumulCharts[i]);
       var points = row.points;
       var n = Math.max(points.length, 1);
       var labels = points.map(function (p) { return p.label; });
@@ -1042,8 +1093,7 @@
         }
       }
 
-      var pointRadius = showAll ? (n > 40 ? 0 : (n > 20 ? 1.5 : 2.5)) : 2.5;
-      var chart = new Chart(canvas, {
+      var chart = finalizeChart(new Chart(canvas, {
         type: 'line',
         data: {
           labels: labels,
@@ -1053,7 +1103,7 @@
             backgroundColor: color,
             fill: false,
             tension: 0,
-            pointRadius: pointRadius,
+            pointRadius: 0,
             pointHoverRadius: 4,
             pointBackgroundColor: color,
             pointBorderColor: color,
@@ -1062,7 +1112,7 @@
         },
         options: opts,
         plugins: [zeroLinePlugin()]
-      });
+      }), canvas);
       chart.$sportsrsPoints = points;
       chart.$sportsrsTotal = n;
       chart.$sportsrsWindow = WINDOW;
@@ -1070,6 +1120,7 @@
       chart.$panStart = panStart;
       leagueCumulCharts[i] = chart;
       if (panEl) attachChartPan(panEl, function () { return leagueCumulCharts[i]; });
+    });
     });
   }
 
@@ -1091,7 +1142,7 @@
       data = [0];
     }
     var canvas = qs(canvasId);
-    if (!canvas) return;
+    if (!canvas || !canvasHasLayout(canvas)) return;
     destroyChartOnCanvas(canvas, charts[chartKey]);
     charts[chartKey] = null;
 
@@ -1130,7 +1181,7 @@
       },
       options: opts,
       plugins: zeroLine ? [zeroLinePlugin()] : []
-    }));
+    }), canvas);
   }
 
   function renderLeagueCharts() {
@@ -1141,16 +1192,18 @@
     if (!qs('page-league-charts')) return;
     chartDefaults();
     leagueCompareCache = buildLeagueCompareSeries(leagueChartSport);
-    renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
-    renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
-    renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
-    renderLeagueCumulCharts();
     bindLeagueChartsSportToggle();
     bindLeagueCumulRangeToggle();
     bindMetricToggle('league-cumul-metric-toggle',
       function () { return leagueCumulMetric; },
       function (m) { leagueCumulMetric = m; },
       renderLeagueCumulCharts);
+    scheduleChartFrame(function () {
+      renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
+      renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
+      renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
+      renderLeagueCumulCharts();
+    });
   }
 
   function bindLeagueChartsSportToggle() {
