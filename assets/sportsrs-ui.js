@@ -491,11 +491,11 @@
   function deferChartUntilReady(canvas, drawFn, attempt) {
     attempt = attempt || 0;
     if (canvas && canvasHasLayout(canvas)) {
-      drawFn();
+      drawFn(false);
       return;
     }
     if (attempt >= 40) {
-      drawFn();
+      drawFn(true);
       return;
     }
     scheduleChartFrame(function () {
@@ -503,14 +503,18 @@
     });
   }
 
-  function renderWinRateChart() {
+  function renderWinRateChart(seq) {
     if (!window.Chart) return;
     var canvas = qs('chart-winrate');
     if (!canvas) return;
-    deferChartUntilReady(canvas, renderWinRateChartNow);
+    var drawSeq = seq != null ? seq : chartRenderSeq;
+    deferChartUntilReady(canvas, function (force) {
+      renderWinRateChartNow(drawSeq, force);
+    });
   }
 
-  function renderWinRateChartNow() {
+  function renderWinRateChartNow(seq, force) {
+    if (seq !== chartRenderSeq) return;
     if (!window.Chart) return;
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
@@ -520,7 +524,7 @@
     }
     var data = series.map(function (s) { return Number((s.winRate || 0).toFixed(2)); });
     var canvas = qs('chart-winrate');
-    if (!canvas || !canvasHasLayout(canvas)) return;
+    if (!canvas || (!force && !canvasHasLayout(canvas))) return;
     destroyChartOnCanvas(canvas, charts.winrate);
     charts.winrate = null;
 
@@ -556,13 +560,17 @@
     }
   }
 
-  function renderMonthlyChart() {
+  function renderMonthlyChart(seq) {
     var canvas = qs('chart-monthly');
     if (!canvas) return;
-    deferChartUntilReady(canvas, renderMonthlyChartNow);
+    var drawSeq = seq != null ? seq : chartRenderSeq;
+    deferChartUntilReady(canvas, function (force) {
+      renderMonthlyChartNow(drawSeq, force);
+    });
   }
 
-  function renderMonthlyChartNow() {
+  function renderMonthlyChartNow(seq, force) {
+    if (seq !== chartRenderSeq) return;
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
     if (!labels.length) {
@@ -575,7 +583,7 @@
     });
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-monthly');
-    if (!canvas || !canvasHasLayout(canvas)) return;
+    if (!canvas || (!force && !canvasHasLayout(canvas))) return;
     destroyChartOnCanvas(canvas, charts.monthly);
     charts.monthly = null;
 
@@ -611,13 +619,17 @@
   var cumulPanStart = 0;
   var cumulPanBound = false;
 
-  function renderCumulativeChart() {
+  function renderCumulativeChart(seq) {
     var canvas = qs('chart-cumulative');
     if (!canvas) return;
-    deferChartUntilReady(canvas, renderCumulativeChartNow);
+    var drawSeq = seq != null ? seq : chartRenderSeq;
+    deferChartUntilReady(canvas, function (force) {
+      renderCumulativeChartNow(drawSeq, force);
+    });
   }
 
-  function renderCumulativeChartNow() {
+  function renderCumulativeChartNow(seq, force) {
+    if (seq !== chartRenderSeq) return;
     var points = cumulPointsCache;
     var labels = points.map(function (p) { return p.label; });
     if (!labels.length) {
@@ -631,7 +643,7 @@
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-cumulative');
     var panEl = qs('chart-cumulative-pan');
-    if (!canvas || !canvasHasLayout(canvas)) return;
+    if (!canvas || (!force && !canvasHasLayout(canvas))) return;
     destroyChartOnCanvas(canvas, charts.cumulative);
     charts.cumulative = null;
 
@@ -807,14 +819,31 @@
   function rebuildChartDataAndRender() {
     if (!window.Chart) return;
     var seq = ++chartRenderSeq;
+    hideChartTooltip();
     monthlySeriesCache = buildMonthlySeries();
     cumulPointsCache = buildCumulativePoints();
     scheduleChartFrame(function () {
       if (seq !== chartRenderSeq) return;
-      renderWinRateChart();
-      renderMonthlyChart();
-      renderCumulativeChart();
+      renderWinRateChart(seq);
+      renderMonthlyChart(seq);
+      renderCumulativeChart(seq);
     });
+  }
+
+  function ensureHomeChartsVisibleRefresh() {
+    var section = qs('charts');
+    if (!section || section.dataset.chartVisBound === '1') return;
+    section.dataset.chartVisBound = '1';
+    if (!('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting || !window.Chart) return;
+        var canvas = qs('chart-winrate');
+        if (!canvas || Chart.getChart(canvas)) return;
+        rebuildChartDataAndRender();
+      });
+    }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
+    io.observe(section);
   }
 
   function leagueDisplayLabel(lg) {
@@ -1388,6 +1417,7 @@
     bindMetricToggle('cumul-metric-toggle', function () { return cumulMetric; }, function (m) { cumulMetric = m; }, renderCumulativeChart);
     bindCumulRangeToggle();
     bindSportToggle();
+    ensureHomeChartsVisibleRefresh();
     rebuildChartDataAndRender();
   }
 
