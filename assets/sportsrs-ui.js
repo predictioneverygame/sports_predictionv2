@@ -15,6 +15,8 @@
   var monthlySeriesCache = [];
   var cumulPointsCache = [];
   var chartRenderSeq = 0;
+  var cumulRenderSeq = 0;
+  var monthlyRenderSeq = 0;
   var leagueCompareCache = [];
   var leagueChartsSportBound = false;
   var leagueCumulMetric = 'roi';
@@ -560,17 +562,20 @@
     }
   }
 
-  function renderMonthlyChart(seq) {
+  function renderMonthlyChart(rebuildSeq) {
     var canvas = qs('chart-monthly');
     if (!canvas) return;
-    var drawSeq = seq != null ? seq : chartRenderSeq;
+    var tiedToRebuild = rebuildSeq != null && rebuildSeq === chartRenderSeq;
+    var drawSeq = tiedToRebuild ? rebuildSeq : ++monthlyRenderSeq;
     deferChartUntilReady(canvas, function (force) {
-      renderMonthlyChartNow(drawSeq, force);
+      renderMonthlyChartNow(drawSeq, force, tiedToRebuild);
     });
   }
 
-  function renderMonthlyChartNow(seq, force) {
-    if (seq !== chartRenderSeq) return;
+  function renderMonthlyChartNow(seq, force, tiedToRebuild) {
+    if (tiedToRebuild) {
+      if (seq !== chartRenderSeq) return;
+    } else if (seq !== monthlyRenderSeq) return;
     var series = monthlySeriesCache;
     var labels = series.map(function (s) { return s.label; });
     if (!labels.length) {
@@ -619,17 +624,20 @@
   var cumulPanStart = 0;
   var cumulPanBound = false;
 
-  function renderCumulativeChart(seq) {
+  function renderCumulativeChart(rebuildSeq) {
     var canvas = qs('chart-cumulative');
     if (!canvas) return;
-    var drawSeq = seq != null ? seq : chartRenderSeq;
+    var tiedToRebuild = rebuildSeq != null && rebuildSeq === chartRenderSeq;
+    var drawSeq = tiedToRebuild ? rebuildSeq : ++cumulRenderSeq;
     deferChartUntilReady(canvas, function (force) {
-      renderCumulativeChartNow(drawSeq, force);
+      renderCumulativeChartNow(drawSeq, force, tiedToRebuild);
     });
   }
 
-  function renderCumulativeChartNow(seq, force) {
-    if (seq !== chartRenderSeq) return;
+  function renderCumulativeChartNow(seq, force, tiedToRebuild) {
+    if (tiedToRebuild) {
+      if (seq !== chartRenderSeq) return;
+    } else if (seq !== cumulRenderSeq) return;
     var points = cumulPointsCache;
     var labels = points.map(function (p) { return p.label; });
     if (!labels.length) {
@@ -653,8 +661,8 @@
     cumulPanStart = Math.max(0, n - WINDOW);
 
     var opts = makeBaseOpts(function (chart, point) {
-      var idx = point.dataIndex;
-      var row = cumulPointsCache[idx];
+      var src = chart.$sportsrsPoints || cumulPointsCache;
+      var row = src[point.dataIndex];
       if (!row) return null;
       var lines = [
         row.title,
@@ -677,20 +685,27 @@
       delete opts.scales.x.max;
     } else {
       opts.scales.x.ticks = { maxRotation: 0, autoSkip: false, maxTicksLimit: WINDOW };
-      if (n > WINDOW) {
-        opts.scales.x.min = cumulPanStart;
-        opts.scales.x.max = cumulPanStart + WINDOW - 1;
-      }
+      delete opts.scales.x.min;
+      delete opts.scales.x.max;
     }
 
     var pointHoverRadius = 4;
+    var drawPoints = points;
+    if (!showAll && n > WINDOW) {
+      drawPoints = points.slice(cumulPanStart, cumulPanStart + WINDOW);
+    }
+
+    var drawLabels = drawPoints.map(function (p) { return p.label; });
+    var drawData = drawPoints.map(function (p) {
+      return Number((isRoi ? p.cumulRoi : p.cumulUnits).toFixed(2));
+    });
 
     charts.cumulative = finalizeChart(new Chart(canvas, {
       type: 'line',
       data: {
-        labels: labels,
+        labels: drawLabels,
         datasets: [{
-          data: data,
+          data: drawData,
           borderColor: color,
           backgroundColor: color,
           fill: false,
@@ -705,7 +720,7 @@
       options: opts,
       plugins: [zeroLinePlugin()]
     }), canvas);
-    charts.cumulative.$sportsrsPoints = points;
+    charts.cumulative.$sportsrsPoints = drawPoints;
     charts.cumulative.$sportsrsWindow = WINDOW;
     charts.cumulative.$sportsrsShowAll = showAll;
 
@@ -725,14 +740,15 @@
         if (!chart || chart.$sportsrsShowAll) return;
         var total = (cumulPointsCache && cumulPointsCache.length) || 0;
         var win = chart.$sportsrsWindow || 10;
-        if (total <= win) {
-          delete chart.options.scales.x.min;
-          delete chart.options.scales.x.max;
-        } else {
-          cumulPanStart = Math.max(0, Math.min(total - win, cumulPanStart));
-          chart.options.scales.x.min = cumulPanStart;
-          chart.options.scales.x.max = cumulPanStart + win - 1;
-        }
+        if (total <= win) return;
+        cumulPanStart = Math.max(0, Math.min(total - win, cumulPanStart));
+        var slice = cumulPointsCache.slice(cumulPanStart, cumulPanStart + win);
+        var isRoiPan = cumulMetric === 'roi';
+        chart.data.labels = slice.map(function (p) { return p.label; });
+        chart.data.datasets[0].data = slice.map(function (p) {
+          return Number((isRoiPan ? p.cumulRoi : p.cumulUnits).toFixed(2));
+        });
+        chart.$sportsrsPoints = slice;
         chart.update('none');
       }
 
