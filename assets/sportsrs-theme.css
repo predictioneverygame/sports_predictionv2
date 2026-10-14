@@ -855,8 +855,7 @@ nav {
 }
 .sb-card h3,
 .profit-card .profit-title,
-#pred-stats-card .stats-card-head h3,
-.week-summary-card > .week-summary-head h3 {
+#pred-stats-card .stats-card-head h3 {
   margin: 0;
   color: var(--text);
   font-size: .92rem;
@@ -893,31 +892,12 @@ nav {
 #pred-stats-card .pred-stats-season-btn.active { background: var(--text); border-color: var(--border-strong); color: #fff; }
 #pred-stats-card .pred-stat-scroll-wrap > .stats-card-head.pred-stat-grid,
 #pred-stats-card .pred-stat-scroll-wrap > .pred-stat-total.pred-stat-grid { background: #fff; }
-#pred-stats-card .pred-stat-total .lbl,
-.week-summary-card .pred-stat-total .lbl { color: var(--text); }
+#pred-stats-card .pred-stat-total .lbl { color: var(--text); }
 #pred-stats-card .pred-stat-rows::-webkit-scrollbar-thumb,
 #pred-stats-card .pred-stat-rows::-webkit-scrollbar-thumb:hover { background: #d1d5db; background-clip: padding-box; }
 #pred-stats-card .pred-stat-grid { grid-template-columns: minmax(0, 1fr) 28px 8px 28px 48px 62px; }
 .pred-stat-col-hit.ic-hit, .ic-hit.pred-stat-col-hit { color: var(--win); }
 .pred-stat-col-miss.ic-miss, .ic-miss.pred-stat-col-miss { color: var(--loss); }
-
-.week-summary-card > .week-summary-head { padding: 0 0 8px; margin-bottom: 0; border-bottom: 1px solid var(--border); cursor: default; }
-.week-summary-card > .week-summary-head:hover { background: none; }
-.week-summary-card .week-summary-item {
-  margin: 0;
-  background: #fff;
-  border: 0;
-  border-bottom: 1px solid var(--row-line);
-  border-radius: 0;
-}
-.week-summary-card .week-summary-item:last-child { border-bottom: 0; }
-.week-summary-card .week-summary-item.open { border-color: var(--row-line); }
-.week-summary-card .week-summary-head { padding: 7px 2px; }
-.week-summary-card .week-summary-item .week-summary-head:hover { background: var(--surface-alt); }
-.week-summary-card .week-summary-item .week-summary-head h3 { color: var(--text-2); font-size: .82rem; font-weight: 600; font-variant-numeric: tabular-nums; }
-.week-summary-card .week-summary-head .chevron { font-size: .7rem; }
-.week-summary-card .week-summary-body { padding: 0 2px 12px; }
-.week-summary-card .week-league-breakdown summary { color: var(--primary); }
 
 .legend-list { display: flex; flex-wrap: wrap; gap: 8px 18px; list-style: none; margin: 0; padding: 0; }
 .legend-list li { display: flex; align-items: center; gap: 6px; font-size: .86rem; color: var(--text-2); }

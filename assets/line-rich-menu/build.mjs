@@ -42,7 +42,6 @@ const T = {
   ligue1: '&#27861;&#30002;',
   bundes2: '&#24503;&#20057;',
   mls: '&#32654;&#36275;',
-  ligamx: '&#22696;&#36229;',
   ered: '&#33655;&#34349;&#30002;',
   allFb: '&#20840;&#37096;&#36275;&#29699;',
   allFbSub: '&#26412;&#36913;&#25152;&#26377;&#36275;&#29699;&#25512;&#34214;',
@@ -124,8 +123,6 @@ const svgs = {
   <text x="1250" y="1204" text-anchor="middle" fill="#059669" font-family="Microsoft JhengHei, sans-serif" font-size="48" font-weight="800">${T.bundes2}</text>
   <rect x="1660" y="1044" width="776" height="300" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
   <text x="2048" y="1204" text-anchor="middle" fill="#059669" font-family="Microsoft JhengHei, sans-serif" font-size="48" font-weight="800">${T.mls}</text>
-  <rect x="64" y="1368" width="776" height="254" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
-  <text x="452" y="1510" text-anchor="middle" fill="#059669" font-family="Microsoft JhengHei, sans-serif" font-size="48" font-weight="800">${T.ligamx}</text>
   <rect x="862" y="1368" width="776" height="254" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
   <text x="1250" y="1510" text-anchor="middle" fill="#059669" font-family="Microsoft JhengHei, sans-serif" font-size="48" font-weight="800">${T.ered}</text>
   <rect x="1660" y="1368" width="776" height="254" rx="4" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>

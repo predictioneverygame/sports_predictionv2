@@ -17,7 +17,6 @@
     '法甲': 'ligue-1',
     '德乙': 'bundesliga-2',
     '美足': 'mls',
-    '墨超': 'liga-mx',
     '荷蘭甲': 'eredivisie',
     '歐冠': 'champions-league',
     '歐洲超級盃': 'uefa-super-cup',

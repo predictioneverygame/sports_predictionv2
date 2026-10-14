@@ -387,96 +387,6 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 .profit-card .profit-detail-row{display:flex;justify-content:space-between;padding:2px 0 2px 8px}
 .profit-card .profit-detail-val.pos{color:var(--green)}.profit-card .profit-detail-val.neg{color:var(--red)}.profit-card .profit-detail-val.zero{color:var(--muted)}
 .mobile-only-profit{display:none;margin-bottom:14px}
-/* 側欄：當周總累積（預測戰績與搜尋之間） */
-.week-summary-card{margin-top:18px}
-.week-summary-card .week-summary-item{
-  background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;
-  margin-bottom:12px;
-}
-.week-summary-card .week-summary-item:last-child{margin-bottom:0}
-.week-summary-card .week-summary-item.open{border-color:var(--accent)}
-.week-summary-card .week-summary-head{
-  display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
-  cursor:pointer;user-select:none;
-}
-.week-summary-card .week-summary-head:hover{background:rgba(0,212,255,.04)}
-.week-summary-card .week-summary-head h3{
-  font-size:.85rem;font-weight:700;color:var(--accent);text-transform:none;letter-spacing:.5px;
-  margin:0;padding:0;border-bottom:none;margin-bottom:0;
-}
-.week-summary-card .week-summary-item .week-summary-head h3.week-summary-head-title{
-  display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px;flex:1;min-width:0;margin-right:8px;
-}
-.week-summary-card .week-summary-head .week-summary-dates{white-space:nowrap}
-.week-summary-card .week-summary-head .week-summary-sep-dot{opacity:.45;color:var(--muted);font-weight:400}
-.week-summary-card .week-summary-head .week-summary-total-net{font-weight:800;font-size:.8rem;letter-spacing:.2px;white-space:nowrap}
-.week-summary-card .week-summary-head .week-summary-total-net.pos{color:var(--green)}
-.week-summary-card .week-summary-head .week-summary-total-net.neg{color:var(--red)}
-.week-summary-card .week-summary-head .week-summary-total-net.zero{color:var(--muted)}
-.week-summary-card .week-summary-head .week-summary-metrics{
-  display:inline-flex;align-items:center;gap:10px;font-weight:800;font-size:.76rem;
-  letter-spacing:.2px;white-space:nowrap;font-variant-numeric:tabular-nums;
-}
-.week-summary-card .week-summary-head .week-summary-metrics .pos{color:var(--green)}
-.week-summary-card .week-summary-head .week-summary-metrics .neg{color:var(--red)}
-.week-summary-card .week-summary-head .week-summary-metrics .zero{color:var(--muted)}
-.week-summary-card .week-summary-head .chevron{color:var(--muted);font-size:.9rem;transition:transform .3s}
-.week-summary-card .week-summary-item.open > .week-summary-head .chevron{transform:rotate(180deg)}
-.week-summary-card .week-summary-body{display:none;padding:0 18px 18px}
-.week-summary-card .week-summary-item.open > .week-summary-body{display:block}
-.week-summary-card .week-summary-range{font-size:.72rem;color:var(--muted);line-height:1.4;margin-bottom:12px}
-.week-summary-card .week-summary-rows{display:flex;flex-direction:column;gap:0}
-.week-summary-card .pred-stat-grid{
-  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
-  column-gap:8px;font-size:.76rem;
-}
-.week-summary-card .pred-stat-col-hit,
-.week-summary-card .pred-stat-col-miss,
-.week-summary-card .pred-stat-sep,
-.week-summary-card .pred-stat-col-net{display:none}
-.week-summary-card .pred-stat-col-units,
-.week-summary-card .pred-stat-col-roi{
-  display:block;text-align:right;font-weight:800;font-size:.76rem;white-space:nowrap;
-  font-variant-numeric:tabular-nums
-}
-.week-summary-card .pred-stat-col-units.pos,.week-summary-card .pred-stat-col-roi.pos{color:var(--green)}
-.week-summary-card .pred-stat-col-units.neg,.week-summary-card .pred-stat-col-roi.neg{color:var(--red)}
-.week-summary-card .pred-stat-col-units.zero,.week-summary-card .pred-stat-col-roi.zero{color:var(--muted)}
-.week-summary-card .week-summary-col-head{
-  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
-  column-gap:8px;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--border);
-  font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.3px;
-}
-.week-summary-card .week-summary-col-head .pred-stat-col-units,
-.week-summary-card .week-summary-col-head .pred-stat-col-roi{display:block;text-align:right}
-.week-summary-card .pred-stat-row.pred-stat-grid{padding:8px 0;border-bottom:1px solid var(--border)}
-.week-summary-card .pred-stat-row:last-of-type{border-bottom:none}
-.week-summary-card .pred-stat-row .pred-stat-league{color:var(--text)}
-.week-summary-card .week-league-breakdown{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px}
-.week-summary-card .week-league-breakdown summary{
-  cursor:pointer;user-select:none;list-style:none;display:flex;align-items:center;gap:6px;
-  font-size:.78rem;color:var(--accent);font-weight:700;letter-spacing:.2px;
-}
-.week-summary-card .week-league-breakdown summary::-webkit-details-marker{display:none}
-.week-summary-card .week-league-breakdown summary::before{
-  content:'▸';color:var(--muted);font-size:.72rem;transform:translateY(-1px);transition:transform .2s;
-}
-.week-summary-card .week-league-breakdown[open] summary::before{transform:rotate(90deg) translateX(1px)}
-.week-summary-card .week-league-breakdown .week-league-rows{margin-top:8px}
-.week-summary-card .week-league-breakdown .empty{font-size:.74rem;color:var(--muted);padding:8px 0}
-.week-summary-card .week-league-col-head{
-  display:grid;grid-template-columns:minmax(0,1fr) 56px 56px;align-items:center;
-  column-gap:8px;padding:0 0 8px;margin-bottom:4px;border-bottom:1px solid var(--border);
-  font-size:.68rem;font-weight:700;color:var(--muted);letter-spacing:.3px;
-}
-.week-summary-card .week-league-col-head .pred-stat-col-units,
-.week-summary-card .week-league-col-head .pred-stat-col-roi{display:block;text-align:right}
-.week-summary-card .pred-stat-net{font-weight:800;font-size:.82rem}
-.week-summary-card .pred-stat-net.pos{color:var(--green)}
-.week-summary-card .pred-stat-net.neg{color:var(--red)}
-.week-summary-card .pred-stat-net.zero{color:var(--muted)}
-.week-summary-card .pred-stat-total.pred-stat-grid{margin-top:4px;padding-top:12px;border-top:1px solid var(--border);font-size:.82rem}
-.week-summary-card .pred-stat-total .lbl{font-weight:800;color:var(--accent);letter-spacing:.5px}
 .analyst-card{background:linear-gradient(135deg,rgba(124,58,237,.15),rgba(0,212,255,.1));border:1px solid rgba(124,58,237,.3);border-radius:12px;padding:18px;text-align:center}
 .analyst-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent2),var(--accent));display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 10px}
 .analyst-name{font-size:.97rem;font-weight:700;margin-bottom:3px}
@@ -707,7 +617,7 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261005a">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261015d">
 </head>
 <body>
 <nav id="site-nav">
@@ -830,7 +740,6 @@ footer a{color:var(--accent);text-decoration:none}
           <div class="pred-stat-total pred-stat-grid" id="pred-stats-total"></div>
         </div>
       </div>
-      <div class="sb-card stats-card week-summary-card" id="week-summary-card"></div>
       <div class="sb-card legend-card" aria-label="預測結果符號說明">
         <h3>符號說明</h3>
         <ul class="legend-list">
@@ -934,7 +843,7 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="section-head">
       <div class="section-head-text">
         <h2 class="section-title">最近推薦紀錄</h2>
-        <p class="section-note">最近結算的 15 場，完整紀錄請見下方歷史戰績。</p>
+        <p class="section-note">最近結算的 10 場，完整紀錄請見下方歷史戰績。</p>
       </div>
     </div>
     <div class="records-table-wrap">
@@ -993,7 +902,6 @@ footer a{color:var(--accent);text-decoration:none}
           <li><a href="/football/ligue-1"><span class="lg-name">法甲</span><span class="lg-sub">Ligue 1 · 法國</span></a></li>
           <li><a href="/football/bundesliga-2"><span class="lg-name">德乙</span><span class="lg-sub">Bundesliga 2 · 德國</span></a></li>
           <li><a href="/football/mls"><span class="lg-name">美足 MLS</span><span class="lg-sub">Major League Soccer · 美國</span></a></li>
-          <li><a href="/football/liga-mx"><span class="lg-name">墨超</span><span class="lg-sub">Liga MX · 墨西哥</span></a></li>
           <li><a href="/football/eredivisie"><span class="lg-name">荷蘭甲</span><span class="lg-sub">Eredivisie · 荷蘭</span></a></li>
           <li><a href="/football/champions-league"><span class="lg-name">歐冠</span><span class="lg-sub">Champions League · 歐洲</span></a></li>
           <li><a href="/football/uefa-super-cup"><span class="lg-name">歐超盃</span><span class="lg-sub">UEFA Super Cup · 歐洲</span></a></li>
@@ -1174,7 +1082,7 @@ footer a{color:var(--accent);text-decoration:none}
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
 <script src="assets/sportsrs-ui.js?v=20261015c"></script>
-<script src="assets/sportsrs-router.js?v=20261015b"></script>
+<script src="assets/sportsrs-router.js?v=20261015d"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
@@ -2240,7 +2148,6 @@ const LEAGUE_STATS_LABEL = {
   德乙: '德乙',
   澳甲: '澳甲',
   美足: 'MLS',
-  墨超: '墨超',
   荷蘭甲: '荷甲',
   歐冠: '歐冠',
   歐洲超級盃: '歐超盃',
@@ -2249,7 +2156,7 @@ const LEAGUE_STATS_LABEL = {
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
 const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
-const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const PROFIT_START_DATE = '2026-04-23';
 const SEASON_SPLIT_DATE = '2026-07-17';
@@ -2328,7 +2235,7 @@ function netClass(hit, miss) {
 }
 
 const PRED_CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
-const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','墨超','荷蘭甲'];
+const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲'];
 const PRED_BANKROLL_UNITS = 20;
 
 function unitStakeForLeague(lg, seasonKey) {
@@ -2404,7 +2311,7 @@ function renderProfitSummary() {
   var UNIT_STAKE = 10600;
   var UNIT_STAKE_2526 = 8100;
   var BANKROLL_UNITS = 20;
-  var SC_LEAGUES = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲'];
+  var SC_LEAGUES = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲'];
   var BB_LEAGUES = BASKETBALL_LEAGUE_KEYS.slice();
 
   function isBasketballMatch(m) {
@@ -2546,7 +2453,7 @@ function renderPredictionStats() {
     else scExtras.push(lg);
   });
   var scOrder = selectedPredStatsSeason === '2526'
-    ? ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃']
+    ? ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃']
     : PRED_STATS_SC_ORDER;
   var bbLeagues = PRED_STATS_BB_ORDER.concat(bbExtras);
   var scLeagues = scOrder.concat(scExtras.filter(function (lg) {
@@ -2616,196 +2523,7 @@ function renderPredictionStats() {
     <span class="pred-stat-col-miss ic-miss">${formatTallyDisplay(totalMiss)}</span>
     ${trailingCells(totalHit, totalMiss, groupUnits)}
   `;
-}
 
-/** 當周區間內已結算；SBL 贏+0.5、輸+0.5 計入欄位；push 不計入 */
-function tallyHitsMissesInMatches(matches) {
-  var hit = 0;
-  var miss = 0;
-  matches.forEach(function (m) {
-    if (m.status !== 'final' || !m.prediction) return;
-    Object.values(m.prediction).forEach(function (p) {
-      var r = derivePredictionDisplayResult(m, p);
-      var d = { hit: 0, miss: 0 };
-      applyResultToPredTally(m, r, d);
-      hit += d.hit;
-      miss += d.miss;
-    });
-  });
-  return { hit: hit, miss: miss };
-}
-
-// 可手動補充本賽季週次；未設定時會依已結算賽事自動分週（週二～隔週週一）
-const WEEK_RANGES = [];
-
-function formatYmd(date) {
-  var y = date.getFullYear();
-  var m = String(date.getMonth() + 1).padStart(2, '0');
-  var d = String(date.getDate()).padStart(2, '0');
-  return y + '-' + m + '-' + d;
-}
-
-/** 取得該日期所屬週的週二（週區間：週二～隔週週一） */
-function getWeekStartTuesday(dateStr) {
-  var d = new Date(dateStr + 'T12:00:00');
-  var day = d.getDay(); // 0日 1一 2二 …
-  var offset = (day - 2 + 7) % 7; // 距離本週週二的天數
-  d.setDate(d.getDate() - offset);
-  return formatYmd(d);
-}
-
-function addDaysYmd(dateStr, days) {
-  var d = new Date(dateStr + 'T12:00:00');
-  d.setDate(d.getDate() + days);
-  return formatYmd(d);
-}
-
-function buildCurrentSeasonWeekRanges() {
-  var ranges = {};
-
-  function addRange(from, to) {
-    var clipFrom = from < SEASON_SPLIT_DATE ? SEASON_SPLIT_DATE : from;
-    if (to < SEASON_SPLIT_DATE) return;
-    ranges[clipFrom + '_' + to] = { from: clipFrom, to: to };
-  }
-
-  WEEK_RANGES.forEach(function (range) {
-    if (range.to >= SEASON_SPLIT_DATE) addRange(range.from, range.to);
-  });
-
-  MATCHES.forEach(function (m) {
-    if (m.status !== 'final' || isWorldCupMatch(m)) return;
-    var date = String(m.date || '');
-    if (date < SEASON_SPLIT_DATE) return;
-    var tue = getWeekStartTuesday(date);
-    addRange(tue, addDaysYmd(tue, 6)); // 週二～隔週週一
-  });
-
-  return Object.keys(ranges).map(function (key) { return ranges[key]; }).sort(function (a, b) {
-    return b.from.localeCompare(a.from);
-  });
-}
-
-function buildWeekSummaryItemHtml(range) {
-  var inRange = MATCHES.filter(function (m) {
-    return m.date >= range.from && m.date <= range.to;
-  });
-  var bbList = inRange.filter(function (m) { return m.sport === 'basketball'; });
-  var scList = inRange.filter(function (m) { return m.sport === 'soccer' || m.sport === 'football'; });
-
-  var unitsBb = tallyUnitsByLeague(bbList, '2627').totalUnits;
-  var unitsSc = tallyUnitsByLeague(scList, '2627').totalUnits;
-
-  function formatWeekUnits(n) {
-    if (Math.abs(n) < 1e-9) return '0.00';
-    var v = Math.round(n * 100) / 100;
-    return (v > 0 ? '+' : '') + v.toFixed(2);
-  }
-  function formatWeekRoi(units) {
-    var roi = (units / PRED_BANKROLL_UNITS) * 100;
-    if (Math.abs(roi) < 1e-9) return '0.00%';
-    return (roi > 0 ? '+' : '') + roi.toFixed(2) + '%';
-  }
-  function metricCells(units) {
-    var uc = signedMetricClass(units);
-    return (
-      '<span class="pred-stat-col-units ' + uc + '">' + formatWeekUnits(units) + '</span>' +
-      '<span class="pred-stat-col-roi ' + uc + '">' + formatWeekRoi(units) + '</span>'
-    );
-  }
-
-  function rowHtml(label, units) {
-    return (
-      '<div class="pred-stat-row pred-stat-grid">' +
-        '<span class="lbl pred-stat-col-league">' + label + '</span>' +
-        metricCells(units) +
-      '</div>'
-    );
-  }
-
-  function buildLeagueRowsInWeek(list) {
-    var byLeagueUnits = tallyUnitsByLeague(list, '2627').byLeague;
-    var byLeague = tallyPredictionsByLeague(list).byLeague;
-    var ordered = PRED_STATS_LEAGUE_ORDER.filter(function (lg) {
-      return Math.abs(byLeagueUnits[lg] || 0) > 1e-9
-        || (byLeague[lg] && (Math.abs(byLeague[lg].hit) > 1e-9 || Math.abs(byLeague[lg].miss) > 1e-9));
-    });
-    Object.keys(byLeagueUnits).concat(Object.keys(byLeague)).forEach(function (lg) {
-      if (ordered.indexOf(lg) !== -1) return;
-      if (isWorldCupLeague(lg) || isWorldCupKnockoutLeague(lg)) return;
-      var units = byLeagueUnits[lg] || 0;
-      var rec = byLeague[lg];
-      if (Math.abs(units) > 1e-9 || (rec && (Math.abs(rec.hit) > 1e-9 || Math.abs(rec.miss) > 1e-9))) {
-        ordered.push(lg);
-      }
-    });
-    if (!ordered.length) {
-      return '<div class="empty">本週尚無可統計的聯賽結算資料</div>';
-    }
-    return ordered.map(function (lg) {
-      var units = byLeagueUnits[lg] || 0;
-      var label = LEAGUE_STATS_LABEL[lg] || lg;
-      return (
-        '<div class="pred-stat-row pred-stat-grid">' +
-          '<span class="pred-stat-league pred-stat-col-league">' + label + '</span>' +
-          metricCells(units) +
-        '</div>'
-      );
-    }).join('');
-  }
-
-  var leagueRowsHtml = buildLeagueRowsInWeek(inRange);
-
-  return `
-    <div class="week-summary-item">
-      <div class="week-summary-head" onclick="this.parentElement.classList.toggle('open')">
-        <h3 class="week-summary-head-title">
-          <span class="week-summary-dates">${range.from.slice(5).replace('-','/')}－${range.to.slice(5).replace('-','/')}</span>
-        </h3>
-        <span class="chevron">▼</span>
-      </div>
-      <div class="week-summary-body">
-        <div class="week-summary-range" title="統計 ${range.from}～${range.to} 期間已結算場次；Unit＝獲利÷10600；%＝Unit÷20×100"></div>
-        <div class="week-summary-col-head">
-          <span></span>
-          <span class="pred-stat-col-units">Unit</span>
-          <span class="pred-stat-col-roi">%</span>
-        </div>
-        <div class="week-summary-rows">
-          ${rowHtml('籃球', unitsBb)}
-          ${rowHtml('足球', unitsSc)}
-        </div>
-        <details class="week-league-breakdown">
-          <summary>查看當周各聯賽狀況</summary>
-          <div class="week-league-col-head">
-            <span></span>
-            <span class="pred-stat-col-units">Unit</span>
-            <span class="pred-stat-col-roi">%</span>
-          </div>
-          <div class="week-league-rows">
-            ${leagueRowsHtml}
-          </div>
-        </details>
-      </div>
-    </div>
-  `;
-}
-
-function renderWeekSummary() {
-  var containerEl = document.getElementById('week-summary-card');
-  if (!containerEl) return;
-
-  var currentWeeks = buildCurrentSeasonWeekRanges();
-  var currentWeeksHtml = currentWeeks.length
-    ? currentWeeks.map(buildWeekSummaryItemHtml).join('')
-    : '<div class="empty" style="padding:10px 0;font-size:.78rem;color:var(--muted)">本賽季尚無週累積資料</div>';
-
-  containerEl.innerHTML = `
-    <div class="week-summary-head">
-      <h3>每週累積 · 2026–2027</h3>
-    </div>
-    ${currentWeeksHtml}
-  `;
 }
 
 // ════════════════════════════════════════════
@@ -2832,11 +2550,11 @@ function sortFinalMatchesChrono(matches) {
   });
 }
 const BB_LEAGUE_ORDER = BASKETBALL_LEAGUE_KEYS.slice();
-const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 /* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
   SBL: 'SBL', TPBL: 'TPBL', PLG: 'PLG', BCL: 'BCL', 東超: '東超',
-  英超: '英超', 西甲: '西甲', 德甲: '德甲', 法甲: '法甲', 德乙: '德乙', 澳甲: '澳甲', 美足: '美足', 墨超: '墨超', 荷蘭甲: '荷蘭甲',
+  英超: '英超', 西甲: '西甲', 德甲: '德甲', 法甲: '法甲', 德乙: '德乙', 澳甲: '澳甲', 美足: '美足', 荷蘭甲: '荷蘭甲',
   歐冠: '歐冠', 歐洲超級盃: '歐超盃', 聯賽盃: '聯賽盃',
 };
 function sortLeagueKeys(keys, order) {
@@ -3286,7 +3004,7 @@ function renderRecentRecords() {
     var dc = String(b.date).localeCompare(String(a.date));
     if (dc !== 0) return dc;
     return String(b.time).localeCompare(String(a.time));
-  }).slice(0, 15);
+  }).slice(0, 10);
 
   if (!finals.length) {
     body.innerHTML = '<tr><td colspan="9" class="records-empty">尚無已結算紀錄</td></tr>';
@@ -3349,7 +3067,7 @@ function showLeague(league, opts) {
     'BCL':'BCL Asia-East', 'SBL':'SBL 超級籃球聯賽',
     'TPBL':'TPBL', 'PLG':'PLG P.LEAGUE+', '東超':'東超 EASL',
     '英超':'英超 Premier League', '西甲':'西甲 LaLiga', '德甲':'德甲 Bundesliga', '法甲':'法甲 Ligue 1', '德乙':'德乙 Bundesliga 2',
-    '美足':'美足 MLS', '墨超':'墨超 Liga MX', '荷蘭甲':'荷蘭甲 Eredivisie',
+    '美足':'美足 MLS', '荷蘭甲':'荷蘭甲 Eredivisie',
     '歐冠':'歐冠 Champions League', '歐洲超級盃':'歐洲超級盃', '聯賽盃':'聯賽盃 Leagues Cup'
   };
   document.getElementById('league-header').textContent = leagueNames[league] || league;
@@ -4161,7 +3879,6 @@ async function initApp() {
   renderRecentRecords();
   renderProfitSummary();
   renderPredictionStats();
-  renderWeekSummary();
   updateHeroRecCount();
   renderWorldCupPage();
   if (window.SportsRSUI && typeof window.SportsRSUI.refresh === 'function') {

@@ -11,7 +11,7 @@ const CONFIG = {
   unitStake2526: 8100,
   unitStake2627: 10600,
   bankrollUnits: 20,
-  soccerLeagues: ["英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "墨超", "荷蘭甲"],
+  soccerLeagues: ["英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "荷蘭甲"],
   basketballLeagues: ["SBL", "TPBL", "PLG", "BCL", "東超"],
   timeoutMs: 12000,
   // 建議改用本地照片最穩定：先在 Scriptable App 內執行一次，會讓你選圖
