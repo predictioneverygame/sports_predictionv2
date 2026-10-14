@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SportsRS LINE 圖文選單預覽</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, "Noto Sans TC", sans-serif; background: #eef0f3; color: #111827; padding: 24px; }
+    h1 { font-size: 1.25rem; margin: 0 0 8px; }
+    p { color: #6b7280; margin: 0 0 20px; line-height: 1.6; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .toolbar button, .toolbar a {
+      border: 1px solid #d1d5db; background: #fff; color: #111827;
+      padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 14px; cursor: pointer;
+    }
+    .toolbar button.active, .toolbar a.primary { background: #0b5fad; border-color: #0b5fad; color: #fff; }
+    .phone { width: min(100%, 420px); margin: 0 auto; background: #fff; border-radius: 24px; box-shadow: 0 12px 40px rgba(17,24,39,.12); overflow: hidden; border: 1px solid #e5e7eb; }
+    .phone-head { background: #f8f9fa; padding: 12px 16px; font-size: 13px; color: #6b7280; border-bottom: 1px solid #e5e7eb; }
+    .phone-chat { height: 140px; background: #fff; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; }
+    .menu-wrap img { display: block; width: 100%; height: auto; }
+    .spec { max-width: 900px; margin: 28px auto 0; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; }
+    .spec h2 { font-size: 1rem; margin: 0 0 12px; }
+    .spec ol { margin: 0; padding-left: 20px; line-height: 1.8; color: #374151; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>SportsRS LINE 圖文選單（3 頁）</h1>
+  <p>主選單三格皆為 <strong>Postback</strong>，點擊後由 Webhook 在聊天室回 Flex Message 二級選單（籃球／足球 → 聯賽 → 開 <code>sportsrs.com/picks</code>）。</p>
+
+  <div class="toolbar">
+    <button type="button" class="active" data-page="main">主選單</button>
+    <button type="button" data-page="basketball">籃球</button>
+    <button type="button" data-page="football">足球</button>
+    <a class="primary" href="main.png" download>下載 main.png</a>
+    <a class="primary" href="basketball.png" download>下載 basketball.png</a>
+    <a class="primary" href="football.png" download>下載 football.png</a>
+    <a href="areas.json" download>座標 JSON</a>
+  </div>
+
+  <div class="phone">
+    <div class="phone-head">SportsRS · @013dnjqw</div>
+    <div class="phone-chat">聊天訊息區域</div>
+    <div class="menu-wrap">
+      <img id="menu-preview" src="main.png" alt="SportsRS LINE Rich Menu">
+    </div>
+  </div>
+
+  <div class="spec">
+    <h2>LINE 後台設定（Flex 二級選單）</h2>
+    <ol>
+      <li>部署 Webhook：<code>npm run supabase:deploy:line-webhook</code></li>
+      <li>LINE Developers → Messaging API → Webhook URL 設為 <code>areas.json</code> 內的 <code>webhook</code>，並<strong>啟用 Webhook</strong></li>
+      <li>圖文選單上傳 <code>main.png</code>，三格動作改<strong>Postback</strong>（非連結）：<code>m=t</code>、<code>m=w</code>、<code>m=h</code></li>
+      <li>Secrets 需有 <code>LINE_CHANNEL_SECRET</code> 與 <code>LINE_CHANNEL_ACCESS_TOKEN</code>（或 ID+SECRET）</li>
+    </ol>
+  </div>
+
+  <script>
+    var map = { main: 'main.png', basketball: 'basketball.png', football: 'football.png' };
+    document.querySelectorAll('.toolbar button[data-page]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.toolbar button[data-page]').forEach(function (b) {
+          b.classList.toggle('active', b === btn);
+        });
+        document.getElementById('menu-preview').src = map[btn.getAttribute('data-page')] || 'main.png';
+      });
+    });
+  </script>
+</body>
+</html>

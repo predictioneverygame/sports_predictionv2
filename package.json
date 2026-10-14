@@ -6,7 +6,8 @@
   "scripts": {
     "supabase:login": "supabase login",
     "supabase:link": "supabase link --project-ref zcytivwjylkmnpqszvui",
-    "supabase:deploy:scores": "supabase functions deploy fetch-football-fixtures"
+    "supabase:deploy:scores": "supabase functions deploy fetch-football-fixtures",
+    "supabase:deploy:line-webhook": "supabase functions deploy line-webhook"
   },
   "repository": {
     "type": "git",

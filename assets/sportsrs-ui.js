@@ -325,6 +325,31 @@
     Chart.defaults.animation = { duration: 250 };
   }
 
+  function hideChartTooltip() {
+    var tooltipEl = document.getElementById('chartjs-tooltip');
+    if (tooltipEl) tooltipEl.style.opacity = '0';
+  }
+
+  /** 同一 canvas 重繪前先清掉舊實例，避免 destroy 後留白 */
+  function destroyChartOnCanvas(canvas, stored) {
+    hideChartTooltip();
+    if (window.Chart && canvas) {
+      var existing = Chart.getChart(canvas);
+      if (existing) {
+        try { existing.destroy(); } catch (_) {}
+      }
+    }
+    if (stored && typeof stored.destroy === 'function') {
+      try { stored.destroy(); } catch (_) {}
+    }
+  }
+
+  function finalizeChart(chart) {
+    if (!chart) return chart;
+    try { chart.resize(); } catch (_) {}
+    return chart;
+  }
+
   function ensureTooltipEl() {
     var tooltipEl = document.getElementById('chartjs-tooltip');
     if (!tooltipEl) {
@@ -453,9 +478,10 @@
     var data = series.map(function (s) { return Number((s.winRate || 0).toFixed(2)); });
     var canvas = qs('chart-winrate');
     if (!canvas) return;
-    if (charts.winrate) charts.winrate.destroy();
+    destroyChartOnCanvas(canvas, charts.winrate);
+    charts.winrate = null;
 
-    charts.winrate = new Chart(canvas, {
+    charts.winrate = finalizeChart(new Chart(canvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -481,7 +507,7 @@
         };
       }),
       plugins: []
-    });
+    }));
     if (charts.winrate.options.plugins) {
       charts.winrate.options.plugins.sportsrsZeroLine = { enabled: false };
     }
@@ -501,9 +527,10 @@
     var color = isRoi ? CHART_COLORS.primary : CHART_COLORS.secondary;
     var canvas = qs('chart-monthly');
     if (!canvas) return;
-    if (charts.monthly) charts.monthly.destroy();
+    destroyChartOnCanvas(canvas, charts.monthly);
+    charts.monthly = null;
 
-    charts.monthly = new Chart(canvas, {
+    charts.monthly = finalizeChart(new Chart(canvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -529,7 +556,7 @@
         return { text: signedText(v, 2, ' Unit'), color: signedColor(v) };
       }),
       plugins: [zeroLinePlugin()]
-    });
+    }));
   }
 
   var cumulPanStart = 0;
@@ -550,7 +577,8 @@
     var canvas = qs('chart-cumulative');
     var panEl = qs('chart-cumulative-pan');
     if (!canvas) return;
-    if (charts.cumulative) charts.cumulative.destroy();
+    destroyChartOnCanvas(canvas, charts.cumulative);
+    charts.cumulative = null;
 
     var showAll = cumulRangeMode !== 'window';
     var WINDOW = 10;
@@ -591,7 +619,7 @@
     var pointRadius = showAll ? (n > 40 ? 0 : (n > 20 ? 1.5 : 2.5)) : 2.5;
     var pointHoverRadius = 4;
 
-    charts.cumulative = new Chart(canvas, {
+    charts.cumulative = finalizeChart(new Chart(canvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -610,7 +638,7 @@
       },
       options: opts,
       plugins: [zeroLinePlugin()]
-    });
+    }));
     charts.cumulative.$sportsrsPoints = points;
     charts.cumulative.$sportsrsWindow = WINDOW;
     charts.cumulative.$sportsrsShowAll = showAll;
@@ -693,6 +721,7 @@
     box.addEventListener('click', function (e) {
       var btn = e.target.closest('.chart-toggle-btn');
       if (!btn) return;
+      e.preventDefault();
       var mode = btn.getAttribute('data-range');
       if (!mode || mode === cumulRangeMode) return;
       cumulRangeMode = mode;
@@ -710,6 +739,7 @@
     box.addEventListener('click', function (e) {
       var btn = e.target.closest('.chart-toggle-btn');
       if (!btn) return;
+      e.preventDefault();
       var metric = btn.getAttribute('data-metric');
       if (!metric || metric === getMetric()) return;
       setMetric(metric);
@@ -742,7 +772,7 @@
     if (typeof PRED_STATS_LEAGUE_ORDER !== 'undefined' && Array.isArray(PRED_STATS_LEAGUE_ORDER)) {
       preferred = PRED_STATS_LEAGUE_ORDER.slice();
     } else {
-      preferred = ['SBL', 'TPBL', 'PLG', 'BCL', '英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
+      preferred = ['SBL', 'TPBL', 'PLG', 'BCL', '東超', '英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
     }
     var ordered = preferred.filter(function (lg) { return map[lg]; });
     keys.sort().forEach(function (lg) {
@@ -929,6 +959,7 @@
     box.addEventListener('click', function (e) {
       var btn = e.target.closest('.chart-toggle-btn');
       if (!btn) return;
+      e.preventDefault();
       var mode = btn.getAttribute('data-range');
       if (!mode || mode === leagueCumulRangeMode) return;
       leagueCumulRangeMode = mode;
@@ -1061,7 +1092,8 @@
     }
     var canvas = qs(canvasId);
     if (!canvas) return;
-    if (charts[chartKey]) charts[chartKey].destroy();
+    destroyChartOnCanvas(canvas, charts[chartKey]);
+    charts[chartKey] = null;
 
     var colors = barColorsForValues(data, colorMode);
     var opts = makeBaseOpts(function (chart, point) {
@@ -1083,7 +1115,7 @@
     };
     opts.plugins.sportsrsZeroLine = { enabled: !!zeroLine };
 
-    charts[chartKey] = new Chart(canvas, {
+    charts[chartKey] = finalizeChart(new Chart(canvas, {
       type: 'bar',
       data: {
         labels: labels,
@@ -1098,7 +1130,7 @@
       },
       options: opts,
       plugins: zeroLine ? [zeroLinePlugin()] : []
-    });
+    }));
   }
 
   function renderLeagueCharts() {
@@ -1128,6 +1160,7 @@
     box.addEventListener('click', function (e) {
       var btn = e.target.closest('.chart-toggle-btn');
       if (!btn) return;
+      e.preventDefault();
       var sport = btn.getAttribute('data-sport');
       if (!sport || sport === leagueChartSport) return;
       leagueChartSport = sport;
@@ -1145,14 +1178,10 @@
     box.addEventListener('click', function (e) {
       var btn = e.target.closest('.chart-toggle-btn');
       if (!btn) return;
+      e.preventDefault();
       var sport = btn.getAttribute('data-sport');
       if (!sport || sport === chartSport) return;
       setChartSport(sport);
-      if (window.SportsRSRouter && typeof window.SportsRSRouter.isApplying === 'function' && !window.SportsRSRouter.isApplying()) {
-        if (sport === 'basketball') window.SportsRSRouter.navigate('/basketball');
-        else if (sport === 'soccer') window.SportsRSRouter.navigate('/football');
-        else window.SportsRSRouter.navigate('/');
-      }
     });
   }
 

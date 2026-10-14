@@ -10,6 +10,7 @@
     TPBL: 'tpbl',
     PLG: 'plg',
     BCL: 'bcl',
+    '東超': 'easl',
     '英超': 'premier-league',
     '西甲': 'la-liga',
     '德甲': 'bundesliga',
@@ -28,7 +29,7 @@
     SLUG_TO_LEAGUE[LEAGUE_SLUGS[name]] = name;
   });
 
-  var BB_LEAGUES = { SBL: 1, TPBL: 1, PLG: 1, BCL: 1 };
+  var BB_LEAGUES = { SBL: 1, TPBL: 1, PLG: 1, BCL: 1, '東超': 1 };
 
   var PAGE_TITLES = {
     home: 'SportsRS — Professional Sports Analytics',
@@ -208,14 +209,20 @@
 
       switch (route.type) {
         case 'home':
+          if (typeof window.clearPicksFilters === 'function') window.clearPicksFilters();
+          if (typeof window.renderDateList === 'function') window.renderDateList();
           if (typeof window._applyPage === 'function') window._applyPage('home');
           setHomeChartSport('all');
           window.scrollTo(0, 0);
           break;
 
         case 'picks':
+          if (typeof window.applyPicksFiltersFromQuery === 'function') {
+            window.applyPicksFiltersFromQuery(route.query);
+          }
           if (typeof window._applyPage === 'function') window._applyPage('home');
           setHomeChartSport('all');
+          if (typeof window.renderDateList === 'function') window.renderDateList();
           scrollToId('daily-recs-title', 80);
           break;
 

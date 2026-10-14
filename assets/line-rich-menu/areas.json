@@ -1,0 +1,73 @@
+{
+  "size": { "width": 2500, "height": 1686 },
+  "layout": "left1-right2",
+  "webhook": "https://zcytivwjylkmnpqszvui.supabase.co/functions/v1/line-webhook",
+  "menus": {
+    "main": {
+      "file": "main.png",
+      "alias": "sportsrs-main",
+      "areas": [
+        {
+          "bounds": { "x": 48, "y": 48, "width": 1176, "height": 1590 },
+          "action": { "type": "postback", "data": "m=t", "displayText": "今日推薦" },
+          "label": "今日推薦"
+        },
+        {
+          "bounds": { "x": 1248, "y": 48, "width": 1204, "height": 775 },
+          "action": { "type": "postback", "data": "m=w", "displayText": "本週推薦" },
+          "label": "本週推薦"
+        },
+        {
+          "bounds": { "x": 1248, "y": 843, "width": 1204, "height": 795 },
+          "action": { "type": "postback", "data": "m=h", "displayText": "前往網站" },
+          "label": "前往網站"
+        }
+      ]
+    },
+    "basketball": {
+      "file": "basketball.png",
+      "alias": "sportsrs-basketball",
+      "note": "選用：若改 richmenuswitch 子選單時使用；Flex 流程可不用",
+      "areas": [
+        { "bounds": { "x": 64, "y": 36, "width": 200, "height": 72 }, "action": { "type": "richmenuswitch", "richMenuAliasId": "sportsrs-main", "data": "back" }, "label": "返回主選單" },
+        { "bounds": { "x": 64, "y": 168, "width": 1176, "height": 420 }, "action": { "type": "postback", "data": "s=b&r=t", "displayText": "今日籃球" }, "label": "今日籃球" },
+        { "bounds": { "x": 1260, "y": 168, "width": 1176, "height": 420 }, "action": { "type": "postback", "data": "s=b&r=w", "displayText": "本週籃球" }, "label": "本週籃球" },
+        { "bounds": { "x": 64, "y": 720, "width": 776, "height": 420 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week&league=SBL" }, "label": "SBL" },
+        { "bounds": { "x": 862, "y": 720, "width": 776, "height": 420 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week&league=TPBL" }, "label": "TPBL" },
+        { "bounds": { "x": 1660, "y": 720, "width": 776, "height": 420 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week&league=PLG" }, "label": "PLG" },
+        { "bounds": { "x": 64, "y": 1164, "width": 776, "height": 458 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week&league=BCL" }, "label": "BCL" },
+        { "bounds": { "x": 862, "y": 1164, "width": 776, "height": 458 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week&league=%E6%9D%B1%E8%B6%85" }, "label": "東超" },
+        { "bounds": { "x": 1660, "y": 1164, "width": 776, "height": 458 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=basketball&range=week" }, "label": "全部籃球" }
+      ]
+    },
+    "football": {
+      "file": "football.png",
+      "alias": "sportsrs-football",
+      "note": "選用：若改 richmenuswitch 子選單時使用；Flex 流程可不用",
+      "areas": [
+        { "bounds": { "x": 64, "y": 36, "width": 200, "height": 72 }, "action": { "type": "richmenuswitch", "richMenuAliasId": "sportsrs-main", "data": "back" }, "label": "返回主選單" },
+        { "bounds": { "x": 64, "y": 168, "width": 1176, "height": 420 }, "action": { "type": "postback", "data": "s=f&r=t", "displayText": "今日足球" }, "label": "今日足球" },
+        { "bounds": { "x": 1260, "y": 168, "width": 1176, "height": 420 }, "action": { "type": "postback", "data": "s=f&r=w", "displayText": "本週足球" }, "label": "本週足球" },
+        { "bounds": { "x": 64, "y": 720, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E8%8B%B1%E8%B6%85" }, "label": "英超" },
+        { "bounds": { "x": 862, "y": 720, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E8%A5%BF%E7%94%B2" }, "label": "西甲" },
+        { "bounds": { "x": 1660, "y": 720, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E5%BE%B7%E7%94%B2" }, "label": "德甲" },
+        { "bounds": { "x": 64, "y": 1044, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E6%B3%95%E7%94%B2" }, "label": "法甲" },
+        { "bounds": { "x": 862, "y": 1044, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E5%BE%B7%E4%B9%99" }, "label": "德乙" },
+        { "bounds": { "x": 1660, "y": 1044, "width": 776, "height": 300 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E7%BE%8E%E8%B6%B3" }, "label": "美足" },
+        { "bounds": { "x": 862, "y": 1368, "width": 776, "height": 254 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week&league=%E8%8D%B7%E8%98%AD%E7%94%B2" }, "label": "荷蘭甲" },
+        { "bounds": { "x": 1660, "y": 1368, "width": 776, "height": 254 }, "action": { "type": "uri", "uri": "https://sportsrs.com/picks?sport=football&range=week" }, "label": "全部足球" }
+      ]
+    }
+  },
+  "postbackCodes": {
+    "m=t": "今日推薦 → 選籃球/足球",
+    "m=w": "本週推薦 → 選籃球/足球",
+    "m=h": "前往網站 → 快捷連結",
+    "s=b&r=t": "今日籃球 → 選聯賽",
+    "s=b&r=w": "本週籃球 → 選聯賽",
+    "s=f&r=t": "今日足球 → 選聯賽",
+    "s=f&r=w": "本週足球 → 選聯賽",
+    "p=a&r=t": "今日全部 → 列出賽事",
+    "p=b&r=t&l=SBL": "今日籃球 SBL → 列出賽事"
+  }
+}

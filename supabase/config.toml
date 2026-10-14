@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.notify-line-recommendation]
 verify_jwt = false
+
+[functions.line-webhook]
+verify_jwt = false

@@ -439,7 +439,7 @@ nav {
 }
 .chart-card h3 { margin: 0; font-size: .92rem; font-weight: 600; color: var(--text); }
 .chart-card-toggles { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
-.chart-card canvas { width: 100% !important; max-height: 180px; }
+.chart-card > canvas { width: 100% !important; height: 160px !important; min-height: 160px; max-height: 180px; }
 .chart-hint { margin: 0 0 10px; font-size: .74rem; color: var(--muted); }
 .chart-pan { width: 100%; height: 180px; cursor: grab; touch-action: none; user-select: none; }
 .chart-pan.is-overview { cursor: default; touch-action: auto; }

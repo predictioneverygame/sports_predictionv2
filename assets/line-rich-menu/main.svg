@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+  <rect width="2500" height="1686" fill="#fafafa"/>
+  <rect x="48" y="48" width="1176" height="1590" fill="#0b5fad"/>
+  <text x="108" y="140" fill="#ffffff" font-family="Inter, sans-serif" font-size="36" font-weight="800" letter-spacing="6" opacity="0.9">RS</text>
+  <text x="108" y="720" fill="#ffffff" font-family="Microsoft JhengHei, sans-serif" font-size="96" font-weight="800">&#20170;&#26085;&#25512;&#34214;</text>
+  <text x="108" y="810" fill="#dbeafe" font-family="Microsoft JhengHei, sans-serif" font-size="32">&#30070;&#26085;&#26377;&#20998;&#26512;&#30340;&#36093;&#20107;</text>
+  <line x1="108" y1="880" x2="380" y2="880" stroke="#ffffff" stroke-width="2" opacity="0.45"/>
+  <rect x="1248" y="48" width="1204" height="775" fill="#ffffff"/>
+  <rect x="1248" y="48" width="1204" height="8" fill="#0b5fad"/>
+  <text x="1308" y="420" fill="#111827" font-family="Microsoft JhengHei, sans-serif" font-size="88" font-weight="800">&#26412;&#36913;&#25512;&#34214;</text>
+  <text x="1308" y="500" fill="#6b7280" font-family="Microsoft JhengHei, sans-serif" font-size="30">&#36817; 7 &#26085;&#24453;&#38283;&#36093;&#20998;&#26512;</text>
+  <text x="1308" y="580" fill="#9ca3af" font-family="Microsoft JhengHei, sans-serif" font-size="26">SBL &#183; TPBL &#183; PLG &#183; &#33521;&#36229; &#183; &#35199;&#30002; &#183; &#24503;&#30002;</text>
+  <rect x="1248" y="843" width="1204" height="795" fill="#ffffff"/>
+  <rect x="1248" y="843" width="8" height="795" fill="#374151"/>
+  <text x="1308" y="1180" fill="#111827" font-family="Microsoft JhengHei, sans-serif" font-size="80" font-weight="800">&#21069;&#24448;&#32178;&#31449;</text>
+  <text x="1308" y="1260" fill="#6b7280" font-family="Inter, sans-serif" font-size="36">sportsrs.com</text>
+  <text x="1308" y="1330" fill="#9ca3af" font-family="Microsoft JhengHei, sans-serif" font-size="26">&#20844;&#38283;&#25136;&#32318; &#183; &#30436;&#21475;&#25512;&#34214;</text>
+</svg>

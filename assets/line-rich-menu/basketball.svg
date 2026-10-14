@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="2500" height="1686" viewBox="0 0 2500 1686">
+  <rect width="2500" height="1686" fill="#ffffff"/>
+  <line x1="0" y1="132" x2="2500" y2="132" stroke="#e5e7eb" stroke-width="2"/>
+  <rect x="64" y="36" width="200" height="72" rx="4" fill="#f3f4f6" stroke="#d1d5db" stroke-width="2"/>
+  <text x="164" y="86" text-anchor="middle" fill="#374151" font-family="Microsoft JhengHei, sans-serif" font-size="28" font-weight="600">&#8592; &#36820;&#22238;</text>
+  <text x="320" y="88" fill="#0b5fad" font-family="Microsoft JhengHei, sans-serif" font-size="52" font-weight="800">&#31811;&#29699;&#25512;&#34214;</text>
+  <rect x="64" y="168" width="1176" height="420" rx="4" fill="#0b5fad"/>
+  <text x="120" y="300" fill="#ffffff" font-family="Microsoft JhengHei, sans-serif" font-size="56" font-weight="700">&#20170;&#26085;&#31811;&#29699;</text>
+  <text x="120" y="370" fill="#dbeafe" font-family="Microsoft JhengHei, sans-serif" font-size="28">&#20170;&#22825;&#26377;&#25512;&#34214;&#30340;&#31811;&#29699;&#36093;&#20107;</text>
+  <rect x="1260" y="168" width="1176" height="420" rx="4" fill="#ffffff" stroke="#0b5fad" stroke-width="3"/>
+  <text x="1316" y="300" fill="#0b5fad" font-family="Microsoft JhengHei, sans-serif" font-size="56" font-weight="700">&#26412;&#36913;&#31811;&#29699;</text>
+  <text x="1316" y="370" fill="#6b7280" font-family="Microsoft JhengHei, sans-serif" font-size="28">&#36817; 7 &#26085;&#24453;&#38283;&#36093;&#31811;&#29699;&#25512;&#34214;</text>
+  <text x="80" y="660" fill="#6b7280" font-family="Microsoft JhengHei, sans-serif" font-size="26" font-weight="600">&#20381;&#32879;&#36093;&#28687;&#35261;</text>
+  <rect x="64" y="720" width="776" height="420" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="452" y="920" text-anchor="middle" fill="#111827" font-family="Inter, sans-serif" font-size="56" font-weight="800">SBL</text>
+  <rect x="862" y="720" width="776" height="420" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="1250" y="920" text-anchor="middle" fill="#0b5fad" font-family="Inter, sans-serif" font-size="56" font-weight="800">TPBL</text>
+  <rect x="1660" y="720" width="776" height="420" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="2048" y="920" text-anchor="middle" fill="#111827" font-family="Inter, sans-serif" font-size="56" font-weight="800">PLG</text>
+  <rect x="64" y="1164" width="776" height="458" rx="4" fill="#f8f9fa" stroke="#e5e7eb" stroke-width="2"/>
+  <text x="452" y="1370" text-anchor="middle" fill="#111827" font-family="Inter, sans-serif" font-size="56" font-weight="800">BCL</text>
+  <rect x="862" y="1164" width="776" height="458" rx="4" fill="#fffbeb" stroke="#78350f" stroke-width="2"/>
+  <text x="1250" y="1370" text-anchor="middle" fill="#78350f" font-family="Microsoft JhengHei, sans-serif" font-size="56" font-weight="800">&#26481;&#36229;</text>
+  <rect x="1660" y="1164" width="776" height="458" rx="4" fill="#eef4fb" stroke="#0b5fad" stroke-width="2"/>
+  <text x="2048" y="1350" text-anchor="middle" fill="#0b5fad" font-family="Microsoft JhengHei, sans-serif" font-size="44" font-weight="700">&#20840;&#37096;&#31811;&#29699;</text>
+  <text x="2048" y="1410" text-anchor="middle" fill="#6b7280" font-family="Microsoft JhengHei, sans-serif" font-size="24">&#26412;&#36913;&#25152;&#26377;&#31811;&#29699;&#25512;&#34214;</text>
+</svg>

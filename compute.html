@@ -417,6 +417,11 @@ const leagues = {
     sport: "basketball",
     teams: ["新北國王", "桃園璞園領航猿", "香港南華", "烏蘭巴托野馬", "特庫高科技", "柔佛南虎", "德瓦聯"]
   },
+  EASL: {
+    label: "東超",
+    sport: "basketball",
+    teams: ["福爾摩沙夢想家", "臺北富邦勇士", "新北國王", "琉球黃金國王", "馬尼拉電光", "宇都宮皇者", "首爾SK騎士", "廣島龍貓", "香港東方", "阿布拉韋爾斯"]
+  },
   EPL: {
     label: "英超",
     sport: "soccer",
@@ -696,7 +701,9 @@ function saveRecommendations() {
 }
 
 function inferSportByLeague(league) {
-    return leagues[league] ? leagues[league].sport : "soccer";
+    if (leagues[league]) return leagues[league].sport;
+    if (league === "東超") return "basketball";
+    return "soccer";
 }
 
 function formatLeagueName(league) {

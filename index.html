@@ -981,6 +981,7 @@ footer a{color:var(--accent);text-decoration:none}
           <li><a href="/basketball/tpbl"><span class="lg-name">TPBL</span><span class="lg-sub">台灣職籃 · 台灣</span></a></li>
           <li><a href="/basketball/plg"><span class="lg-name">PLG</span><span class="lg-sub">P. LEAGUE+ · 台灣</span></a></li>
           <li><a href="/basketball/bcl"><span class="lg-name">BCL</span><span class="lg-sub">Asia-East · 亞洲</span></a></li>
+          <li><a href="/basketball/easl"><span class="lg-name">東超</span><span class="lg-sub">EASL · 東亞</span></a></li>
         </ul>
       </div>
       <div id="section-football" class="leagues-section">
@@ -1006,7 +1007,7 @@ footer a{color:var(--accent);text-decoration:none}
     <div class="section-head">
       <h2 class="section-title">關於 Sports RS</h2>
     </div>
-    <p>Sports RS 整理籃球（SBL、TPBL、PLG、BCL）與足球（歐洲主要聯賽、歐冠、美足）的賽事觀察與盤口推薦，內容每日更新。每場推薦都會在賽後結算並保留紀錄，戰績、Units 與 ROI 全部公開。</p>
+    <p>Sports RS 整理籃球（SBL、TPBL、PLG、BCL、東超）與足球（歐洲主要聯賽、歐冠、美足）的賽事觀察與盤口推薦，內容每日更新。每場推薦都會在賽後結算並保留紀錄，戰績、Units 與 ROI 全部公開。</p>
     <p class="home-about-links"><a href="/about">推薦方式與資金控管說明 →</a></p>
   </section>
 </div>
@@ -1177,6 +1178,13 @@ footer a{color:var(--accent);text-decoration:none}
 // DATA — 每場比賽的推薦 + 結果
 // ════════════════════════════════════════════
 const MATCHES = [];
+const BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+
+function resolveSportFromLeague(league, sport) {
+  if (BASKETBALL_LEAGUE_KEYS.indexOf(league) !== -1) return 'basketball';
+  if (sport === 'soccer' || sport === 'football') return 'soccer';
+  return 'basketball';
+}
 
 const SUPABASE_URL = 'https://zcytivwjylkmnpqszvui.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA';
@@ -1576,14 +1584,15 @@ function normalizeRecommendations(list, idPrefix) {
       return;
     }
     if (!r.line) return;
-    var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
+    var league = String(r.league);
+    var sport = resolveSportFromLeague(league, r.sport);
     var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
     var safeId = r.id || (idPrefix + '_' + r.date + '_' + r.time + '_' + idx);
     var lineMeta = parsePredictionResultsFromLine(r.line);
     regularRows.push({
       id: String(safeId),
       date: String(r.date),
-      league: String(r.league),
+      league: league,
       sport: sport,
       time: String(r.time),
       status: status,
@@ -1670,7 +1679,8 @@ function normalizeCloudMatches(list) {
       return r && r.id && r.date && r.time && r.league && r.sport && r.status && r.home_name && r.away_name;
     })
     .map(function (r) {
-      var sport = (r.sport === 'soccer' || r.sport === 'football') ? 'soccer' : 'basketball';
+      var league = String(r.league);
+      var sport = resolveSportFromLeague(league, r.sport);
       var status = (r.status === 'final' || r.status === 'live' || r.status === 'preview') ? r.status : 'preview';
       var lineMeta = parsePredictionResultsFromLine(r.prediction_value || '');
       var predictionValue = lineMeta.display;
@@ -1679,7 +1689,7 @@ function normalizeCloudMatches(list) {
       return {
         id: String(r.id),
         date: String(r.date),
-        league: String(r.league),
+        league: league,
         sport: sport,
         time: String(r.time),
         status: status,
@@ -2220,6 +2230,7 @@ const LEAGUE_STATS_LABEL = {
   SBL: 'SBL',
   TPBL: 'TPBL',
   PLG: 'PLG',
+  東超: '東超',
   英超: '英超',
   西甲: '西甲',
   德甲: '德甲',
@@ -2235,7 +2246,7 @@ const LEAGUE_STATS_LABEL = {
 };
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
-const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
+const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
 const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const PROFIT_START_DATE = '2026-04-23';
@@ -2315,7 +2326,7 @@ function netClass(hit, miss) {
 }
 
 const PRED_CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
-const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','英超','西甲','德甲','法甲','德乙','澳甲','美足','墨超','荷蘭甲'];
+const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','墨超','荷蘭甲'];
 const PRED_BANKROLL_UNITS = 20;
 
 function unitStakeForLeague(lg, seasonKey) {
@@ -2392,7 +2403,7 @@ function renderProfitSummary() {
   var UNIT_STAKE_2526 = 8100;
   var BANKROLL_UNITS = 20;
   var SC_LEAGUES = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '墨超', '荷蘭甲'];
-  var BB_LEAGUES = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+  var BB_LEAGUES = BASKETBALL_LEAGUE_KEYS.slice();
 
   function isBasketballMatch(m) {
     var s = String(m.sport || '').toLowerCase();
@@ -2818,11 +2829,11 @@ function sortFinalMatchesChrono(matches) {
     return a.time.localeCompare(b.time);
   });
 }
-const BB_LEAGUE_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL'];
+const BB_LEAGUE_ORDER = BASKETBALL_LEAGUE_KEYS.slice();
 const SC_LEAGUE_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '墨超', '荷蘭甲', '歐冠', '歐洲超級盃', '聯賽盃'];
 /* sortLeagueKeys already puts unknown leagues at end (idx 999), so other leagues appear automatically */
 const LEAGUE_NEST_LABEL = {
-  SBL: 'SBL', TPBL: 'TPBL', PLG: 'PLG', BCL: 'BCL',
+  SBL: 'SBL', TPBL: 'TPBL', PLG: 'PLG', BCL: 'BCL', 東超: '東超',
   英超: '英超', 西甲: '西甲', 德甲: '德甲', 法甲: '法甲', 德乙: '德乙', 澳甲: '澳甲', 美足: '美足', 墨超: '墨超', 荷蘭甲: '荷蘭甲',
   歐冠: '歐冠', 歐洲超級盃: '歐超盃', 聯賽盃: '聯賽盃',
 };
@@ -2995,6 +3006,76 @@ function localDateKey(d) {
 
 var DAILY_RECS_GROUP_KEY = 'rs_daily_recs_group';
 var dailyRecsGroupMode = 'time';
+var picksFilterSport = null;
+var picksFilterRange = null;
+var picksFilterLeague = null;
+
+function normalizePicksSportQuery(sport) {
+  var s = String(sport || '').toLowerCase();
+  if (s === 'football') return 'soccer';
+  if (s === 'basketball' || s === 'soccer') return s;
+  return null;
+}
+
+function applyPicksFiltersFromQuery(query) {
+  picksFilterSport = null;
+  picksFilterRange = null;
+  picksFilterLeague = null;
+  if (!query) return;
+  picksFilterSport = normalizePicksSportQuery(query.sport);
+  if (query.range === 'today' || query.range === 'week') picksFilterRange = query.range;
+  if (query.league) picksFilterLeague = String(query.league);
+}
+
+function clearPicksFilters() {
+  picksFilterSport = null;
+  picksFilterRange = null;
+  picksFilterLeague = null;
+}
+
+function filterOngoingForPicks(list) {
+  var out = list.filter(function (m) {
+    return m.status !== 'final' && !isWorldCupMatch(m);
+  });
+  if (picksFilterSport === 'basketball') {
+    out = out.filter(function (m) { return m.sport === 'basketball'; });
+  } else if (picksFilterSport === 'soccer') {
+    out = out.filter(isSoccerMatch);
+  }
+  if (picksFilterLeague) {
+    out = out.filter(function (m) { return String(m.league) === picksFilterLeague; });
+  }
+  if (picksFilterRange === 'today') {
+    var todayKey = localDateKey(new Date());
+    out = out.filter(function (m) { return String(m.date) === todayKey; });
+  } else if (picksFilterRange === 'week') {
+    var today = new Date();
+    var weekEnd = new Date(today.getTime() + 7 * 86400000);
+    var startKey = localDateKey(today);
+    var endKey = localDateKey(weekEnd);
+    out = out.filter(function (m) {
+      var d = String(m.date || '');
+      return d >= startKey && d <= endKey;
+    });
+  }
+  return out;
+}
+
+function updateDailyRecsTitle() {
+  var titleEl = document.getElementById('daily-recs-title');
+  if (!titleEl) return;
+  if (!picksFilterSport && !picksFilterRange && !picksFilterLeague) {
+    titleEl.textContent = '今日推薦';
+    return;
+  }
+  var parts = [];
+  if (picksFilterSport === 'basketball') parts.push('籃球');
+  else if (picksFilterSport === 'soccer') parts.push('足球');
+  if (picksFilterLeague) parts.push(picksFilterLeague);
+  if (picksFilterRange === 'today') parts.push('今日');
+  else if (picksFilterRange === 'week') parts.push('本週');
+  titleEl.textContent = parts.length ? parts.join(' · ') : '今日推薦';
+}
 
 function getDailyRecsGroupMode() {
   try {
@@ -3095,7 +3176,11 @@ function renderOngoingByEvent(container, ongoing) {
 }
 
 function renderDateList() {
-  const ongoing = MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
+  const hasPicksFilter = !!(picksFilterSport || picksFilterRange || picksFilterLeague);
+  const ongoing = hasPicksFilter
+    ? filterOngoingForPicks(MATCHES)
+    : MATCHES.filter(function (m) { return m.status !== 'final' && !isWorldCupMatch(m); });
+  updateDailyRecsTitle();
   const finals = MATCHES.filter(function (m) { return m.status === 'final' && !isWorldCupMatch(m); });
 
   const grouped = groupByDate(ongoing);
@@ -3112,7 +3197,10 @@ function renderDateList() {
   }
 
   if (!container.children.length) {
-    container.innerHTML = '<div class="empty-state"><p>目前沒有待開賽的推薦，新推薦發布後會顯示在這裡。</p></div>';
+    var emptyMsg = hasPicksFilter
+      ? '<p>這個條件下目前沒有待開賽推薦。</p><p><a href="/picks">查看全部推薦</a></p>'
+      : '<p>目前沒有待開賽的推薦，新推薦發布後會顯示在這裡。</p>';
+    container.innerHTML = '<div class="empty-state">' + emptyMsg + '</div>';
   }
 
   if (finals.length > 0 || MATCHES.some(isWorldCupMatch)) {
@@ -3257,7 +3345,7 @@ function showLeague(league, opts) {
   const matches = sortMatchesForLeague(league).filter(function (m) { return !isWorldCupMatch(m); });
   const leagueNames = {
     'BCL':'BCL Asia-East', 'SBL':'SBL 超級籃球聯賽',
-    'TPBL':'TPBL', 'PLG':'PLG P.LEAGUE+',
+    'TPBL':'TPBL', 'PLG':'PLG P.LEAGUE+', '東超':'東超 EASL',
     '英超':'英超 Premier League', '西甲':'西甲 LaLiga', '德甲':'德甲 Bundesliga', '法甲':'法甲 Ligue 1', '德乙':'德乙 Bundesliga 2',
     '美足':'美足 MLS', '墨超':'墨超 Liga MX', '荷蘭甲':'荷蘭甲 Eredivisie',
     '歐冠':'歐冠 Champions League', '歐洲超級盃':'歐洲超級盃', '聯賽盃':'聯賽盃 Leagues Cup'
@@ -4007,21 +4095,25 @@ function renderWorldCupPage() {
 // PAGE NAV
 // ════════════════════════════════════════════
 function _applyPage(name) {
+  var targetId = 'page-' + name;
+  var pageEl = document.getElementById(targetId);
+  var homeEl = document.getElementById('page-home');
+  var alreadyActive = (pageEl && pageEl.classList.contains('active'))
+    || (!pageEl && name !== 'home' && homeEl && homeEl.classList.contains('active'));
   document.querySelectorAll('.page').forEach(function (p) {
     p.classList.remove('active');
   });
-  var pageEl = document.getElementById('page-' + name);
   if (pageEl) {
     pageEl.classList.add('active');
-    window.scrollTo(0, 0);
+    if (!alreadyActive) window.scrollTo(0, 0);
     if (name === 'worldcup') renderWorldCupPage();
     if (name === 'league-charts' && window.SportsRSUI && typeof SportsRSUI.renderLeagueCharts === 'function') {
       SportsRSUI.renderLeagueCharts();
     }
     return;
   }
-  document.getElementById('page-home').classList.add('active');
-  window.scrollTo(0, 0);
+  if (homeEl) homeEl.classList.add('active');
+  if (!alreadyActive) window.scrollTo(0, 0);
 }
 
 function showPage(name) {
