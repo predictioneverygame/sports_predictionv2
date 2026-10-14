@@ -36,7 +36,7 @@
     neutral: '#6b7280',
     grid: '#eef0f3',
     axis: '#6b7280',
-    zero: '#9ca3af'
+    zero: '#525252'
   };
 
   function qs(id) { return document.getElementById(id); }
@@ -434,9 +434,10 @@
         var ctx = chart.ctx;
         ctx.save();
         ctx.beginPath();
-        ctx.setLineDash([4, 4]);
-        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 1.75;
         ctx.strokeStyle = CHART_COLORS.zero;
+        ctx.globalAlpha = 0.92;
         ctx.moveTo(chart.chartArea.left, y);
         ctx.lineTo(chart.chartArea.right, y);
         ctx.stroke();
