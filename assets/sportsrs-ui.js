@@ -488,12 +488,19 @@
     };
   }
 
-  function deferChartUntilReady(canvas, drawFn) {
-    if (canvasHasLayout(canvas)) {
+  function deferChartUntilReady(canvas, drawFn, attempt) {
+    attempt = attempt || 0;
+    if (canvas && canvasHasLayout(canvas)) {
       drawFn();
       return;
     }
-    scheduleChartFrame(drawFn);
+    if (attempt >= 40) {
+      drawFn();
+      return;
+    }
+    scheduleChartFrame(function () {
+      deferChartUntilReady(canvas, drawFn, attempt + 1);
+    });
   }
 
   function renderWinRateChart() {
@@ -1083,7 +1090,8 @@
     updateLeagueChartsVisibility();
     syncLeagueSportToggleUi();
     leagueCompareCache = buildLeagueCompareSeries(leagueChartSport);
-    scheduleChartFrame(function () {
+    var probe = qs('chart-league-winrate');
+    deferChartUntilReady(probe, function () {
       renderLeagueBarChart('chart-league-winrate', 'leagueWr', 'winRate', '%', 'winrate', false);
       renderLeagueBarChart('chart-league-roi', 'leagueRoi', 'roi', '%', 'signed', true);
       renderLeagueBarChart('chart-league-units', 'leagueUnits', 'units', ' Unit', 'signed', true);
@@ -1144,7 +1152,8 @@
       }
     }
 
-    var chart = new Chart(canvas, {
+    if (!canvasHasLayout(canvas)) return;
+    var chart = finalizeChart(new Chart(canvas, {
       type: 'line',
       data: {
         labels: labels,
@@ -1163,8 +1172,7 @@
       },
       options: opts,
       plugins: [zeroLinePlugin()]
-    });
-    try { chart.resize(); } catch (_) {}
+    }), canvas);
     chart.$sportsrsPoints = points;
     chart.$sportsrsTotal = n;
     chart.$sportsrsWindow = WINDOW;
@@ -1231,7 +1239,8 @@
         + '</div></div>';
     }).join('');
 
-    scheduleChartFrame(function () {
+    var firstCanvas = qs('league-cumul-canvas-0');
+    deferChartUntilReady(firstCanvas || qs('chart-league-winrate'), function () {
       if (seq !== leagueCumulRenderSeq) return;
       runLeagueCumulBatch(0, seq);
     });
@@ -1247,6 +1256,14 @@
   }
 
   function renderLeagueBarChart(canvasId, chartKey, metricKey, suffix, colorMode, zeroLine) {
+    var canvas = qs(canvasId);
+    if (!canvas) return;
+    deferChartUntilReady(canvas, function () {
+      renderLeagueBarChartNow(canvasId, chartKey, metricKey, suffix, colorMode, zeroLine);
+    });
+  }
+
+  function renderLeagueBarChartNow(canvasId, chartKey, metricKey, suffix, colorMode, zeroLine) {
     var series = leagueCompareCache;
     var labels = series.map(function (s) { return s.label; });
     var data = series.map(function (s) { return Number((s[metricKey] || 0).toFixed(2)); });
@@ -1379,7 +1396,9 @@
     updateKpis();
     renderCharts();
     if (qs('page-league-charts') && qs('page-league-charts').classList.contains('active')) {
-      renderLeagueCharts();
+      ensureLeagueChartsUiBound();
+      if (leagueSportSelected()) refreshLeagueChartData();
+      else renderLeagueCharts();
     }
     initLucide();
   }
