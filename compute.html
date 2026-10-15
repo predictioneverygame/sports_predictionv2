@@ -257,6 +257,13 @@ input[type="text"] {
     color: #e2e8f0;
     border: 1px solid #64748b;
 }
+
+.collapsible-card > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; user-select: none; }
+.collapsible-card > summary::-webkit-details-marker { display: none; }
+.collapsible-card > summary::after { content: "+"; color: #38bdf8; font-size: 22px; line-height: 1; }
+.collapsible-card[open] > summary::after { content: "−"; }
+.collapsible-card > summary .list-count { margin-left: auto; color: #94a3b8; font-size: 13px; font-weight: 500; }
+.collapsible-card[open] > summary { margin-bottom: 8px; }
 </style>
 
 </head>
@@ -341,11 +348,12 @@ input[type="text"] {
 
 </div>
 
-<div class="card">
-<div class="card-title">已匯入推薦清單（雲端）</div>
+<details class="card collapsible-card">
+<summary class="card-title">已匯入推薦清單（雲端）<span class="list-count" id="cloudSectionCount">載入中</span></summary>
 <div class="action-row">
     <button class="smallBtn" onclick="loadCloudRecommendations()">重新整理清單</button>
     <button class="smallBtn" onclick="syncSoccerScoresAndSettle()" title="用 API-Football 抓完場比分並結算足球推薦">同步足球比分結算</button>
+    <button class="smallBtn" id="cloudToggleButton" onclick="toggleCloudRecommendationsList()" hidden>展開更多</button>
 </div>
 <div class="hint" id="cloudStatus">尚未讀取</div>
 <div class="field-label">API-Football Key（可選：本機測試用；線上網站請改放 Supabase Secrets）</div>
@@ -368,10 +376,10 @@ input[type="text"] {
     </thead>
     <tbody id="cloudList"></tbody>
 </table>
-</div>
+</details>
 
-<div class="card">
-<div class="card-title">已結算清單（雲端）</div>
+<details class="card collapsible-card">
+<summary class="card-title">已結算清單（雲端）<span class="list-count" id="settledSectionCount">載入中</span></summary>
 <div class="action-row">
     <button class="smallBtn" onclick="loadCloudSettledMatches()">重新整理結算清單</button>
     <button class="smallBtn" id="settledToggleButton" onclick="toggleCloudSettledList()" hidden>展開更多</button>
@@ -392,7 +400,7 @@ input[type="text"] {
     </thead>
     <tbody id="settledList"></tbody>
 </table>
-</div>
+</details>
 
 <script src="compute-secrets.local.js" onerror=""></script>
 <script>
@@ -527,6 +535,7 @@ let bets = [];
 let recommendations = [];
 let cloudRecommendations = [];
 let cloudSettledMatches = [];
+let showAllCloudRecommendations = false;
 let showAllCloudSettled = false;
 const SUPABASE_URL = "https://zcytivwjylkmnpqszvui.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA";
@@ -1154,8 +1163,8 @@ async function loadCloudRecommendations() {
         }
 
         cloudRecommendations = fixGarbledRecommendations(await response.json());
+        showAllCloudRecommendations = false;
         renderCloudRecommendations();
-        setCloudStatus(`目前共 ${cloudRecommendations.length} 筆`);
     } catch (err) {
         console.error(err);
         setCloudStatus("讀取失敗，請檢查 Supabase 權限設定");
@@ -1167,6 +1176,8 @@ function renderCloudRecommendations() {
     cloudList.innerHTML = "";
 
     if (!cloudRecommendations.length) {
+        document.getElementById("cloudSectionCount").innerText = "0 筆";
+        document.getElementById("cloudToggleButton").hidden = true;
         cloudList.innerHTML = `
         <tr>
             <td colspan="7">目前沒有雲端資料</td>
@@ -1188,7 +1199,16 @@ function renderCloudRecommendations() {
         grouped[key].lines.push(String(item.line || "").replace("大3.0", "大3").replace("大4.0", "大4"));
     });
 
-    Object.values(grouped).forEach((group) => {
+    const groupedRows = Object.values(grouped);
+    document.getElementById("cloudSectionCount").innerText = groupedRows.length + " 筆";
+    const toggleButton = document.getElementById("cloudToggleButton");
+    const previewCount = 8;
+    const visibleRows = showAllCloudRecommendations ? groupedRows : groupedRows.slice(0, previewCount);
+    toggleButton.hidden = groupedRows.length <= previewCount;
+    toggleButton.innerText = showAllCloudRecommendations ? "收合清單" : "展開其餘 " + (groupedRows.length - previewCount) + " 筆";
+    setCloudStatus("顯示 " + visibleRows.length + "/" + groupedRows.length + " 筆");
+
+    visibleRows.forEach((group) => {
         const item = group.first;
         var mergedLines = Array.from(new Set(group.lines)).join("/");
         const rawLine = /^世足\s*(?:[A-L]組|32強|16強|8強|4強|決賽|季軍)/.test(String(item.league || ""))
@@ -1212,6 +1232,11 @@ function renderCloudRecommendations() {
             </td>
         </tr>`;
     });
+}
+
+function toggleCloudRecommendationsList() {
+    showAllCloudRecommendations = !showAllCloudRecommendations;
+    renderCloudRecommendations();
 }
 
 async function loadCloudSettledMatches() {
@@ -1260,6 +1285,8 @@ function renderCloudSettledMatches() {
     const settledList = document.getElementById("settledList");
     const toggleButton = document.getElementById("settledToggleButton");
     settledList.innerHTML = "";
+
+    document.getElementById("settledSectionCount").innerText = cloudSettledMatches.length + " 筆";
 
     if (!cloudSettledMatches.length) {
         settledList.innerHTML = '<tr><td colspan="8">目前沒有已結算資料</td></tr>';
