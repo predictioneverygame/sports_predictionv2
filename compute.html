@@ -374,6 +374,7 @@ input[type="text"] {
 <div class="card-title">已結算清單（雲端）</div>
 <div class="action-row">
     <button class="smallBtn" onclick="loadCloudSettledMatches()">重新整理結算清單</button>
+    <button class="smallBtn" id="settledToggleButton" onclick="toggleCloudSettledList()" hidden>展開更多</button>
 </div>
 <div class="hint" id="settledStatus">尚未讀取</div>
 <table>
@@ -526,6 +527,7 @@ let bets = [];
 let recommendations = [];
 let cloudRecommendations = [];
 let cloudSettledMatches = [];
+let showAllCloudSettled = false;
 const SUPABASE_URL = "https://zcytivwjylkmnpqszvui.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA";
 const SUPABASE_TABLE = "recommendations";
@@ -1245,8 +1247,9 @@ async function loadCloudSettledMatches() {
         const raw = await response.json();
         await ensureKnockoutWinnersCloudSeed(raw);
         cloudSettledMatches = raw.filter((item) => !isKnockoutWinnersMetaRow(item));
+        showAllCloudSettled = false;
         renderCloudSettledMatches();
-        setSettledStatus(`目前共 ${cloudSettledMatches.length} 筆`);
+
     } catch (err) {
         console.error(err);
         setSettledStatus("讀取失敗，請檢查 Supabase 權限設定");
@@ -1255,39 +1258,46 @@ async function loadCloudSettledMatches() {
 
 function renderCloudSettledMatches() {
     const settledList = document.getElementById("settledList");
+    const toggleButton = document.getElementById("settledToggleButton");
     settledList.innerHTML = "";
 
     if (!cloudSettledMatches.length) {
-        settledList.innerHTML = `
-        <tr>
-            <td colspan="8">目前沒有已結算資料</td>
-        </tr>`;
+        settledList.innerHTML = '<tr><td colspan="8">目前沒有已結算資料</td></tr>';
+        toggleButton.hidden = true;
+        document.getElementById("settledStatus").innerText = "目前共 0 筆";
         return;
     }
 
     const now = new Date();
     const cutoff = new Date(now.getTime() - 7 * 86400000).toISOString().slice(0, 10);
-    const recent = cloudSettledMatches.filter(item => String(item.date || '') >= cutoff);
+    const recent = cloudSettledMatches.filter(item => String(item.date || "") >= cutoff);
+    const previewCount = 8;
+    const visible = showAllCloudSettled ? recent : recent.slice(0, previewCount);
 
-    if (recent.length < cloudSettledMatches.length) {
-        document.getElementById("settledStatus").innerText =
-            `顯示近 7 天共 ${recent.length} 筆（全部 ${cloudSettledMatches.length} 筆）`;
-    }
+    toggleButton.hidden = recent.length <= previewCount;
+    toggleButton.innerText = showAllCloudSettled ? "收合清單" : "展開其餘 " + (recent.length - previewCount) + " 筆";
+    document.getElementById("settledStatus").innerText = recent.length < cloudSettledMatches.length
+        ? "顯示近 7 天 " + visible.length + "/" + recent.length + " 筆（全部 " + cloudSettledMatches.length + " 筆）"
+        : "顯示 " + visible.length + "/" + recent.length + " 筆";
 
-    recent.forEach((item) => {
+    visible.forEach((item) => {
         const profit = toNum(item.profit) || 0;
         const displayLine = parsePredictionResultsFromLine(item.prediction_value || "").display;
-        settledList.innerHTML += `
-        <tr>
-            <td>${item.date} ${item.time}</td>
-            <td>${item.league}</td>
-            <td>${item.home_name} vs ${item.away_name}</td>
-            <td>${displayLine}</td>
-            ${openingScoreResultCells("matches", item.id, item, true)}
-            <td>${profit.toFixed(2)}</td>
-            <td><button class="delBtn" onclick="deleteSettledMatch('${item.id}')">刪除</button></td>
-        </tr>`;
+        settledList.innerHTML += "<tr>" +
+            "<td>" + item.date + " " + item.time + "</td>" +
+            "<td>" + item.league + "</td>" +
+            "<td>" + item.home_name + " vs " + item.away_name + "</td>" +
+            "<td>" + displayLine + "</td>" +
+            openingScoreResultCells("matches", item.id, item, true) +
+            "<td>" + profit.toFixed(2) + "</td>" +
+            '<td><button class="delBtn" onclick="deleteSettledMatch(\'' + item.id + '\')">刪除</button></td>' +
+            "</tr>";
     });
+}
+
+function toggleCloudSettledList() {
+    showAllCloudSettled = !showAllCloudSettled;
+    renderCloudSettledMatches();
 }
 
 async function deleteSettledMatch(id) {
