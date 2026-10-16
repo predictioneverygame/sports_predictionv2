@@ -265,14 +265,11 @@ input[type="text"] {
 .collapsible-card > summary .list-count { margin-left: auto; color: #94a3b8; font-size: 13px; font-weight: 500; }
 .collapsible-card[open] > summary { margin-bottom: 8px; }
 
-.event-browser-controls { margin: 10px 0 8px; }
-.event-browser-controls input[type="search"] { margin: 0; }
-.event-button-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; max-height: 340px; overflow-y: auto; padding: 2px 4px 4px 0; }
-.event-select-btn { width: 100%; min-width: 0; min-height: 62px; margin: 0; padding: 9px 12px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; border: 1px solid #334155; border-radius: 9px; background: #1e293b; color: #e2e8f0; text-align: left; cursor: pointer; }
-.event-select-btn:hover { border-color: #38bdf8; background: #26374e; }
-.event-select-btn.active { border-color: #38bdf8; background: #123451; box-shadow: 0 0 0 1px rgba(56,189,248,.25); }
-.event-btn-meta, .event-btn-count { color: #94a3b8; font-size: 12px; line-height: 1.35; }
-.event-btn-match { color: #f8fafc; font-size: 14px; font-weight: 700; line-height: 1.4; }
+.league-button-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; }
+.league-select-btn { width: auto; min-width: 92px; margin: 0; padding: 8px 12px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid #334155; border-radius: 9px; background: #1e293b; color: #e2e8f0; font-size: 14px; font-weight: 700; cursor: pointer; }
+.league-select-btn:hover { border-color: #38bdf8; background: #26374e; }
+.league-select-btn.active { border-color: #38bdf8; background: #123451; box-shadow: 0 0 0 1px rgba(56,189,248,.25); }
+.league-btn-count { color: #94a3b8; font-size: 12px; font-weight: 500; }
 .event-empty { padding: 14px; color: #94a3b8; text-align: center; }
 .selected-event-panel { margin-top: 14px; }
 .selected-event-title { margin: 0 0 8px; color: #e2e8f0; font-weight: 700; }
@@ -373,10 +370,8 @@ input[type="text"] {
     <button class="smallBtn" type="button" onclick="saveApiSportsKey()">儲存本機 Key</button>
 </div>
 <div class="hint" id="apiSportsStatus">線上版：部署 Edge Function 後不需在網站貼 Key</div>
-<div class="event-browser-controls">
-    <input id="cloudEventSearch" type="search" placeholder="搜尋球隊或聯賽" oninput="filterCloudRecommendationEvents(this.value)">
-</div>
-<div id="cloudEventButtons" class="event-button-grid" aria-label="雲端推薦賽事"></div>
+<div id="cloudLeagueButtons" class="league-button-list" aria-label="依聯賽篩選推薦"></div>
+<div id="cloudLeagueHint" class="event-empty">點選上方聯賽按鈕，查看該聯賽的賽事推薦。</div>
 <div id="cloudSelectedEvent" class="selected-event-panel" hidden>
     <div id="cloudSelectedTitle" class="selected-event-title"></div>
     <table>
@@ -554,7 +549,7 @@ let recommendations = [];
 let cloudRecommendations = [];
 let cloudSettledMatches = [];
 let cloudRecommendationGroups = [];
-let selectedCloudRecommendationKey = "";
+let selectedCloudLeague = "";
 let showAllCloudSettled = false;
 const SUPABASE_URL = "https://zcytivwjylkmnpqszvui.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeXRpdndqeWxrbW5wcXN6dnVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4NDU5NDksImV4cCI6MjA5MjQyMTk0OX0.NrBtPoDxlcmspY0MJ6-yIKYTznxxVocJ66vPNZy-JYA";
@@ -1190,9 +1185,9 @@ async function loadCloudRecommendations() {
 }
 
 function renderCloudRecommendations() {
-    const eventButtons = document.getElementById("cloudEventButtons");
-    const search = document.getElementById("cloudEventSearch");
-    eventButtons.innerHTML = "";
+    const buttons = document.getElementById("cloudLeagueButtons");
+    buttons.innerHTML = "";
+    cloudList.innerHTML = "";
 
     const grouped = {};
     cloudRecommendations.forEach((item) => {
@@ -1201,110 +1196,108 @@ function renderCloudRecommendations() {
         grouped[key].items.push(item);
         grouped[key].lines.push(String(item.line || "").replace("大3.0", "大3").replace("大4.0", "大4"));
     });
-
     cloudRecommendationGroups = Object.values(grouped);
     document.getElementById("cloudSectionCount").innerText = cloudRecommendationGroups.length + " 場";
+
     if (!cloudRecommendationGroups.length) {
-        selectedCloudRecommendationKey = "";
+        selectedCloudLeague = "";
         document.getElementById("cloudSelectedEvent").hidden = true;
-        eventButtons.innerHTML = "<div class=\"event-empty\">目前沒有雲端資料</div>";
+        document.getElementById("cloudLeagueHint").hidden = false;
+        document.getElementById("cloudLeagueHint").textContent = "目前沒有雲端推薦賽事。";
         setCloudStatus("目前沒有雲端推薦賽事");
         return;
     }
 
+    const leagueCounts = new Map();
     cloudRecommendationGroups.forEach((group) => {
-        const item = group.first;
+        const league = String(group.first.league || "其他");
+        leagueCounts.set(league, (leagueCounts.get(league) || 0) + 1);
+    });
+    const leagueNames = Array.from(leagueCounts.keys()).sort((a, b) => a.localeCompare(b, "zh-TW"));
+    if (selectedCloudLeague && selectedCloudLeague !== "__ALL__" && !leagueCounts.has(selectedCloudLeague)) selectedCloudLeague = "";
+
+    const addLeagueButton = (label, key, count) => {
         const button = document.createElement("button");
         button.type = "button";
-        button.className = "event-select-btn";
-        button.dataset.eventKey = group.key;
-        const meta = document.createElement("span");
-        meta.className = "event-btn-meta";
-        meta.textContent = item.date + " " + (item.time || "") + " · " + item.league;
-        const match = document.createElement("span");
-        match.className = "event-btn-match";
-        match.textContent = item.home + " vs " + item.away;
-        const count = document.createElement("span");
-        count.className = "event-btn-count";
-        count.textContent = group.items.length + " 項推薦";
-        button.append(meta, match, count);
-        button.addEventListener("click", () => selectCloudRecommendationEvent(group.key));
-        eventButtons.appendChild(button);
-    });
+        button.className = "league-select-btn";
+        button.dataset.league = key;
+        button.classList.toggle("active", selectedCloudLeague === key);
+        const name = document.createElement("span");
+        name.textContent = label;
+        const number = document.createElement("span");
+        number.className = "league-btn-count";
+        number.textContent = count + " 場";
+        button.append(name, number);
+        button.addEventListener("click", () => selectCloudRecommendationLeague(key));
+        buttons.appendChild(button);
+    };
+    addLeagueButton("全部", "__ALL__", cloudRecommendationGroups.length);
+    leagueNames.forEach((league) => addLeagueButton(league, league, leagueCounts.get(league)));
 
-    filterCloudRecommendationEvents(search.value);
-    renderSelectedCloudRecommendation();
+    setCloudStatus("共 " + cloudRecommendationGroups.length + " 場賽事，分屬 " + leagueNames.length + " 個聯賽");
+    renderCloudLeagueMatches();
 }
 
-function filterCloudRecommendationEvents(query) {
-    const eventButtons = document.getElementById("cloudEventButtons");
-    const needle = String(query || "").trim().toLocaleLowerCase();
-    let visibleCount = 0;
-    eventButtons.querySelectorAll(".event-select-btn").forEach((button) => {
-        const visible = button.textContent.toLocaleLowerCase().includes(needle);
-        button.hidden = !visible;
-        if (visible) visibleCount += 1;
+function selectCloudRecommendationLeague(league) {
+    selectedCloudLeague = league;
+    document.querySelectorAll("#cloudLeagueButtons .league-select-btn").forEach((button) => {
+        button.classList.toggle("active", button.dataset.league === league);
     });
-    const selectedButton = Array.from(eventButtons.querySelectorAll(".event-select-btn")).find(button => button.dataset.eventKey === selectedCloudRecommendationKey);
-    if (selectedButton && selectedButton.hidden) {
-        selectedCloudRecommendationKey = "";
-        renderSelectedCloudRecommendation();
-    }
-    setCloudStatus(needle ? "找到 " + visibleCount + "/" + cloudRecommendationGroups.length + " 場賽事" : "共 " + visibleCount + " 場賽事，點選按鈕查看");
+    renderCloudLeagueMatches();
 }
 
-function selectCloudRecommendationEvent(key) {
-    selectedCloudRecommendationKey = key;
-    document.querySelectorAll("#cloudEventButtons .event-select-btn").forEach((button) => {
-        button.classList.toggle("active", button.dataset.eventKey === key);
-    });
-    renderSelectedCloudRecommendation();
-}
-
-function renderSelectedCloudRecommendation() {
+function renderCloudLeagueMatches() {
     const panel = document.getElementById("cloudSelectedEvent");
+    const hint = document.getElementById("cloudLeagueHint");
     const cloudList = document.getElementById("cloudList");
-    const group = cloudRecommendationGroups.find(item => item.key === selectedCloudRecommendationKey);
     cloudList.innerHTML = "";
-    if (!group) {
+    if (!selectedCloudLeague) {
         panel.hidden = true;
+        hint.hidden = false;
+        hint.textContent = "點選上方聯賽按鈕，查看該聯賽的賽事推薦。";
         return;
     }
+    const groups = selectedCloudLeague === "__ALL__"
+        ? cloudRecommendationGroups
+        : cloudRecommendationGroups.filter(group => String(group.first.league || "其他") === selectedCloudLeague);
     panel.hidden = false;
-    const item = group.first;
-    const mergedLines = Array.from(new Set(group.lines)).join("/");
-    const rawLine = /^世足\s*(?:[A-L]組|32強|16強|8強|4強|決賽|季軍)/.test(String(item.league || ""))
-        ? (item.summary ? "初盤:" + mergedLines + "｜" + item.summary : mergedLines)
-        : mergedLines;
-    const displayLine = parsePredictionResultsFromLine(
-        isCombinedOpeningScoreText(item.line || "") ? item.line : rawLine
-    ).display;
-    document.getElementById("cloudSelectedTitle").textContent = item.league + " · " + item.date + " " + (item.time || "") + " · " + item.home + " vs " + item.away;
+    hint.hidden = true;
+    document.getElementById("cloudSelectedTitle").textContent = (selectedCloudLeague === "__ALL__" ? "全部聯賽" : selectedCloudLeague) + " · " + groups.length + " 場賽事";
 
-    const row = document.createElement("tr");
-    [item.date + " " + (item.time || ""), item.league, item.home + " vs " + item.away, displayLine].forEach((value) => {
-        const cell = document.createElement("td");
-        cell.textContent = value || "—";
-        row.appendChild(cell);
+    groups.forEach((group) => {
+        const item = group.first;
+        const mergedLines = Array.from(new Set(group.lines)).join("/");
+        const rawLine = /^世足\s*(?:[A-L]組|32強|16強|8強|4強|決賽|季軍)/.test(String(item.league || ""))
+            ? (item.summary ? "初盤:" + mergedLines + "｜" + item.summary : mergedLines)
+            : mergedLines;
+        const displayLine = parsePredictionResultsFromLine(
+            isCombinedOpeningScoreText(item.line || "") ? item.line : rawLine
+        ).display;
+        const row = document.createElement("tr");
+        [item.date + " " + (item.time || ""), item.league, item.home + " vs " + item.away, displayLine].forEach((value) => {
+            const cell = document.createElement("td");
+            cell.textContent = value || "—";
+            row.appendChild(cell);
+        });
+        row.insertAdjacentHTML("beforeend", openingScoreResultCells("recommendations", item.id, item, false));
+        const actionsCell = document.createElement("td");
+        const actions = document.createElement("div");
+        actions.className = "action-row";
+        const settleButton = document.createElement("button");
+        settleButton.type = "button";
+        settleButton.className = "smallBtn";
+        settleButton.textContent = "結算";
+        settleButton.addEventListener("click", () => settleCloudRecommendation(item.id));
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delBtn";
+        deleteButton.textContent = "刪除";
+        deleteButton.addEventListener("click", () => deleteCloudRecommendationGroup(item.id));
+        actions.append(settleButton, deleteButton);
+        actionsCell.appendChild(actions);
+        row.appendChild(actionsCell);
+        cloudList.appendChild(row);
     });
-    row.insertAdjacentHTML("beforeend", openingScoreResultCells("recommendations", item.id, item, false));
-    const actionsCell = document.createElement("td");
-    const actions = document.createElement("div");
-    actions.className = "action-row";
-    const settleButton = document.createElement("button");
-    settleButton.type = "button";
-    settleButton.className = "smallBtn";
-    settleButton.textContent = "結算";
-    settleButton.addEventListener("click", () => settleCloudRecommendation(item.id));
-    const deleteButton = document.createElement("button");
-    deleteButton.type = "button";
-    deleteButton.className = "delBtn";
-    deleteButton.textContent = "刪除";
-    deleteButton.addEventListener("click", () => deleteCloudRecommendationGroup(item.id));
-    actions.append(settleButton, deleteButton);
-    actionsCell.appendChild(actions);
-    row.appendChild(actionsCell);
-    cloudList.appendChild(row);
 }
 
 async function loadCloudSettledMatches() {
