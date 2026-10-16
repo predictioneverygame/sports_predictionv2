@@ -1278,3 +1278,112 @@ footer a:hover { color: var(--primary); text-decoration: underline; }
   .records-table td:nth-child(9) { order: 9; font-size: .82rem; }
   .records-table .records-empty { flex-basis: 100%; }
 }
+
+/* ─── DESIGN REFINEMENT ───
+   Preserve SportsRS's light editorial look while improving hierarchy and interaction feedback. */
+.section-head,
+.daily-recs-head,
+.league-charts-head {
+  border-bottom: 1px solid var(--border-strong);
+}
+
+.section-title {
+  position: relative;
+  padding-left: 13px;
+  text-wrap: balance;
+}
+
+.section-title::before {
+  content: '';
+  display: block;
+  position: absolute;
+  left: 0;
+  top: .16em;
+  width: 3px;
+  height: 1.05em;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.hero-facts dd,
+.kpi-value,
+.profit-main,
+.team-score,
+.records-table .num {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.btn-primary,
+.btn-ghost,
+.nav-cta,
+.chart-toggle-btn,
+.pred-stats-season-btn,
+.back-to-top {
+  transition: color .18s ease, background-color .18s ease, border-color .18s ease,
+    box-shadow .18s ease, transform .18s ease;
+}
+
+.btn-primary,
+.btn-ghost {
+  min-height: 42px;
+}
+
+.btn-primary:active,
+.btn-ghost:active,
+.nav-cta:active,
+.chart-toggle-btn:active,
+.pred-stats-season-btn:active,
+.back-to-top:active {
+  transform: translateY(1px);
+}
+
+.match-card[data-match-id] {
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.match-card[data-match-id]:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .match-card[data-match-id]:hover {
+    border-color: #b8cce0;
+    box-shadow: 0 4px 14px rgba(15, 45, 75, .07);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:hover,
+  .btn-ghost:hover,
+  .nav-cta:hover,
+  .chart-toggle-btn:hover,
+  .pred-stats-season-btn:hover,
+  .back-to-top:hover {
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 640px) {
+  .hero-cta-row .btn-primary,
+  .hero-cta-row .btn-ghost {
+    min-height: 46px;
+  }
+
+  .chart-toggle-btn {
+    min-height: 40px;
+    padding-right: 13px;
+    padding-left: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary,
+  .btn-ghost,
+  .nav-cta,
+  .chart-toggle-btn,
+  .pred-stats-season-btn,
+  .back-to-top,
+  .match-card[data-match-id] {
+    transition-duration: .01ms;
+  }
+}
