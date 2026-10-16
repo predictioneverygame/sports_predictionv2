@@ -249,7 +249,7 @@ function formatMatchBlock(item: MergedRec, index: number, total: number) {
   const matchup = item.time
     ? `${item.home} vs ${item.away} · ${item.time}`
     : `${item.home} vs ${item.away}`;
-  const pick = item.lines.length ? `\n初盤：${item.lines.join("、")}` : "";
+  const pick = item.lines.length ? `\n賽事預測：${item.lines.join("、")}` : "";
   return `${head}\n${matchup}${pick}`;
 }
 

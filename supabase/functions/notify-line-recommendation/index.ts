@@ -134,7 +134,7 @@ function formatRecBlock(item: MergedRecItem, index: number, total: number) {
   const head = total > 1 ? `\n【${index + 1}】${sportEmoji(item.sport)} ${league}` : `${sportEmoji(item.sport)} ${league}`;
   const matchup = home && away ? `\n${home} vs ${away}` : "";
   const pick = item.lines.length
-    ? `\n初盤：${item.lines.join("、")}`
+    ? `\n賽事預測：${item.lines.join("、")}`
     : "";
   const when = date ? `\n📅 ${date.slice(5).replace("-", "/")}${time ? " " + time : ""}` : "";
   return head + matchup + pick + when;
