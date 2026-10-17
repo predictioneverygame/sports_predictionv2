@@ -1800,17 +1800,42 @@ function basketballResultForSegment(segment, homeScore, awayScore) {
   return 'push';
 }
 
+function formatMatchPickForDisplay(match, value) {
+  var text = String(value || '');
+  if (!match || match.sport !== 'basketball') return text;
+  var homeName = match.home && match.home.name ? match.home.name : '';
+  var awayName = match.away && match.away.name ? match.away.name : '';
+  return text
+    .replace(/(^|[ /｜])主隊(?=\s)/g, '$1' + homeName)
+    .replace(/(^|[ /｜])客隊(?=\s)/g, '$1' + awayName);
+}
+
 function derivePredictionDisplayResult(m, p) {
   if (!p || m.status !== 'final') return p.result;
   var raw = String(p.value || '').trim();
   if (!raw) return p.result;
 
   if (m.sport === 'soccer' || m.sport === 'football') {
-    var total = Number(m.home.score || 0) + Number(m.away.score || 0);
+    var fullHome = Number(m.home.score || 0);
+    var fullAway = Number(m.away.score || 0);
+    var halfMatch = String(m.summary || '').match(/(?:^|\s)HT\s+(\d+)\s*[-–:]\s*(\d+)/i);
+    var halfHome = halfMatch ? Number(halfMatch[1]) : null;
+    var halfAway = halfMatch ? Number(halfMatch[2]) : null;
+    var total = fullHome + fullAway;
     var segments = raw.split('/').map(function (s) { return s.trim(); }).filter(Boolean);
     var derived = [];
     for (var i = 0; i < segments.length; i++) {
-      var one = soccerOverUnderResultForToken(segments[i], total);
+      var segment = segments[i];
+      var selection = segment.match(/^(上半場|全場)\s+(主隊|客隊)\s+(PK|[+-]?\d+(?:\.\d+)?)$/);
+      var one;
+      if (selection) {
+        if (selection[1] === '上半場' && (halfHome === null || halfAway === null)) return p.result;
+        var selectedHome = selection[1] === '上半場' ? halfHome : fullHome;
+        var selectedAway = selection[1] === '上半場' ? halfAway : fullAway;
+        one = basketballResultForSegment(selection[2] + ' ' + selection[3], selectedHome, selectedAway);
+      } else {
+        one = soccerOverUnderResultForToken(segment, total);
+      }
       if (one === null) return p.result;
       derived.push(one);
     }
@@ -1968,7 +1993,7 @@ function buildMatchPredictionItemsHtml(m) {
       '<div class="pred-item">' +
         '<div class="pred-label">' + escapeHtml(p.label) + '</div>' +
         '<div class="pred-value ' + valueClass + '">' +
-          escapeHtml(p.value) +
+          escapeHtml(formatMatchPickForDisplay(m, p.value)) +
           (m.status === 'final' ? predictionResultTagHtml(displayResult) : '') +
         '</div>' +
       '</div>'
@@ -3036,7 +3061,7 @@ function renderRecentRecords() {
         '<td class="records-date">' + escapeHtml(String(m.date).slice(5).replace('-', '/')) + '</td>' +
         '<td>' + escapeHtml(LEAGUE_STATS_LABEL[m.league] || m.league) + '</td>' +
         '<td class="records-match">' + escapeHtml(m.home.name) + ' <span class="records-muted">vs</span> ' + escapeHtml(m.away.name) + '</td>' +
-        '<td class="records-pick">' + escapeHtml(p.value || '—') + '</td>' +
+        '<td class="records-pick">' + escapeHtml(formatMatchPickForDisplay(m, p.value || '—')) + '</td>' +
         '<td class="num">' + (odds > 0 ? odds.toFixed(2) : '<span class="records-muted">—</span>') + '</td>' +
         '<td class="num">' + Number(m.home.score || 0) + '–' + Number(m.away.score || 0) + '</td>' +
         '<td class="center records-result">' + resultCell + '</td>' +
