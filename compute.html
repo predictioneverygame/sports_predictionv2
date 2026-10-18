@@ -1796,7 +1796,7 @@ async function notifyLineFollowers(items) {
                     league: entry.league,
                     home: entry.home,
                     away: entry.away,
-                    line: entry.line,
+                    line: formatLineForMatchDisplay(entry.line, entry),
                     date: entry.date,
                     time: entry.time,
                     sport: entry.sport

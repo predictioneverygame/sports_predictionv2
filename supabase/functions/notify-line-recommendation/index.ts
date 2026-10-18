@@ -42,6 +42,13 @@ function matchKey(item: RecItem) {
   ].join("\0");
 }
 
+function formatLineForPush(item: RecItem, line: string) {
+  if (String(item.sport || "").toLowerCase() !== "basketball") return line;
+  return line
+    .replace(/(^|[ /｜])主隊(?=\s)/g, `$1${String(item.home || "主隊")}`)
+    .replace(/(^|[ /｜])客隊(?=\s)/g, `$1${String(item.away || "客隊")}`);
+}
+
 /** 同一場（聯賽、對手、日期時間相同）的多個盤口合併為一則 */
 function mergeRecItems(items: RecItem[]): MergedRecItem[] {
   const merged: MergedRecItem[] = [];
@@ -49,7 +56,7 @@ function mergeRecItems(items: RecItem[]): MergedRecItem[] {
 
   for (const item of items) {
     const key = matchKey(item);
-    const line = String(item.line || "").trim();
+    const line = formatLineForPush(item, String(item.line || "").trim());
     const existingIdx = indexByKey.get(key);
 
     if (existingIdx === undefined) {
