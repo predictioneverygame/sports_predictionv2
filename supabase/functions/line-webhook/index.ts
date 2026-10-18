@@ -150,6 +150,13 @@ function matchKey(item: RecRow) {
   ].join("\0");
 }
 
+function formatLineForLineMessage(line: string, home: string, away: string, sport: string) {
+  if (sport !== "basketball") return line;
+  return line
+    .replace(/(^|[ /｜])主隊(?=\s|[+-]?\d|PK)/g, `$1${home}`)
+    .replace(/(^|[ /｜])客隊(?=\s|[+-]?\d|PK)/g, `$1${away}`);
+}
+
 function mergeRecRows(items: RecRow[]): MergedRec[] {
   const merged: MergedRec[] = [];
   const indexByKey = new Map<string, number>();
@@ -160,12 +167,12 @@ function mergeRecRows(items: RecRow[]): MergedRec[] {
     const away = String(item.away || "").trim();
     const date = String(item.date || "").trim();
     const time = String(item.time || "").trim();
-    const line = String(item.line || "").trim();
+    const sport = resolveSport(league, item.sport);
+    const line = formatLineForLineMessage(String(item.line || "").trim(), home, away, sport);
     if (!league || !home || !away || !date || !time || !line) continue;
     if (isWorldCupLeague(league)) continue;
 
     const key = matchKey(item);
-    const sport = resolveSport(league, item.sport);
     const existingIdx = indexByKey.get(key);
 
     if (existingIdx === undefined) {
