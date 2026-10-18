@@ -910,8 +910,8 @@ function formatLineText(line, lineSide, sport) {
 function formatLineForMatchDisplay(line, match) {
     if (!match || match.sport !== "basketball") return String(line || "");
     return String(line || "")
-        .replace(/(^|[ /｜])主隊(?=\s)/g, `$1${match.home || match.home_name || "主隊"}`)
-        .replace(/(^|[ /｜])客隊(?=\s)/g, `$1${match.away || match.away_name || "客隊"}`);
+        .replace(/(^|[ /｜])主隊(?=\s|[+-]?\d|PK)/g, `$1${match.home || match.home_name || "主隊"}`)
+        .replace(/(^|[ /｜])客隊(?=\s|[+-]?\d|PK)/g, `$1${match.away || match.away_name || "客隊"}`);
 }
 
 function getMatchGroupKey(item) {

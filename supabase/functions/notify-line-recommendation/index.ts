@@ -45,8 +45,8 @@ function matchKey(item: RecItem) {
 function formatLineForPush(item: RecItem, line: string) {
   if (String(item.sport || "").toLowerCase() !== "basketball") return line;
   return line
-    .replace(/(^|[ /｜])主隊(?=\s)/g, `$1${String(item.home || "主隊")}`)
-    .replace(/(^|[ /｜])客隊(?=\s)/g, `$1${String(item.away || "客隊")}`);
+    .replace(/(^|[ /｜])主隊(?=\s|[+-]?\d|PK)/g, `$1${String(item.home || "主隊")}`)
+    .replace(/(^|[ /｜])客隊(?=\s|[+-]?\d|PK)/g, `$1${String(item.away || "客隊")}`);
 }
 
 /** 同一場（聯賽、對手、日期時間相同）的多個盤口合併為一則 */
