@@ -183,6 +183,13 @@
     }, delay != null ? delay : 50);
   }
 
+  function scrollPageToTop() {
+    // 直接設定文件捲動容器，避免 smooth scroll 或 SPA 的 scroll restoration 留在舊位置。
+    document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    window.scrollTo(0, 0);
+  }
+
   function setHomeChartSport(sportKey) {
     if (!window.SportsRSUI || typeof window.SportsRSUI.setChartSport !== 'function') return;
     var map = { basketball: 'basketball', football: 'soccer', all: 'all' };
@@ -254,8 +261,9 @@
         case 'performance':
           if (typeof window._applyPage === 'function') window._applyPage('league-charts');
           setPerformanceChartSport(route.query);
-          // SPA 路由不會自動重設捲動位置；從首頁下方切換時回到績效頁頂端。
-          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          // SPA 路由不會自動重設捲動位置；切換與版面更新後都回到績效頁頂端。
+          scrollPageToTop();
+          requestAnimationFrame(scrollPageToTop);
           break;
 
         case 'about':
