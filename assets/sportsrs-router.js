@@ -47,6 +47,9 @@
   var ready = false;
   var pendingRoute = null;
 
+  // SPA 導覽由路由管理捲動，避免瀏覽器在路由切換後還原舊頁面的捲動位置。
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
   function leagueSport(league) {
     return BB_LEAGUES[league] ? 'basketball' : 'football';
   }
@@ -261,9 +264,11 @@
         case 'performance':
           if (typeof window._applyPage === 'function') window._applyPage('league-charts');
           setPerformanceChartSport(route.query);
-          // SPA 路由不會自動重設捲動位置；切換與版面更新後都回到績效頁頂端。
+          // 延後重設以涵蓋 SPA 切頁後的版面更新與瀏覽器捲動恢復。
           scrollPageToTop();
           requestAnimationFrame(scrollPageToTop);
+          setTimeout(scrollPageToTop, 80);
+          setTimeout(scrollPageToTop, 300);
           break;
 
         case 'about':
