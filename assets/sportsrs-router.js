@@ -254,6 +254,8 @@
         case 'performance':
           if (typeof window._applyPage === 'function') window._applyPage('league-charts');
           setPerformanceChartSport(route.query);
+          // SPA 路由不會自動重設捲動位置；從首頁下方切換時回到績效頁頂端。
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
           break;
 
         case 'about':
