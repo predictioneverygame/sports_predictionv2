@@ -758,7 +758,7 @@ footer a{color:var(--accent);text-decoration:none}
   <section class="home-section" id="season-summary">
     <div class="section-head">
       <h2 class="section-title">本季戰績摘要</h2>
-      <p class="section-note">2026–27 賽季已結算場次，不含世足。</p>
+      <p class="section-note">2026–27 賽季已結算場次，不含世足；1 Unit：2026/10/20 前 10,600，當日起 15,600。</p>
     </div>
     <div class="dash-grid">
       <div class="kpi-card">
@@ -1084,7 +1084,7 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20261015c"></script>
+<script src="assets/sportsrs-ui.js?v=20261019c"></script>
 <script src="assets/sportsrs-router.js?v=20261019b"></script>
 <script>
 // ════════════════════════════════════════════
@@ -2265,9 +2265,17 @@ function netClass(hit, miss) {
 const PRED_CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲'];
 const PRED_BANKROLL_UNITS = 20;
+const UNIT_STAKE_CHANGE_DATE = '2026-10-20';
 
-function unitStakeForLeague(lg, seasonKey) {
-  return seasonKey === '2526' ? 8100 : 10600;
+function unitStakeForLeague(lg, seasonKey, date) {
+  if (seasonKey === '2526') return 8100;
+  return String(date || '') >= UNIT_STAKE_CHANGE_DATE ? 15600 : 10600;
+}
+
+/** 2026–27 賽季 2026-10-20 起採新注碼基準；2025–26 歷史基準不變。 */
+function unitStakeForMatch(m, seasonKey) {
+  var key = seasonKey || (String(m && m.date || '') < SEASON_SPLIT_DATE ? '2526' : '2627');
+  return unitStakeForLeague(m && m.league, key, m && m.date);
 }
 
 function signedMetricClass(n) {
@@ -2296,7 +2304,7 @@ function tallyUnitsByLeague(matches, seasonKey) {
     if (typeof isWorldCupRelated === 'function' && isWorldCupRelated(m)) return;
     var lg = m.league;
     var profit = calcProfitForMatch(m);
-    var stake = unitStakeForLeague(lg, seasonKey);
+    var stake = unitStakeForMatch(m, seasonKey);
     var units = stake > 0 ? profit / stake : 0;
     if (!byLeague[lg]) byLeague[lg] = 0;
     byLeague[lg] += units;
@@ -2336,8 +2344,6 @@ function renderProfitSummary() {
   var card = document.getElementById('profit-summary-card');
   if (!card) return;
 
-  var UNIT_STAKE = 10600;
-  var UNIT_STAKE_2526 = 8100;
   var BANKROLL_UNITS = 20;
   var SC_LEAGUES = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲'];
   var BB_LEAGUES = BASKETBALL_LEAGUE_KEYS.slice();
@@ -2363,8 +2369,9 @@ function renderProfitSummary() {
     return 'sc_other';
   }
 
-  function calcSeasonSummary(matches, unitStake) {
+  function calcSeasonSummary(matches) {
     var totalUnits = matches.reduce(function (sum, m) {
+      var unitStake = unitStakeForMatch(m);
       return sum + (unitStake > 0 ? calcProfitForMatch(m) / unitStake : 0);
     }, 0);
     return {
@@ -2397,12 +2404,12 @@ function renderProfitSummary() {
     return list.filter(function (m) { return profitBucket(m) === key; });
   }
 
-  var summaryScLeague = calcSeasonSummary(bucketMatches(finals2627, 'sc_league'), UNIT_STAKE);
-  var summaryScUcl = calcSeasonSummary(bucketMatches(finals2627, 'sc_ucl'), UNIT_STAKE);
-  var summaryScOther = calcSeasonSummary(bucketMatches(finals2627, 'sc_other'), UNIT_STAKE);
-  var summaryBbLeague = calcSeasonSummary(bucketMatches(finals2627, 'bb_league'), UNIT_STAKE);
-  var summaryBbOther = calcSeasonSummary(bucketMatches(finals2627, 'bb_other'), UNIT_STAKE);
-  var summary2526 = calcSeasonSummary(finals2526, UNIT_STAKE_2526);
+  var summaryScLeague = calcSeasonSummary(bucketMatches(finals2627, 'sc_league'));
+  var summaryScUcl = calcSeasonSummary(bucketMatches(finals2627, 'sc_ucl'));
+  var summaryScOther = calcSeasonSummary(bucketMatches(finals2627, 'sc_other'));
+  var summaryBbLeague = calcSeasonSummary(bucketMatches(finals2627, 'bb_league'));
+  var summaryBbOther = calcSeasonSummary(bucketMatches(finals2627, 'bb_other'));
+  var summary2526 = calcSeasonSummary(finals2526);
 
   var combined2627Units = summaryScLeague.units + summaryScUcl.units + summaryScOther.units
     + summaryBbLeague.units + summaryBbOther.units;
@@ -3049,7 +3056,7 @@ function renderRecentRecords() {
     var p = m.prediction.winner || Object.values(m.prediction)[0] || {};
     var result = derivePredictionDisplayResult(m, p);
     var seasonKey = String(m.date) < SEASON_SPLIT_DATE ? '2526' : '2627';
-    var stake = unitStakeForLeague(m.league, seasonKey);
+    var stake = unitStakeForMatch(m, seasonKey);
     var units = stake > 0 ? calcProfitForMatch(m) / stake : 0;
     var unitsClass = signedMetricClass(units);
     var odds = Number(m.odds || 0);

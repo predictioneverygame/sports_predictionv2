@@ -8,8 +8,10 @@ const CONFIG = {
   matchesTable: "matches",
   profitStartDate: "2026-04-23",
   seasonSplitDate: "2026-07-17",
+  unitStakeChangeDate: "2026-10-20",
   unitStake2526: 8100,
   unitStake2627: 10600,
+  unitStake2627AfterChange: 15600,
   bankrollUnits: 20,
   soccerLeagues: ["英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "荷蘭甲"],
   basketballLeagues: ["SBL", "TPBL", "PLG", "BCL", "東超"],
@@ -224,13 +226,16 @@ function calcProfitForMatch(row) {
   return 0;
 }
 
-function calcSeasonSummary(rows, unitStake) {
+function calcSeasonSummary(rows, unitStake, currentSeason) {
   let totalProfit = 0;
   let totalUnits = 0;
   for (const row of rows) {
     const profit = calcProfitForMatch(row);
+    const rowUnitStake = currentSeason && String(row?.date || "") >= CONFIG.unitStakeChangeDate
+      ? CONFIG.unitStake2627AfterChange
+      : unitStake;
     totalProfit += profit;
-    totalUnits += unitStake > 0 ? profit / unitStake : 0;
+    totalUnits += rowUnitStake > 0 ? profit / rowUnitStake : 0;
   }
   return {
     settledCount: rows.length,
@@ -281,11 +286,11 @@ function calcSummary(rows) {
     return list.filter((row) => profitBucket(row) === key);
   }
 
-  const scLeague = calcSeasonSummary(bucket(finals2627, "sc_league"), CONFIG.unitStake2627);
-  const scUcl = calcSeasonSummary(bucket(finals2627, "sc_ucl"), CONFIG.unitStake2627);
-  const scOther = calcSeasonSummary(bucket(finals2627, "sc_other"), CONFIG.unitStake2627);
-  const bbLeague = calcSeasonSummary(bucket(finals2627, "bb_league"), CONFIG.unitStake2627);
-  const bbOther = calcSeasonSummary(bucket(finals2627, "bb_other"), CONFIG.unitStake2627);
+  const scLeague = calcSeasonSummary(bucket(finals2627, "sc_league"), CONFIG.unitStake2627, true);
+  const scUcl = calcSeasonSummary(bucket(finals2627, "sc_ucl"), CONFIG.unitStake2627, true);
+  const scOther = calcSeasonSummary(bucket(finals2627, "sc_other"), CONFIG.unitStake2627, true);
+  const bbLeague = calcSeasonSummary(bucket(finals2627, "bb_league"), CONFIG.unitStake2627, true);
+  const bbOther = calcSeasonSummary(bucket(finals2627, "bb_other"), CONFIG.unitStake2627, true);
   const combinedUnits = scLeague.units + scUcl.units + scOther.units + bbLeague.units + bbOther.units;
 
   return {

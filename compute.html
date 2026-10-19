@@ -296,7 +296,7 @@ input[type="text"] {
   <div class="card-title">本金比較（40 萬）</div>
   <div class="field-label">目前金額</div>
   <input id="currentBankroll" type="number" inputmode="numeric" placeholder="例如：410600" step="1">
-  <div class="hint">本金固定 400,000；獲利％以單位注額 10,600、本金 20 單位計算（例：+10,600 → +5%）</div>
+  <div class="hint">本金固定 400,000；獲利％以當期單位注額計算（每 +1 Unit 約 +5%）</div>
   <button type="button" onclick="compareBankroll()">計算目前獲利</button>
   <div id="bankrollResult" class="bankroll-result" aria-live="polite"></div>
 </div>
@@ -797,6 +797,25 @@ function parseDateTimeInput(dateTimeRaw) {
     if (!date || !time) return null;
     return { date, time };
 }
+
+const CURRENT_SEASON_STAKE_CHANGE_DATE = "2026-10-20";
+
+function syncRecommendationStakeDefaults() {
+    const dateInput = document.getElementById("matchDateTime");
+    if (!dateInput) return;
+    const date = String(dateInput.value || "").slice(0, 10);
+    const nextDefault = date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600;
+    ["stake", "stake2"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const previousDefault = Number(input.dataset.autoStakeDefault || 10600);
+        if (!input.value || Number(input.value) === previousDefault) input.value = String(nextDefault);
+        input.dataset.autoStakeDefault = String(nextDefault);
+    });
+}
+
+document.getElementById("matchDateTime").addEventListener("change", syncRecommendationStakeDefaults);
+syncRecommendationStakeDefaults();
 
 function buildMatchId(league, date, time, home, away) {
     const raw = `${league}_${date}_${time}_${home}_${away}`.toLowerCase();
@@ -2469,7 +2488,6 @@ function addBet() {
 
 // ---------- 本金比較（40 萬）----------
 const BANKROLL_PRINCIPAL = 400000;
-const BANKROLL_UNIT = 10600;
 const BANKROLL_UNITS = 20;
 const BANKROLL_STORAGE_KEY = "rs_current_bankroll";
 let bankrollToastTimer = null;
@@ -2495,7 +2513,14 @@ function compareBankroll() {
     } catch (e) {}
 
     const profit = current - BANKROLL_PRINCIPAL;
-    const units = BANKROLL_UNIT > 0 ? profit / BANKROLL_UNIT : 0;
+    const taipeiDateParts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit"
+    }).formatToParts(new Date());
+    const taipeiDate = taipeiDateParts.find(part => part.type === "year").value + "-"
+        + taipeiDateParts.find(part => part.type === "month").value + "-"
+        + taipeiDateParts.find(part => part.type === "day").value;
+    const bankrollUnit = taipeiDate >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600;
+    const units = bankrollUnit > 0 ? profit / bankrollUnit : 0;
     const pct = (units / BANKROLL_UNITS) * 100;
     const pctText = (pct > 0 ? "+" : "") + pct.toFixed(2).replace(/\.00$/, "") + "%";
     const profitText = (profit > 0 ? "+" : "") + formatMoney(profit);

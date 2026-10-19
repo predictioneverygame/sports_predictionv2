@@ -159,6 +159,11 @@
     return isNaN(p) ? 0 : p;
   }
 
+  function calcUnits(m) {
+    var stake = typeof unitStakeForMatch === 'function' ? unitStakeForMatch(m) : UNIT;
+    return stake > 0 ? calcProfit(m) / stake : 0;
+  }
+
   function tallyHitMiss(finals) {
     var hit = 0;
     var miss = 0;
@@ -180,9 +185,8 @@
     var season2627 = finals.filter(function (m) { return String(m.date || '') >= split; });
     var rows = season2627.length ? season2627 : finals;
 
-    var totalProfit = 0;
-    rows.forEach(function (m) { totalProfit += calcProfit(m); });
-    var units = UNIT > 0 ? totalProfit / UNIT : 0;
+    var units = 0;
+    rows.forEach(function (m) { units += calcUnits(m); });
     var roi = (units / BANKROLL) * 100;
 
     var hm = tallyHitMiss(rows);
@@ -258,8 +262,9 @@
     finals.forEach(function (m) {
       var key = monthKey(m.date);
       if (!key || key.length < 7) return;
-      if (!map[key]) map[key] = { profit: 0, hit: 0, miss: 0, count: 0 };
+      if (!map[key]) map[key] = { profit: 0, units: 0, hit: 0, miss: 0, count: 0 };
       map[key].profit += calcProfit(m);
+      map[key].units += calcUnits(m);
       map[key].count += 1;
       var hm = hitMissForMatch(m);
       map[key].hit += hm.hit;
@@ -275,7 +280,7 @@
       var row = map[k];
       var denom = row.hit + row.miss;
       var wr = denom > 0 ? (row.hit / denom) * 100 : 0;
-      var units = UNIT > 0 ? row.profit / UNIT : 0;
+      var units = row.units;
       var roi = (units / BANKROLL) * 100;
       return { label: k.slice(5), winRate: wr, roi: roi, profitUnits: units };
     });
@@ -303,7 +308,7 @@
     var runningRoi = 0;
     return finals.map(function (m, idx) {
       var profit = calcProfit(m);
-      var units = UNIT > 0 ? profit / UNIT : 0;
+      var units = calcUnits(m);
       var matchRoi = (units / BANKROLL) * 100;
       runningUnits += units;
       runningRoi += matchRoi;
@@ -974,8 +979,9 @@
     var map = {};
     finals.forEach(function (m) {
       var lg = String(m.league || '').trim();
-      if (!map[lg]) map[lg] = { profit: 0, hit: 0, miss: 0, count: 0 };
+      if (!map[lg]) map[lg] = { profit: 0, units: 0, hit: 0, miss: 0, count: 0 };
       map[lg].profit += calcProfit(m);
+      map[lg].units += calcUnits(m);
       map[lg].count += 1;
       var hm = hitMissForMatch(m);
       map[lg].hit += hm.hit;
@@ -989,7 +995,7 @@
       var row = map[lg];
       var denom = row.hit + row.miss;
       var wr = denom > 0 ? (row.hit / denom) * 100 : 0;
-      var units = UNIT > 0 ? row.profit / UNIT : 0;
+      var units = row.units;
       var roi = (units / BANKROLL) * 100;
       return {
         league: lg,
@@ -1021,7 +1027,7 @@
       var runningRoi = 0;
       var points = map[lg].map(function (m, idx) {
         var profit = calcProfit(m);
-        var units = UNIT > 0 ? profit / UNIT : 0;
+        var units = calcUnits(m);
         var matchRoi = (units / BANKROLL) * 100;
         runningUnits += units;
         runningRoi += matchRoi;
