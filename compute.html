@@ -668,17 +668,13 @@ function renderLineOptions() {
         lineSelect2.style.display = "";
         lineSelect.innerHTML = "";
         lineSelect2.innerHTML = "";
-        const handicapOptions = [{ value: "PK", label: "PK" }];
-        for (let i = 0.5; i <= 4; i += 0.5) {
-            handicapOptions.push({ value: `-${i}`, label: `讓分 -${i}` });
-            handicapOptions.push({ value: `+${i}`, label: `受讓 +${i}` });
-        }
-        handicapOptions.forEach((opt) => {
+        // 歐冠走足球大小球盤；賽事期間仍可選全場或上半場。
+        (LINE_OPTIONS.soccer || []).forEach((opt) => {
             lineSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
             lineSelect2.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
         });
-        lineSideSelect.style.display = "";
-        lineSideSelect2.style.display = "";
+        lineSideSelect.style.display = "none";
+        lineSideSelect2.style.display = "none";
         document.getElementById("uclPeriod").style.display = "";
     } else if (cup) {
         document.getElementById("uclPeriod").style.display = "none";
@@ -753,8 +749,8 @@ function updateTeams() {
         lineSide.style.display = "none";
     } else {
         secondBetLabel.style.display = "";
-        lineSide.style.display = (currentSport === "basketball" || league === "UCL") ? "block" : "none";
-        document.getElementById("lineSide2").style.display = (currentSport === "basketball" || league === "UCL") ? "block" : "none";
+        lineSide.style.display = currentSport === "basketball" ? "block" : "none";
+        document.getElementById("lineSide2").style.display = currentSport === "basketball" ? "block" : "none";
     }
 }
 
@@ -2254,10 +2250,10 @@ async function addRecommendation() {
 
     const uclPeriod = document.getElementById("uclPeriod").value;
     const lineText = cup ? line : (league === "UCL"
-        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide === "home" ? "主隊" : "客隊"} ${line}`
+        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${line}`
         : formatLineText(line, lineSide, currentSport));
     const lineText2 = cup ? '' : (league === "UCL"
-        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide2 === "home" ? "主隊" : "客隊"} ${line2}`
+        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${line2}`
         : formatLineText(line2, lineSide2, currentSport));
 
     if (cup && !lineText) {
