@@ -1859,6 +1859,15 @@ function derivePredictionDisplayResult(m, p) {
   return p.result;
 }
 
+function formatRecordScoreDisplay(match, prediction) {
+  var fullScore = Number(match.home.score || 0) + '–' + Number(match.away.score || 0);
+  var value = String(prediction && prediction.value || '');
+  if (!/(?:^|[ /｜])上半場\s/.test(value)) return fullScore;
+  var halfMatch = String(match.summary || '').match(/(?:^|\s)HT\s+(\d+)\s*[-–:]\s*(\d+)/i);
+  if (!halfMatch) return '半場比分未提供（全場 ' + fullScore + '）';
+  return '半場 ' + halfMatch[1] + '–' + halfMatch[2] + '（全場 ' + fullScore + '）';
+}
+
 function predictionResultTagHtml(result) {
   if (result === 'hit') {
     return '<span class="pred-result-tag tag-hit" title="命中">✓</span>';
@@ -3076,7 +3085,7 @@ function renderRecentRecords() {
         '<td class="records-match">' + escapeHtml(m.home.name) + ' <span class="records-muted">vs</span> ' + escapeHtml(m.away.name) + '</td>' +
         '<td class="records-pick">' + escapeHtml(formatMatchPickForDisplay(m, p.value || '—')) + '</td>' +
         '<td class="num">' + (odds > 0 ? odds.toFixed(2) : '<span class="records-muted">—</span>') + '</td>' +
-        '<td class="num">' + Number(m.home.score || 0) + '–' + Number(m.away.score || 0) + '</td>' +
+        '<td class="num">' + escapeHtml(formatRecordScoreDisplay(m, p)) + '</td>' +
         '<td class="center records-result">' + resultCell + '</td>' +
         '<td class="num ' + unitsClass + '">' + formatUnitsDisplay(units) + '</td>' +
         '<td class="num ' + unitsClass + '">' + formatRoiDisplay(units) + '</td>' +
