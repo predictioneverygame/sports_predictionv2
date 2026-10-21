@@ -326,7 +326,8 @@ input[type="text"] {
   <option value="full">全場</option>
   <option value="half">上半場</option>
 </select>
-<select id="lineSide">
+<div class="field-label" id="lineSideLabel">下注方向／單隊球隊</div>
+<select id="lineSide" aria-label="單隊大小球選擇主隊或客隊">
   <option value="home">主隊</option>
   <option value="away">客隊</option>
 </select>
@@ -344,7 +345,7 @@ input[type="text"] {
 </label>
 
 <div id="secondBetFields" style="display:none;">
-  <select id="lineSide2">
+  <select id="lineSide2" aria-label="第二組單隊大小球選擇主隊或客隊">
     <option value="home">主隊</option>
     <option value="away">客隊</option>
   </select>
@@ -571,6 +572,11 @@ const LINE_OPTIONS = {
     ],
     basketball: buildBasketballLineOptions()
 };
+const UCL_TEAM_TOTAL_OPTIONS = Array.from({ length: 17 }, (_, index) => {
+    const line = 0.5 + index * 0.25;
+    const value = `大${Number(line.toFixed(2))}`;
+    return { value, label: `單隊${value}` };
+});
 
 // ---------- 安全初始化 ----------
 let bets = [];
@@ -668,13 +674,14 @@ function renderLineOptions() {
         lineSelect2.style.display = "";
         lineSelect.innerHTML = "";
         lineSelect2.innerHTML = "";
-        // 歐冠走足球大小球盤；賽事期間仍可選全場或上半場。
-        (LINE_OPTIONS.soccer || []).forEach((opt) => {
+        // 歐冠以單隊進球數下注，可選主／客隊及全場／上半場。
+        UCL_TEAM_TOTAL_OPTIONS.forEach((opt) => {
             lineSelect.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
             lineSelect2.innerHTML += `<option value="${opt.value}">${opt.label}</option>`;
         });
-        lineSideSelect.style.display = "none";
-        lineSideSelect2.style.display = "none";
+        lineSideSelect.style.display = "";
+        lineSideSelect2.style.display = "";
+        document.getElementById("lineSideLabel").style.display = "";
         document.getElementById("uclPeriod").style.display = "";
     } else if (cup) {
         document.getElementById("uclPeriod").style.display = "none";
@@ -683,6 +690,7 @@ function renderLineOptions() {
         lineSelect2.style.display = "none";
         lineSideSelect.style.display = "none";
         lineSideSelect2.style.display = "none";
+        document.getElementById("lineSideLabel").style.display = "none";
     } else {
         document.getElementById("uclPeriod").style.display = "none";
         lineSelect.style.display = "";
@@ -697,6 +705,7 @@ function renderLineOptions() {
         });
         lineSideSelect.style.display = currentSport === "basketball" ? "block" : "none";
         lineSideSelect2.style.display = currentSport === "basketball" ? "block" : "none";
+        document.getElementById("lineSideLabel").style.display = currentSport === "basketball" ? "" : "none";
     }
 }
 
@@ -747,11 +756,15 @@ function updateTeams() {
         secondBetLabel.style.display = "none";
         secondBetFields.style.display = "none";
         lineSide.style.display = "none";
+        document.getElementById("lineSideLabel").style.display = "none";
     } else {
         secondBetLabel.style.display = "";
-        lineSide.style.display = currentSport === "basketball" ? "block" : "none";
-        document.getElementById("lineSide2").style.display = currentSport === "basketball" ? "block" : "none";
+        const showSide = currentSport === "basketball" || league === "UCL";
+        lineSide.style.display = showSide ? "block" : "none";
+        document.getElementById("lineSide2").style.display = showSide ? "block" : "none";
+        document.getElementById("lineSideLabel").style.display = showSide ? "" : "none";
     }
+    syncRecommendationStakeDefaults();
 }
 
 // ---------- 計算 ----------
@@ -800,7 +813,8 @@ function syncRecommendationStakeDefaults() {
     const dateInput = document.getElementById("matchDateTime");
     if (!dateInput) return;
     const date = String(dateInput.value || "").slice(0, 10);
-    const nextDefault = !date || date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600;
+    const isUcl = document.getElementById("league")?.value === "UCL";
+    const nextDefault = isUcl ? 10600 : (!date || date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600);
     ["stake", "stake2"].forEach((id) => {
         const input = document.getElementById(id);
         if (!input) return;
@@ -868,6 +882,29 @@ function getPredictionResultByLine(line, homeScore, awayScore, lineSide) {
         return total > thr ? "hit" : "miss";
     }
 
+    const asianOver = normalizedLine.match(/^大(\d+(?:\.\d+)?)$/);
+    if (asianOver) {
+        const lineValue = Number(asianOver[1]);
+        const fraction = Number((lineValue - Math.floor(lineValue)).toFixed(2));
+        if (fraction === 0) {
+            if (total > lineValue) return "hit";
+            if (total === lineValue) return "push";
+            return "miss";
+        }
+        if (fraction === 0.25) {
+            const whole = Math.floor(lineValue);
+            if (total >= whole + 1) return "hit";
+            if (total === whole) return "half_miss";
+            return "miss";
+        }
+        if (fraction === 0.75) {
+            const whole = Math.floor(lineValue);
+            if (total >= whole + 2) return "hit";
+            if (total === whole + 1) return "half_hit";
+            return "miss";
+        }
+    }
+
     if (normalizedLine === "PK") {
         if (lineSide === "away") {
             if (awayScore > homeScore) return "hit";
@@ -905,16 +942,37 @@ function getProfitByResult(result, stake, odds) {
 
 function parseStoredLine(rawLine, sport) {
     const raw = String(rawLine || "").trim().replace("大3.0", "大3").replace("大4.0", "大4");
-    const periodMatch = raw.match(/^(上半場|全場)\s+/);
-    const period = periodMatch ? (periodMatch[1] === "上半場" ? "half" : "full") : "full";
-    const text = raw.replace(/^(上半場|全場)\s+/, "");
+    const periodMatch = raw.match(/^(上半場|上半|半場|全場)\s*/);
+    let period = periodMatch && periodMatch[1] !== "全場" ? "half" : "full";
+    const text = raw.replace(/^(上半場|上半|半場|全場)\s*/, "");
+    const legacyTeamOver = text.match(/^(?!主隊 |客隊 )(.+?)(?:單邊)?(上半場|上半|半場)?(?:單邊|單隊)?大(\d+(?:\.\d+)?)(?:\s+\d+(?:\.\d+)?)*$/);
+    if (legacyTeamOver) {
+        if (legacyTeamOver[2]) period = "half";
+        return { teamName: legacyTeamOver[1].trim(), lineSide: null, lineValue: `大${legacyTeamOver[3]}`, period, singleTeam: true };
+    }
     if (text.startsWith("主隊 ")) {
-        return { lineSide: "home", lineValue: text.replace("主隊 ", "").trim(), period };
+        const lineValue = text.replace("主隊 ", "").trim().replace(/^單隊\s*/, "");
+        return { lineSide: "home", lineValue, period, singleTeam: /^大\d/.test(lineValue) };
     }
     if (text.startsWith("客隊 ")) {
-        return { lineSide: "away", lineValue: text.replace("客隊 ", "").trim(), period };
+        const lineValue = text.replace("客隊 ", "").trim().replace(/^單隊\s*/, "");
+        return { lineSide: "away", lineValue, period, singleTeam: /^大\d/.test(lineValue) };
     }
-    return { lineSide: "home", lineValue: text, period };
+    return { lineSide: "home", lineValue: text, period, singleTeam: false };
+}
+
+function getSingleTeamOverResult(parsedLine, match, score) {
+    let side = parsedLine.lineSide;
+    if (!side && parsedLine.teamName) {
+        const selected = String(parsedLine.teamName).replace(/\s+/g, "").toLowerCase();
+        const home = String(match.home || match.home_name || "").replace(/\s+/g, "").toLowerCase();
+        const away = String(match.away || match.away_name || "").replace(/\s+/g, "").toLowerCase();
+        if (home && (home.includes(selected) || selected.includes(home))) side = "home";
+        else if (away && (away.includes(selected) || selected.includes(away))) side = "away";
+    }
+    if (!side) return "pending";
+    const teamGoals = side === "away" ? score.away : score.home;
+    return getPredictionResultByLine(parsedLine.lineValue, teamGoals, 0, "home");
 }
 
 function formatLineText(line, lineSide, sport) {
@@ -926,8 +984,15 @@ function formatLineText(line, lineSide, sport) {
 }
 
 function formatLineForMatchDisplay(line, match) {
-    if (!match || match.sport !== "basketball") return String(line || "");
-    return String(line || "")
+    if (!match) return String(line || "");
+    const text = String(line || "");
+    if (match.league === "歐冠" || match.league === "UCL") {
+        return text
+            .replace(/(^|[ /｜])主隊(?=\s|$)/g, `$1${match.home || match.home_name || "主隊"}`)
+            .replace(/(^|[ /｜])客隊(?=\s|$)/g, `$1${match.away || match.away_name || "客隊"}`);
+    }
+    if (match.sport !== "basketball") return text;
+    return text
         .replace(/(^|[ /｜])主隊(?=\s|[+-]?\d|PK)/g, `$1${match.home || match.home_name || "主隊"}`)
         .replace(/(^|[ /｜])客隊(?=\s|[+-]?\d|PK)/g, `$1${match.away || match.away_name || "客隊"}`);
 }
@@ -1510,7 +1575,10 @@ async function settleRecommendationGroupWithScores(item, homeScore, awayScore, m
         const displayLine = parsePredictionResultsFromLine(entry.line).display;
         const parsedLine = parseStoredLine(displayLine, entry.sport);
         const score = parsedLine.period === "half" && halfScores ? halfScores : { home: homeScore, away: awayScore };
-        const result = getPredictionResultByLine(parsedLine.lineValue, score.home, score.away, parsedLine.lineSide);
+        const isUcl = entry.league === "歐冠" || entry.league === "UCL";
+        const result = isUcl && parsedLine.singleTeam
+            ? getSingleTeamOverResult(parsedLine, entry, score)
+            : getPredictionResultByLine(parsedLine.lineValue, score.home, score.away, parsedLine.lineSide);
         const profit = getProfitByResult(result, entry.stake, entry.odds);
         return {
             line: displayLine,
@@ -1583,7 +1651,7 @@ async function settleCloudRecommendation(id) {
     let homeScore, awayScore, manualResult, halfScores;
     if (item.sport === "soccer") {
         const sameMatch = cloudRecommendations.filter((entry) => getMatchGroupKey(entry) === getMatchGroupKey(item));
-        const needsHalf = sameMatch.some((entry) => /^(上半場)\s/.test(parsePredictionResultsFromLine(entry.line).display));
+        const needsHalf = sameMatch.some((entry) => parseStoredLine(parsePredictionResultsFromLine(entry.line).display, entry.sport).period === "half");
         const scores = await getSoccerScoreFromPad(item.home, item.away, needsHalf);
         if (!scores) return;
         homeScore = scores.home;
@@ -2059,7 +2127,7 @@ async function syncSoccerScoresAndSettle() {
             }
 
             const groupItems = cloudRecommendations.filter((entry) => getMatchGroupKey(entry) === getMatchGroupKey(item));
-            const needsHalf = groupItems.some((entry) => /^上半場\s/.test(parsePredictionResultsFromLine(entry.line).display));
+            const needsHalf = groupItems.some((entry) => parseStoredLine(parsePredictionResultsFromLine(entry.line).display, entry.sport).period === "half");
             if (needsHalf && (matched.halfHome == null || matched.halfAway == null)) {
                 skipped += 1;
                 logs.push(`${item.home} vs ${item.away}：API 沒有上半場比分，請手動輸入比分結算`);
@@ -2250,10 +2318,10 @@ async function addRecommendation() {
 
     const uclPeriod = document.getElementById("uclPeriod").value;
     const lineText = cup ? line : (league === "UCL"
-        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${line}`
+        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide === "home" ? "主隊" : "客隊"} 單隊${line}`
         : formatLineText(line, lineSide, currentSport));
     const lineText2 = cup ? '' : (league === "UCL"
-        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${line2}`
+        ? `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide2 === "home" ? "主隊" : "客隊"} 單隊${line2}`
         : formatLineText(line2, lineSide2, currentSport));
 
     if (cup && !lineText) {

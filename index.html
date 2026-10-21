@@ -1802,9 +1802,15 @@ function basketballResultForSegment(segment, homeScore, awayScore) {
 
 function formatMatchPickForDisplay(match, value) {
   var text = String(value || '');
-  if (!match || match.sport !== 'basketball') return text;
+  if (!match) return text;
   var homeName = match.home && match.home.name ? match.home.name : '';
   var awayName = match.away && match.away.name ? match.away.name : '';
+  if (match.league === '歐冠' || match.league === 'UCL') {
+    return text
+      .replace(/(^|[ /｜])主隊(?=\s|$)/g, '$1' + homeName)
+      .replace(/(^|[ /｜])客隊(?=\s|$)/g, '$1' + awayName);
+  }
+  if (match.sport !== 'basketball') return text;
   return text
     .replace(/(^|[ /｜])主隊(?=\s)/g, '$1' + homeName)
     .replace(/(^|[ /｜])客隊(?=\s)/g, '$1' + awayName);
