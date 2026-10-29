@@ -337,7 +337,7 @@ input[type="text"] {
 <input id="lineText" type="text" placeholder="自行輸入盤口（如：皇馬 -1.5）" style="display:none">
 
 <input id="odds" type="number" step="0.01" placeholder="賠率">
-<input id="stake" type="number" placeholder="投注金額" value="15600">
+<input id="stake" type="number" placeholder="投注金額" value="20600">
 
 <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
   <input id="enableSecondBet" type="checkbox" onchange="toggleSecondBetFields()">
@@ -351,7 +351,7 @@ input[type="text"] {
   </select>
   <select id="line2"></select>
   <input id="odds2" type="number" step="0.01" placeholder="第二組賠率">
-  <input id="stake2" type="number" placeholder="第二組投注金額" value="15600">
+  <input id="stake2" type="number" placeholder="第二組投注金額" value="20600">
 </div>
 <input id="matchDateTime" type="datetime-local">
 
@@ -808,19 +808,20 @@ function parseDateTimeInput(dateTimeRaw) {
 }
 
 const CURRENT_SEASON_STAKE_CHANGE_DATE = "2026-10-20";
+const CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE = "2026-10-29";
 
 function syncRecommendationStakeDefaults() {
     const dateInput = document.getElementById("matchDateTime");
     if (!dateInput) return;
     const date = String(dateInput.value || "").slice(0, 10);
     const isUcl = document.getElementById("league")?.value === "UCL";
-    const nextDefault = isUcl ? 10600 : (!date || date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600);
+    const nextDefault = isUcl ? 10600 : (!date || date >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE ? 20600 : (date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600));
     ["stake", "stake2"].forEach((id) => {
         const input = document.getElementById(id);
         if (!input) return;
         const previousDefault = Number(input.dataset.autoStakeDefault || 15600);
         const currentValue = Number(input.value);
-        if (!input.value || currentValue === previousDefault || currentValue === 10600 || currentValue === 15600) {
+        if (!input.value || currentValue === previousDefault || currentValue === 10600 || currentValue === 15600 || currentValue === 20600) {
             input.value = String(nextDefault);
         }
         input.dataset.autoStakeDefault = String(nextDefault);
@@ -2586,7 +2587,9 @@ function compareBankroll() {
     const taipeiDate = taipeiDateParts.find(part => part.type === "year").value + "-"
         + taipeiDateParts.find(part => part.type === "month").value + "-"
         + taipeiDateParts.find(part => part.type === "day").value;
-    const bankrollUnit = taipeiDate >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600;
+    const bankrollUnit = taipeiDate >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE
+        ? 20600
+        : (taipeiDate >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600);
     const units = bankrollUnit > 0 ? profit / bankrollUnit : 0;
     const pct = (units / BANKROLL_UNITS) * 100;
     const pctText = (pct > 0 ? "+" : "") + pct.toFixed(2).replace(/\.00$/, "") + "%";

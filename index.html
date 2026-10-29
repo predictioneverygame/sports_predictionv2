@@ -758,7 +758,7 @@ footer a{color:var(--accent);text-decoration:none}
   <section class="home-section" id="season-summary">
     <div class="section-head">
       <h2 class="section-title">本季戰績摘要</h2>
-      <p class="section-note">2026–27 賽季已結算場次，不含世足；1 Unit：2026/10/20 前 10,600，當日起 15,600。</p>
+      <p class="section-note">2026–27 賽季已結算場次，不含世足；1 Unit：2026/10/20 前 10,600、10/20–10/28 為 15,600、10/29 起為 20,600。</p>
     </div>
     <div class="dash-grid">
       <div class="kpi-card">
@@ -2281,13 +2281,16 @@ const PRED_CUP_LEAGUES = ['歐冠', '歐洲超級盃', '聯賽盃'];
 const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲'];
 const PRED_BANKROLL_UNITS = 20;
 const UNIT_STAKE_CHANGE_DATE = '2026-10-20';
+const UNIT_STAKE_SECOND_CHANGE_DATE = '2026-10-29';
 
 function unitStakeForLeague(lg, seasonKey, date) {
   if (seasonKey === '2526') return 8100;
-  return String(date || '') >= UNIT_STAKE_CHANGE_DATE ? 15600 : 10600;
+  var matchDate = String(date || '');
+  if (matchDate >= UNIT_STAKE_SECOND_CHANGE_DATE) return 20600;
+  return matchDate >= UNIT_STAKE_CHANGE_DATE ? 15600 : 10600;
 }
 
-/** 2026–27 賽季 2026-10-20 起採新注碼基準；2025–26 歷史基準不變。 */
+/** 2026–27 賽季依日期切換 Unit 基準；2025–26 歷史基準不變。 */
 function unitStakeForMatch(m, seasonKey) {
   var key = seasonKey || (String(m && m.date || '') < SEASON_SPLIT_DATE ? '2526' : '2627');
   return unitStakeForLeague(m && m.league, key, m && m.date);

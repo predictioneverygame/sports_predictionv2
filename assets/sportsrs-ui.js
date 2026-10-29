@@ -160,7 +160,10 @@
   }
 
   function calcUnits(m) {
-    var stake = typeof unitStakeForMatch === 'function' ? unitStakeForMatch(m) : UNIT;
+    var matchDate = String(m && m.date || '');
+    var stake = typeof unitStakeForMatch === 'function'
+      ? unitStakeForMatch(m)
+      : (matchDate >= '2026-10-29' ? 20600 : (matchDate >= '2026-10-20' ? 15600 : UNIT));
     return stake > 0 ? calcProfit(m) / stake : 0;
   }
 

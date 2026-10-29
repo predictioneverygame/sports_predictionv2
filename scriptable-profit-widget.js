@@ -9,9 +9,11 @@ const CONFIG = {
   profitStartDate: "2026-04-23",
   seasonSplitDate: "2026-07-17",
   unitStakeChangeDate: "2026-10-20",
+  unitStakeSecondChangeDate: "2026-10-29",
   unitStake2526: 8100,
   unitStake2627: 10600,
   unitStake2627AfterChange: 15600,
+  unitStake2627AfterSecondChange: 20600,
   bankrollUnits: 20,
   soccerLeagues: ["英超", "西甲", "德甲", "法甲", "德乙", "澳甲", "美足", "荷蘭甲"],
   basketballLeagues: ["SBL", "TPBL", "PLG", "BCL", "東超"],
@@ -231,9 +233,12 @@ function calcSeasonSummary(rows, unitStake, currentSeason) {
   let totalUnits = 0;
   for (const row of rows) {
     const profit = calcProfitForMatch(row);
-    const rowUnitStake = currentSeason && String(row?.date || "") >= CONFIG.unitStakeChangeDate
-      ? CONFIG.unitStake2627AfterChange
-      : unitStake;
+    const rowDate = String(row?.date || "");
+    const rowUnitStake = currentSeason && rowDate >= CONFIG.unitStakeSecondChangeDate
+      ? CONFIG.unitStake2627AfterSecondChange
+      : (currentSeason && rowDate >= CONFIG.unitStakeChangeDate
+        ? CONFIG.unitStake2627AfterChange
+        : unitStake);
     totalProfit += profit;
     totalUnits += rowUnitStake > 0 ? profit / rowUnitStake : 0;
   }
