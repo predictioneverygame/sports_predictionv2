@@ -758,7 +758,7 @@ footer a{color:var(--accent);text-decoration:none}
   <section class="home-section" id="season-summary">
     <div class="section-head">
       <h2 class="section-title">本季戰績摘要</h2>
-      <p class="section-note">2026–27 賽季已結算場次，不含世足；1 Unit：2026/10/20 前 10,600、10/20–10/28 為 15,600、10/29 起為 20,600。</p>
+      <p class="section-note">2026–27 賽季已結算場次，不含世足；1 Unit：一般賽事 2026/10/20 前 10,600、10/20–10/28 為 15,600、10/29 起為 20,600；歐冠固定 15,600。</p>
     </div>
     <div class="dash-grid">
       <div class="kpi-card">
@@ -2285,6 +2285,7 @@ const UNIT_STAKE_SECOND_CHANGE_DATE = '2026-10-29';
 
 function unitStakeForLeague(lg, seasonKey, date) {
   if (seasonKey === '2526') return 8100;
+  if (lg === '歐冠' || lg === 'UCL') return 15600;
   var matchDate = String(date || '');
   if (matchDate >= UNIT_STAKE_SECOND_CHANGE_DATE) return 20600;
   return matchDate >= UNIT_STAKE_CHANGE_DATE ? 15600 : 10600;

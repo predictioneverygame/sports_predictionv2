@@ -50,38 +50,27 @@ function formatSignedMoney(value) {
 }
 
 async function fetchSettledMatches() {
-  const selectFields = [
-    "id",
-    "date",
-    "status",
-    "sport",
-    "league",
-    "odds",
-    "stake",
-    "profit",
-    "prediction_result",
-    "prediction_value",
-    "home_score",
-    "away_score"
-  ].join(",");
-
-  const url =
-    `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.matchesTable}` +
-    `?select=${encodeURIComponent(selectFields)}` +
-    `&status=eq.final` +
-    `&date=gte.${CONFIG.profitStartDate}` +
-    `&order=date.desc`;
-
-  const req = new Request(url);
-  req.method = "GET";
-  req.timeoutInterval = Math.ceil(CONFIG.timeoutMs / 1000);
-  req.headers = {
-    apikey: CONFIG.supabaseAnonKey,
-    Authorization: `Bearer ${CONFIG.supabaseAnonKey}`
-  };
-
-  const rows = await req.loadJSON();
-  return Array.isArray(rows) ? rows : [];
+  // 與網站相同讀取完整 matches 資料，再按相同條件計算；分頁避免 REST 預設筆數上限截斷資料。
+  const pageSize = 1000;
+  const allRows = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const url = `${CONFIG.supabaseUrl}/rest/v1/${CONFIG.matchesTable}`
+      + `?select=*&order=date.desc,time.asc&limit=${pageSize}&offset=${offset}`;
+    const req = new Request(url);
+    req.method = "GET";
+    req.timeoutInterval = Math.ceil(CONFIG.timeoutMs / 1000);
+    req.headers = {
+      apikey: CONFIG.supabaseAnonKey,
+      Authorization: `Bearer ${CONFIG.supabaseAnonKey}`
+    };
+    const page = await req.loadJSON();
+    if (!Array.isArray(page)) throw new Error("Supabase 回傳的賽事資料格式不正確");
+    allRows.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return allRows.filter((row) => row && row.id && row.id !== "rs-knockout-winners"
+    && String(row.league || "") !== "__meta__" && row.date && row.time && row.league
+    && row.sport && row.status && row.home_name && row.away_name);
 }
 
 function normalizeSoccerOverToken(token) {
@@ -121,6 +110,9 @@ function soccerOverUnderResultForToken(token, totalGoals) {
     if (totalGoals > 4) return "hit";
     if (totalGoals === 4) return "push";
     return "miss";
+  }
+  if (line === "全場進球數2-3" || line === "全場進球2-3") {
+    return totalGoals >= 2 && totalGoals <= 3 ? "hit" : "miss";
   }
   const halfLine = line.match(/^大(\d+)\.5$/);
   if (halfLine) {
@@ -172,19 +164,35 @@ function derivePredictionDisplayResult(row, baseResult) {
   const status = String(row?.status || "");
   if (status !== "final") return baseResult;
 
-  const raw = String(row?.prediction_value || "").trim();
+  const raw = String(row?.prediction_value || "")
+    .replace(/[|｜]__r:[os=hmpx?,]+$/i, "").trim();
   if (!raw) return baseResult;
 
-  const sport = String(row?.sport || "").toLowerCase();
+  const storedSport = String(row?.sport || "").toLowerCase();
+  const sport = CONFIG.basketballLeagues.indexOf(String(row?.league || "")) !== -1
+    ? "basketball"
+    : ((storedSport === "soccer" || storedSport === "football") ? "soccer" : "basketball");
   const homeScore = Number(row?.home_score || 0);
   const awayScore = Number(row?.away_score || 0);
 
   if (sport === "soccer" || sport === "football") {
     const total = homeScore + awayScore;
+    const halfMatch = String(row?.summary || "").match(/(?:^|\s)HT\s+(\d+)\s*[-–:]\s*(\d+)/i);
+    const halfHome = halfMatch ? Number(halfMatch[1]) : null;
+    const halfAway = halfMatch ? Number(halfMatch[2]) : null;
     const parts = raw.split("/").map((s) => s.trim()).filter(Boolean);
     const derived = [];
     for (const one of parts) {
-      const r = soccerOverUnderResultForToken(one, total);
+      const selection = one.match(/^(上半場|全場)\s+(主隊|客隊)\s+(PK|[+-]?\d+(?:\.\d+)?)$/);
+      let r;
+      if (selection) {
+        if (selection[1] === "上半場" && (halfHome === null || halfAway === null)) return baseResult;
+        r = basketballResultForSegment(selection[2] + " " + selection[3],
+          selection[1] === "上半場" ? halfHome : homeScore,
+          selection[1] === "上半場" ? halfAway : awayScore);
+      } else {
+        r = soccerOverUnderResultForToken(one, total);
+      }
       if (r === null) return baseResult;
       derived.push(r);
     }
@@ -234,7 +242,10 @@ function calcSeasonSummary(rows, unitStake, currentSeason) {
   for (const row of rows) {
     const profit = calcProfitForMatch(row);
     const rowDate = String(row?.date || "");
-    const rowUnitStake = currentSeason && rowDate >= CONFIG.unitStakeSecondChangeDate
+    const isUcl = String(row?.league || "") === "歐冠" || String(row?.league || "") === "UCL";
+    const rowUnitStake = currentSeason && isUcl
+      ? CONFIG.unitStake2627AfterChange
+      : currentSeason && rowDate >= CONFIG.unitStakeSecondChangeDate
       ? CONFIG.unitStake2627AfterSecondChange
       : (currentSeason && rowDate >= CONFIG.unitStakeChangeDate
         ? CONFIG.unitStake2627AfterChange
