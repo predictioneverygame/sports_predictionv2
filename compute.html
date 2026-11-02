@@ -815,7 +815,8 @@ function syncRecommendationStakeDefaults() {
     if (!dateInput) return;
     const date = String(dateInput.value || "").slice(0, 10);
     const isUcl = document.getElementById("league")?.value === "UCL";
-    const nextDefault = isUcl ? 15600 : (!date || date >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE ? 20600 : (date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600));
+    const isUclAfterChange = isUcl && date >= "2026-11-04";
+    const nextDefault = isUclAfterChange ? 15600 : (!date || date >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE ? 20600 : (date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600));
     ["stake", "stake2"].forEach((id) => {
         const input = document.getElementById(id);
         if (!input) return;
