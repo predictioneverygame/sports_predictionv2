@@ -10,7 +10,7 @@ const CONFIG = {
   seasonSplitDate: "2026-07-17",
   unitStakeChangeDate: "2026-10-20",
   unitStakeSecondChangeDate: "2026-10-29",
-  uclUnitStakeChangeDate: "2026-11-04",
+  uclUnitStakeChangeDate: "2026-11-02",
   unitStake2526: 8100,
   unitStake2627: 10600,
   unitStake2627AfterChange: 15600,
@@ -246,7 +246,7 @@ function calcSeasonSummary(rows, unitStake, currentSeason) {
     const isUclAfterChange = (String(row?.league || "") === "歐冠" || String(row?.league || "") === "UCL")
       && rowDate >= CONFIG.uclUnitStakeChangeDate;
     const rowUnitStake = currentSeason && isUclAfterChange
-      ? CONFIG.unitStake2627AfterChange
+      ? CONFIG.unitStake2627AfterSecondChange
       : currentSeason && rowDate >= CONFIG.unitStakeSecondChangeDate
       ? CONFIG.unitStake2627AfterSecondChange
       : (currentSeason && rowDate >= CONFIG.unitStakeChangeDate
