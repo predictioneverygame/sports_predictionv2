@@ -521,6 +521,11 @@ const leagues = {
     // UEFA 2026/27 聯賽階段 36 隊（依官方名單）
     teams: ["AEK雅典", "阿仙奴", "阿士東維拉", "馬德里體育會", "巴塞隆拿", "拜仁慕尼黑", "波杜基林特", "多蒙特", "布魯日", "科木", "費倫巴治", "飛燕諾", "加拉塔沙雷", "國際米蘭", "林茨", "RB萊比錫", "朗斯", "里爾", "利物浦", "曼城", "曼聯", "拿坡里", "巴黎聖日門", "波圖", "PSV燕豪芬", "皇家貝迪斯", "皇家馬德里", "羅馬", "沙巴", "頓內茨克礦工", "布拉格斯拉維亞", "布拉提斯拉瓦斯洛雲", "體育里斯本", "史特加", "維京", "維拉利爾"]
   },
+  NationsLeagueA: {
+    label: "歐國聯賽A",
+    sport: "soccer",
+    teams: ["法國", "意大利", "比利時", "土耳其", "德國", "荷蘭", "塞爾維亞", "希臘", "西班牙", "克羅地亞", "英格蘭", "捷克", "葡萄牙", "丹麥", "挪威", "威爾斯"]
+  },
   SuperCup: {
     label: "歐洲超級盃",
     sport: "soccer",
@@ -552,13 +557,14 @@ function buildBasketballLineOptions() {
     return options;
 }
 
-const CUP_LEAGUES = ['UCL', 'SuperCup', 'LeaguesCup'];
+const CUP_LEAGUES = ['UCL', 'NationsLeagueA', 'SuperCup', 'LeaguesCup'];
 const FREE_INPUT_LEAGUES = ['Other'];
 const FREE_TEAM_LEAGUES = ['Other'];
 const FREE_INPUT_LEAGUES_LABELS = ['歐冠', '歐洲超級盃', '其他賽事'];
 function isCupLeague(league) { return CUP_LEAGUES.includes(league); }
 function isFreeInputLeague(league) { return FREE_INPUT_LEAGUES.includes(league); }
 function isFreeTeamLeague(league) { return FREE_TEAM_LEAGUES.includes(league); }
+function isTeamTotalLeague(league) { return league === 'UCL' || league === 'NationsLeagueA'; }
 
 const LINE_OPTIONS = {
     soccer: [
@@ -670,7 +676,7 @@ function renderLineOptions() {
     const lineSideSelect2 = document.getElementById("lineSide2");
     const league = document.getElementById("league").value;
     const cup = isFreeInputLeague(league);
-  const ucl = league === "UCL";
+  const ucl = isTeamTotalLeague(league);
 
     if (ucl) {
         lineSelect.style.display = "";
@@ -739,7 +745,7 @@ function updateTeams() {
     const secondBetFields = document.getElementById("secondBetFields");
     const lineSide = document.getElementById("lineSide");
     const uclPeriod = document.getElementById("uclPeriod");
-    uclPeriod.style.display = league === "UCL" ? "" : "none";
+    uclPeriod.style.display = isTeamTotalLeague(league) ? "" : "none";
 
     leagueTextEl.style.display = isOther ? "block" : "none";
 
@@ -769,7 +775,7 @@ function updateTeams() {
         document.getElementById("lineSideLabel").style.display = "none";
     } else {
         secondBetLabel.style.display = "";
-        const showSide = currentSport === "basketball" || league === "UCL";
+        const showSide = currentSport === "basketball" || isTeamTotalLeague(league);
         lineSide.style.display = showSide ? "block" : "none";
         document.getElementById("lineSide2").style.display = showSide ? "block" : "none";
         document.getElementById("lineSideLabel").style.display = showSide ? "" : "none";
@@ -1002,7 +1008,7 @@ function formatLineText(line, lineSide, sport) {
 function formatLineForMatchDisplay(line, match) {
     if (!match) return String(line || "");
     const text = String(line || "");
-    if (match.league === "歐冠" || match.league === "UCL") {
+    if (match.league === "歐冠" || match.league === "UCL" || match.league === "歐國聯賽A" || match.league === "NationsLeagueA") {
         return text
             .replace(/(^|[ /｜])主隊(?=\s|$)/g, `$1${match.home || match.home_name || "主隊"}`)
             .replace(/(^|[ /｜])客隊(?=\s|$)/g, `$1${match.away || match.away_name || "客隊"}`);
@@ -1591,7 +1597,7 @@ async function settleRecommendationGroupWithScores(item, homeScore, awayScore, m
         const displayLine = parsePredictionResultsFromLine(entry.line).display;
         const parsedLine = parseStoredLine(displayLine, entry.sport);
         const score = parsedLine.period === "half" && halfScores ? halfScores : { home: homeScore, away: awayScore };
-        const isUcl = entry.league === "歐冠" || entry.league === "UCL";
+        const isUcl = entry.league === "歐冠" || entry.league === "UCL" || entry.league === "歐國聯賽A" || entry.league === "NationsLeagueA";
         const result = isUcl && parsedLine.singleTeam
             ? getSingleTeamOverResult(parsedLine, entry, score)
             : getPredictionResultByLine(parsedLine.lineValue, score.home, score.away, parsedLine.lineSide);
@@ -2335,15 +2341,15 @@ async function addRecommendation() {
     const uclPeriod = document.getElementById("uclPeriod").value;
     const uclCustomValue = document.getElementById("uclCustomLine").value.trim().replace(/\s+/g, "");
     const uclCustomValue2 = document.getElementById("uclCustomLine2").value.trim().replace(/\s+/g, "");
-    if (league === "UCL" && (uclCustomValue && !/^\d+[-–~～]\d+$/.test(uclCustomValue)
+    if (isTeamTotalLeague(league) && (uclCustomValue && !/^\d+[-–~～]\d+$/.test(uclCustomValue)
         || enableSecondBet && uclCustomValue2 && !/^\d+[-–~～]\d+$/.test(uclCustomValue2))) {
         alert("請用進球區間格式輸入，例如：2-3");
         return;
     }
-    const lineText = cup ? line : (league === "UCL"
+    const lineText = cup ? line : (isTeamTotalLeague(league)
         ? (uclCustomValue ? `全場進球數${uclCustomValue}` : `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide === "home" ? "主隊" : "客隊"} 單隊${line}`)
         : formatLineText(line, lineSide, currentSport));
-    const lineText2 = cup ? '' : (league === "UCL"
+    const lineText2 = cup ? '' : (isTeamTotalLeague(league)
         ? (uclCustomValue2 ? `全場進球數${uclCustomValue2}` : `${uclPeriod === "half" ? "上半場" : "全場"} ${lineSide2 === "home" ? "主隊" : "客隊"} 單隊${line2}`)
         : formatLineText(line2, lineSide2, currentSport));
 
