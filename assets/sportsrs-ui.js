@@ -26,6 +26,10 @@
   var leagueCumulRenderSeq = 0;
   var leagueChartsUiBound = false;
   var weeklySelectedStart = '';
+  var weeklyPasswordDialogBound = false;
+  var weeklyAccessUnlocked = false;
+  var WEEKLY_PASSWORD_SALT = 'sportsrs-weekly-v1:';
+  var WEEKLY_PASSWORD_HASH = 'ae44c5050c823e729cde6d784a83afac9a5082bc960c5bb56cc9bdc9683714c0';
   var LEAGUE_CUMUL_BATCH = 2;
   var LEAGUE_CUMUL_MAX_POINTS = 72;
 
@@ -1117,12 +1121,85 @@
     });
   }
 
+  function isWeeklyAccessUnlocked() {
+    if (weeklyAccessUnlocked) return true;
+    try { weeklyAccessUnlocked = window.sessionStorage.getItem('sportsrs-weekly-unlocked') === '1'; }
+    catch (e) { weeklyAccessUnlocked = false; }
+    return weeklyAccessUnlocked;
+  }
+
+  function closeWeeklyPasswordDialog() {
+    var dialog = qs('weekly-password-dialog');
+    var selector = qs('performance-mode-select');
+    var input = qs('weekly-password-input');
+    if (dialog) dialog.hidden = true;
+    if (input) input.value = '';
+    if (selector) selector.focus();
+  }
+
+  function openWeeklyPasswordDialog() {
+    var dialog = qs('weekly-password-dialog');
+    var input = qs('weekly-password-input');
+    var error = qs('weekly-password-error');
+    if (!dialog) return;
+    if (error) { error.hidden = true; error.textContent = ''; }
+    dialog.hidden = false;
+    if (input) { input.value = ''; input.focus(); }
+  }
+
+  function bindWeeklyPasswordDialog() {
+    if (weeklyPasswordDialogBound) return;
+    weeklyPasswordDialogBound = true;
+    var form = qs('weekly-password-form');
+    var input = qs('weekly-password-input');
+    var cancel = qs('weekly-password-cancel');
+    var dialog = qs('weekly-password-dialog');
+    if (cancel) cancel.addEventListener('click', closeWeeklyPasswordDialog);
+    if (dialog) dialog.addEventListener('click', function (event) {
+      if (event.target === dialog) closeWeeklyPasswordDialog();
+    });
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && dialog && !dialog.hidden) closeWeeklyPasswordDialog();
+    });
+    if (!form) return;
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var error = qs('weekly-password-error');
+      if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+        if (error) { error.textContent = '此瀏覽器不支援密碼驗證，請改用支援 Web Crypto 的瀏覽器。'; error.hidden = false; }
+        return;
+      }
+      var bytes = new TextEncoder().encode(WEEKLY_PASSWORD_SALT + input.value);
+      var digest = await window.crypto.subtle.digest('SHA-256', bytes);
+      var actual = Array.prototype.map.call(new Uint8Array(digest), function (byte) {
+        return byte.toString(16).padStart(2, '0');
+      }).join('');
+      if (actual !== WEEKLY_PASSWORD_HASH) {
+        if (error) { error.textContent = '密碼錯誤，請再試一次。'; error.hidden = false; }
+        input.value = '';
+        input.focus();
+        return;
+      }
+      weeklyAccessUnlocked = true;
+      try { window.sessionStorage.setItem('sportsrs-weekly-unlocked', '1'); } catch (e) { /* Keep access for this page view. */ }
+      closeWeeklyPasswordDialog();
+      var selector = qs('performance-mode-select');
+      if (selector) selector.value = 'weekly';
+      setPerformanceView();
+    });
+  }
+
   function setPerformanceView() {
     var selector = qs('performance-mode-select');
     var leagueView = qs('performance-league-view');
     var weeklyView = qs('performance-weekly-view');
     var sportToggle = qs('league-charts-sport-toggle');
     var isWeekly = selector && selector.value === 'weekly';
+    if (isWeekly && !isWeeklyAccessUnlocked()) {
+      if (selector) selector.value = 'leagues';
+      isWeekly = false;
+      openWeeklyPasswordDialog();
+    }
     if (leagueView) leagueView.hidden = isWeekly;
     if (weeklyView) weeklyView.hidden = !isWeekly;
     if (sportToggle) sportToggle.hidden = isWeekly;
@@ -1136,7 +1213,14 @@
     var weekSelect = qs('weekly-settlement-select');
     if (selector && selector.dataset.bound !== '1') {
       selector.dataset.bound = '1';
-      selector.addEventListener('change', setPerformanceView);
+      selector.addEventListener('change', function () {
+        if (selector.value === 'weekly' && !isWeeklyAccessUnlocked()) {
+          selector.value = 'leagues';
+          openWeeklyPasswordDialog();
+          return;
+        }
+        setPerformanceView();
+      });
     }
     if (weekSelect && weekSelect.dataset.bound !== '1') {
       weekSelect.dataset.bound = '1';
@@ -1299,6 +1383,7 @@
   function ensureLeagueChartsUiBound() {
     if (leagueChartsUiBound) return;
     leagueChartsUiBound = true;
+    bindWeeklyPasswordDialog();
     bindPerformanceViewControls();
     bindLeagueChartsSportToggle();
     bindLeagueCumulRangeToggle();
