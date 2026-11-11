@@ -615,7 +615,7 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261017a">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261111a">
 </head>
 <body>
 <nav id="site-nav">
@@ -827,7 +827,7 @@ footer a{color:var(--accent);text-decoration:none}
       </div>
     </div>
     <div class="charts-more-row">
-      <a href="/performance" class="charts-more-link">各聯賽績效 →</a>
+      <a href="/performance" class="charts-more-link">看更多數據 →</a>
     </div>
   </section>
 
@@ -928,12 +928,21 @@ footer a{color:var(--accent);text-decoration:none}
 <div id="page-league-charts" class="page">
   <div class="league-charts-page">
     <div class="league-charts-head">
-      <h1>各聯賽績效 · 2026–27</h1>
-      <div class="chart-toggle charts-sport-toggle" id="league-charts-sport-toggle" role="group" aria-label="聯賽圖表運動篩選">
-        <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
-        <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
+      <h1>更多數據</h1>
+      <div class="performance-controls">
+        <label class="performance-mode-select"><span>查看</span>
+          <select id="performance-mode-select" aria-label="選擇數據類型">
+            <option value="leagues">各聯賽績效</option>
+            <option value="weekly">週結算</option>
+          </select>
+        </label>
+        <div class="chart-toggle charts-sport-toggle" id="league-charts-sport-toggle" role="group" aria-label="聯賽圖表運動篩選">
+          <button type="button" class="chart-toggle-btn" data-sport="basketball">籃球</button>
+          <button type="button" class="chart-toggle-btn" data-sport="soccer">足球</button>
+        </div>
       </div>
     </div>
+    <div id="performance-league-view">
     <p class="league-charts-pick-hint" id="league-charts-pick-hint">請先選擇上方「籃球」或「足球」查看各聯賽績效。</p>
     <div class="league-charts-body" id="league-charts-body" hidden>
     <div class="league-charts-grid">
@@ -965,6 +974,27 @@ footer a{color:var(--accent);text-decoration:none}
     </div>
     <div class="league-cumul-grid" id="league-cumul-grid"></div>
     </div>
+    </div>
+    <section id="performance-weekly-view" class="weekly-settlement" hidden>
+      <div class="weekly-settlement-head">
+        <div>
+          <h2>週結算</h2>
+          <p>每週二 00:00 起算，至下週二 00:00 前（含週一）。勝／輸／平按同場合併後的淨損益計算。</p>
+        </div>
+        <label class="performance-mode-select"><span>選擇週別</span>
+          <select id="weekly-settlement-select" aria-label="選擇結算週別"></select>
+        </label>
+      </div>
+      <div class="weekly-period-label" id="weekly-period-label"></div>
+      <div class="records-table-wrap weekly-table-wrap">
+        <table class="records-table weekly-settlement-table">
+          <thead><tr><th>聯賽</th><th class="num">投資場次</th><th class="num">投入金額</th><th class="num">贏</th><th class="num">輸</th><th class="num">平</th><th class="num">淨利</th><th class="num">ROI</th></tr></thead>
+          <tbody id="weekly-settlement-body"><tr><td colspan="8" class="records-empty">載入中…</td></tr></tbody>
+          <tfoot id="weekly-settlement-total"></tfoot>
+        </table>
+      </div>
+      <p class="weekly-roi-note">ROI = 淨利 ÷ 投入金額；平局包含走水及該場合併淨損益為 0。</p>
+    </section>
   </div>
 </div>
 
@@ -1073,8 +1103,8 @@ footer a{color:var(--accent);text-decoration:none}
 <button type="button" class="back-to-top" id="back-to-top" aria-label="Back to top" title="回到頂部">↑</button>
 <div class="toast-host" id="toast-host" aria-live="polite"></div>
 
-<script src="assets/sportsrs-ui.js?v=20261019c"></script>
-<script src="assets/sportsrs-router.js?v=20261019b"></script>
+<script src="assets/sportsrs-ui.js?v=20261111a"></script>
+<script src="assets/sportsrs-router.js?v=20261111a"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果

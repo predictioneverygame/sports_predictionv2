@@ -470,6 +470,20 @@ nav {
   border-bottom: 2px solid var(--text);
 }
 .league-charts-head h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--text); }
+.performance-controls { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 12px; }
+.performance-mode-select { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; font-weight: 600; }
+.performance-mode-select select { min-height: 38px; padding: 6px 32px 6px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--card); color: var(--text); font: inherit; }
+.weekly-settlement[hidden] { display: none !important; }
+#performance-league-view[hidden],#league-charts-sport-toggle[hidden] { display: none !important; }
+.weekly-settlement-head { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin: 22px 0 12px; }
+.weekly-settlement-head h2 { margin: 0 0 5px; font-size: 1.25rem; font-weight: 700; color: var(--text); }
+.weekly-settlement-head p,.weekly-roi-note { margin: 0; color: var(--muted); font-size: .82rem; line-height: 1.6; }
+.weekly-period-label { margin: 14px 0 8px; font-size: .9rem; font-weight: 700; color: var(--text); }
+.weekly-table-wrap { margin-top: 12px; }
+.weekly-settlement-table { min-width: 760px; }
+.weekly-settlement-table th,.weekly-settlement-table td { padding: 11px 12px; }
+.weekly-settlement-table tfoot td { font-weight: 800; border-top: 2px solid var(--border-strong); }
+.weekly-roi-note { margin-top: 10px; }
 .league-charts-pick-hint {
   margin: 24px 0 0;
   padding: 20px 18px;
@@ -1174,6 +1188,8 @@ footer a:hover { color: var(--primary); text-decoration: underline; }
 @media (max-width: 960px) {
   .charts-grid { grid-template-columns: 1fr; }
   .wc-bracket-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); }
+  .performance-controls { width: 100%; justify-content: space-between; }
+  .weekly-settlement-head { align-items: flex-start; }
 }
 
 @media (max-width: 900px) {

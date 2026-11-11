@@ -25,6 +25,7 @@
   var leagueCumulCharts = {};
   var leagueCumulRenderSeq = 0;
   var leagueChartsUiBound = false;
+  var weeklySelectedStart = '';
   var LEAGUE_CUMUL_BATCH = 2;
   var LEAGUE_CUMUL_MAX_POINTS = 72;
 
@@ -976,6 +977,176 @@
     });
   }
 
+  function dateToLocalParts(dateText) {
+    var parts = String(dateText || '').split('-').map(Number);
+    if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2], 12);
+  }
+
+  function localDateKey(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function taiwanTodayKey() {
+    var parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(new Date());
+    var values = {};
+    parts.forEach(function (part) { values[part.type] = part.value; });
+    return values.year + '-' + values.month + '-' + values.day;
+  }
+
+  function weekStartKey(dateText) {
+    var date = dateToLocalParts(dateText);
+    if (!date) return '';
+    date.setDate(date.getDate() - ((date.getDay() - 2 + 7) % 7));
+    return localDateKey(date);
+  }
+
+  function addDaysToKey(dateText, days) {
+    var date = dateToLocalParts(dateText);
+    if (!date) return '';
+    date.setDate(date.getDate() + days);
+    return localDateKey(date);
+  }
+
+  function shortWeekDate(dateText) {
+    var date = dateToLocalParts(dateText);
+    return date ? (date.getMonth() + 1) + '/' + date.getDate() : dateText;
+  }
+
+  function signedWeekValue(value, decimals, suffix) {
+    var number = Number(value) || 0;
+    return (number > 0 ? '+' : '') + number.toLocaleString('zh-TW', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }) + (suffix || '');
+  }
+
+  function renderWeeklySettlement() {
+    var select = qs('weekly-settlement-select');
+    var body = qs('weekly-settlement-body');
+    var totalFoot = qs('weekly-settlement-total');
+    var periodLabel = qs('weekly-period-label');
+    if (!select || !body || !periodLabel) return;
+
+    var split = (typeof SEASON_SPLIT_DATE !== 'undefined') ? SEASON_SPLIT_DATE : '2026-07-17';
+    var weeks = Object.create(null);
+    getChartFinals().forEach(function (m) {
+      var date = String(m.date || '');
+      var stake = Number(m.stake || 0);
+      if (date < split || !m.prediction || stake <= 0) return;
+      var start = weekStartKey(date);
+      if (!start) return;
+      if (!weeks[start]) weeks[start] = Object.create(null);
+      var league = String(m.league || '其他賽事');
+      if (!weeks[start][league]) weeks[start][league] = { count: 0, stake: 0, profit: 0, win: 0, loss: 0, push: 0 };
+      var row = weeks[start][league];
+      var profit = calcProfit(m);
+      row.count += 1;
+      row.stake += stake;
+      row.profit += profit;
+      if (profit > 0.000001) row.win += 1;
+      else if (profit < -0.000001) row.loss += 1;
+      else row.push += 1;
+    });
+
+    var starts = Object.keys(weeks).sort(function (a, b) { return b.localeCompare(a); });
+    var currentStart = weekStartKey(taiwanTodayKey());
+    select.innerHTML = '';
+    starts.forEach(function (start) {
+      var option = document.createElement('option');
+      option.value = start;
+      option.textContent = (start === currentStart ? '本週（進行中） · ' : '週結算 · ')
+        + shortWeekDate(start) + '–' + shortWeekDate(addDaysToKey(start, 7));
+      select.appendChild(option);
+    });
+
+    if (!starts.length) {
+      weeklySelectedStart = '';
+      periodLabel.textContent = '本賽季尚無已結算的投資賽事。';
+      body.innerHTML = '<tr><td colspan="8" class="records-empty">尚無週結算資料</td></tr>';
+      if (totalFoot) totalFoot.innerHTML = '';
+      return;
+    }
+    if (starts.indexOf(weeklySelectedStart) === -1) weeklySelectedStart = starts[0];
+    select.value = weeklySelectedStart;
+
+    var startKey = weeklySelectedStart;
+    var endKey = addDaysToKey(startKey, 7);
+    periodLabel.textContent = '週期：' + shortWeekDate(startKey) + '（週二）00:00 至 ' + shortWeekDate(endKey) + '（週二）00:00';
+    var leagueRows = weeks[startKey];
+    var keys = orderedLeagueKeys(leagueRows);
+    var totals = { count: 0, stake: 0, profit: 0, win: 0, loss: 0, push: 0 };
+
+    body.innerHTML = keys.map(function (league) {
+      var row = leagueRows[league];
+      totals.count += row.count;
+      totals.stake += row.stake;
+      totals.profit += row.profit;
+      totals.win += row.win;
+      totals.loss += row.loss;
+      totals.push += row.push;
+      var roi = row.stake > 0 ? row.profit / row.stake * 100 : 0;
+      var resultClass = row.profit > 0 ? 'pos' : (row.profit < 0 ? 'neg' : 'zero');
+      return '<tr><td>' + escapeWeeklyText(league) + '</td>'
+        + '<td class="num">' + row.count + '</td>'
+        + '<td class="num">' + Math.round(row.stake).toLocaleString('zh-TW') + ' 元</td>'
+        + '<td class="num pos">' + row.win + '</td>'
+        + '<td class="num neg">' + row.loss + '</td>'
+        + '<td class="num zero">' + row.push + '</td>'
+        + '<td class="num ' + resultClass + '">' + signedWeekValue(row.profit, 0, ' 元') + '</td>'
+        + '<td class="num ' + resultClass + '">' + signedWeekValue(roi, 2, '%') + '</td></tr>';
+    }).join('');
+
+    var totalRoi = totals.stake > 0 ? totals.profit / totals.stake * 100 : 0;
+    var totalClass = totals.profit > 0 ? 'pos' : (totals.profit < 0 ? 'neg' : 'zero');
+    if (totalFoot) totalFoot.innerHTML = '<tr><td>全部聯賽</td>'
+      + '<td class="num">' + totals.count + '</td>'
+      + '<td class="num">' + Math.round(totals.stake).toLocaleString('zh-TW') + ' 元</td>'
+      + '<td class="num pos">' + totals.win + '</td>'
+      + '<td class="num neg">' + totals.loss + '</td>'
+      + '<td class="num zero">' + totals.push + '</td>'
+      + '<td class="num ' + totalClass + '">' + signedWeekValue(totals.profit, 0, ' 元') + '</td>'
+      + '<td class="num ' + totalClass + '">' + signedWeekValue(totalRoi, 2, '%') + '</td></tr>';
+  }
+
+  function escapeWeeklyText(value) {
+    return String(value).replace(/[&<>"']/g, function (character) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character];
+    });
+  }
+
+  function setPerformanceView() {
+    var selector = qs('performance-mode-select');
+    var leagueView = qs('performance-league-view');
+    var weeklyView = qs('performance-weekly-view');
+    var sportToggle = qs('league-charts-sport-toggle');
+    var isWeekly = selector && selector.value === 'weekly';
+    if (leagueView) leagueView.hidden = isWeekly;
+    if (weeklyView) weeklyView.hidden = !isWeekly;
+    if (sportToggle) sportToggle.hidden = isWeekly;
+    if (isWeekly) renderWeeklySettlement();
+    else if (leagueSportSelected()) refreshLeagueChartData();
+    else showLeagueChartsPickState();
+  }
+
+  function bindPerformanceViewControls() {
+    var selector = qs('performance-mode-select');
+    var weekSelect = qs('weekly-settlement-select');
+    if (selector && selector.dataset.bound !== '1') {
+      selector.dataset.bound = '1';
+      selector.addEventListener('change', setPerformanceView);
+    }
+    if (weekSelect && weekSelect.dataset.bound !== '1') {
+      weekSelect.dataset.bound = '1';
+      weekSelect.addEventListener('change', function () {
+        weeklySelectedStart = weekSelect.value;
+        renderWeeklySettlement();
+      });
+    }
+  }
+
   function buildLeagueCompareSeries(sportFilter) {
     var finals = getLeagueScopedFinals(sportFilter);
 
@@ -1128,6 +1299,7 @@
   function ensureLeagueChartsUiBound() {
     if (leagueChartsUiBound) return;
     leagueChartsUiBound = true;
+    bindPerformanceViewControls();
     bindLeagueChartsSportToggle();
     bindLeagueCumulRangeToggle();
     bindMetricToggle('league-cumul-metric-toggle',
@@ -1370,15 +1542,19 @@
   }
 
   function renderLeagueCharts() {
+    if (!qs('page-league-charts')) return;
+    ensureLeagueChartsUiBound();
+    var selector = qs('performance-mode-select');
+    if (selector && selector.value === 'weekly') {
+      setPerformanceView();
+      return;
+    }
     if (!window.Chart) {
       setTimeout(renderLeagueCharts, 200);
       return;
     }
-    if (!qs('page-league-charts')) return;
     chartDefaults();
-    ensureLeagueChartsUiBound();
-    if (leagueSportSelected()) refreshLeagueChartData();
-    else showLeagueChartsPickState();
+    setPerformanceView();
   }
 
   function bindLeagueChartsSportToggle() {
@@ -1453,7 +1629,7 @@
     renderCharts();
     if (qs('page-league-charts') && qs('page-league-charts').classList.contains('active')) {
       ensureLeagueChartsUiBound();
-      if (leagueSportSelected()) refreshLeagueChartData();
+      if (window.Chart) setPerformanceView();
       else renderLeagueCharts();
     }
     initLucide();

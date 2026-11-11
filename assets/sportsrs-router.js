@@ -37,7 +37,7 @@
     records: 'SportsRS — 歷史戰績',
     basketball: 'SportsRS — Basketball Picks & Analytics',
     football: 'SportsRS — Football Picks & Analytics',
-    performance: 'SportsRS — 各聯賽績效',
+    performance: 'SportsRS — 更多數據',
     about: 'SportsRS — 關於',
     worldcup: 'SportsRS — 2026 世界盃',
     match: 'SportsRS — Match Analysis'
