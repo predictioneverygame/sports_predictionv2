@@ -29,7 +29,7 @@
   var weeklyPasswordDialogBound = false;
   var weeklyAccessUnlocked = false;
   var WEEKLY_PASSWORD_SALT = 'sportsrs-weekly-v1:';
-  var WEEKLY_PASSWORD_HASH = 'ae44c5050c823e729cde6d784a83afac9a5082bc960c5bb56cc9bdc9683714c0';
+  var WEEKLY_PASSWORD_HASH = 'aaa078d3928cc165e18faf1f12885344b0aae78f50ee8597755908bec8c9dce4';
   var LEAGUE_CUMUL_BATCH = 2;
   var LEAGUE_CUMUL_MAX_POINTS = 72;
 
