@@ -361,6 +361,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,0.95);backdrop
 #pred-stats-card .pred-stat-sport-group.open .pred-stat-sport-body{display:block}
 #pred-stats-card .pred-stat-sport-body .pred-stat-row{padding:6px 0;border-bottom:1px dashed var(--border);opacity:.92}
 #pred-stats-card .pred-stat-sport-body .pred-stat-row:last-child{border-bottom:none}
+#pred-stats-card .pred-stat-other-group{border-top:1px dashed var(--border)}
+#pred-stats-card .pred-stat-other-head{cursor:pointer;user-select:none}
+#pred-stats-card .pred-stat-other-head:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+#pred-stats-card .pred-stat-other-label{font-weight:700;color:var(--muted)}
+#pred-stats-card .pred-stat-other-count{margin-left:4px;font-size:.68rem;font-weight:600;color:var(--muted);opacity:.8}
+#pred-stats-card .pred-stat-other-head .pred-sport-chev{font-size:.6rem;color:var(--muted);margin-left:4px;transition:transform .2s;display:inline-block}
+#pred-stats-card .pred-stat-other-group.open .pred-sport-chev{transform:rotate(180deg)}
+#pred-stats-card .pred-stat-other-body{display:none;padding-left:8px}
+#pred-stats-card .pred-stat-other-group.open .pred-stat-other-body{display:block}
+#pred-stats-card .pred-stat-other-body .pred-stat-row{padding:6px 0;border-bottom:1px dashed var(--border);opacity:.92}
+#pred-stats-card .pred-stat-other-body .pred-stat-row:last-child{border-bottom:none}
 .profit-card{padding:14px 16px}
 .profit-card .profit-title{font-size:.84rem;font-weight:700;color:var(--accent);letter-spacing:.5px;margin-bottom:10px}
 .profit-card .profit-season{padding:8px 0;border-top:1px dashed var(--border)}
@@ -2235,7 +2246,7 @@ const LEAGUE_STATS_LABEL = {
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
 const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
-const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '荷蘭甲', '歐冠', '歐國聯賽A', '歐洲超級盃', '聯賽盃'];
+const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '荷蘭甲', '歐冠', '歐國聯賽A'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const SEASON_SPLIT_DATE = '2026-07-17';
 
@@ -2524,10 +2535,11 @@ function renderPredictionStats() {
     else scExtras.push(lg);
   });
   var scOrder = PRED_STATS_SC_ORDER;
-  var bbLeagues = PRED_STATS_BB_ORDER.concat(bbExtras);
-  var scLeagues = scOrder.concat(scExtras.filter(function (lg) {
+  var visibleScExtras = scExtras.filter(function (lg) {
     return lg !== '澳甲';
-  }));
+  });
+  var bbLeagues = PRED_STATS_BB_ORDER.concat(bbExtras);
+  var scLeagues = scOrder.concat(visibleScExtras);
 
   function sumGroup(leagues) {
     var hit = 0, miss = 0, units = 0;
@@ -2568,6 +2580,9 @@ function renderPredictionStats() {
 
   function buildSportGroup(icon, name, leagues) {
     var sum = sumGroup(leagues);
+    var mainLeagues = name === '籃球' ? PRED_STATS_BB_ORDER : scOrder;
+    var otherLeagues = name === '籃球' ? bbExtras : visibleScExtras;
+    var sportKey = name === '籃球' ? 'basketball' : 'soccer';
     return (
       '<div class="pred-stat-sport-group">' +
         '<div class="pred-stat-row pred-stat-grid pred-stat-sport-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
@@ -2577,12 +2592,46 @@ function renderPredictionStats() {
           '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(sum.miss) + '</span>' +
           trailingCells(sum.hit, sum.miss, sum.units) +
         '</div>' +
-        '<div class="pred-stat-sport-body">' + leagues.map(buildLeagueRow).join('') + '</div>' +
+        '<div class="pred-stat-sport-body">' +
+          mainLeagues.map(buildLeagueRow).join('') +
+          buildOtherGroup(otherLeagues, sportKey) +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function buildOtherGroup(leagues, sportKey) {
+    if (!leagues.length) return '';
+    var sum = sumGroup(leagues);
+    return (
+      '<div class="pred-stat-other-group">' +
+        '<div class="pred-stat-row pred-stat-grid pred-stat-other-head" role="button" tabindex="0" aria-expanded="false" data-pred-other-toggle="' + sportKey + '">' +
+          '<span class="pred-stat-col-league pred-stat-other-label">其他 <span class="pred-stat-other-count">' + leagues.length + '</span><span class="pred-sport-chev">▼</span></span>' +
+          '<span class="pred-stat-col-hit ic-hit">' + formatTallyDisplay(sum.hit) + '</span>' +
+          '<span class="pred-stat-sep">·</span>' +
+          '<span class="pred-stat-col-miss ic-miss">' + formatTallyDisplay(sum.miss) + '</span>' +
+          trailingCells(sum.hit, sum.miss, sum.units) +
+        '</div>' +
+        '<div class="pred-stat-other-body">' + leagues.map(buildLeagueRow).join('') + '</div>' +
       '</div>'
     );
   }
 
   rowsEl.innerHTML = buildSportGroup('', '籃球', bbLeagues) + buildSportGroup('', '足球', scLeagues);
+  rowsEl.querySelectorAll('[data-pred-other-toggle]').forEach(function (toggle) {
+    function toggleOtherGroup() {
+      var group = toggle.parentElement;
+      var isOpen = group.classList.toggle('open');
+      toggle.setAttribute('aria-expanded', String(isOpen));
+    }
+    toggle.addEventListener('click', toggleOtherGroup);
+    toggle.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        toggleOtherGroup();
+      }
+    });
+  });
 
   var groupUnits = sumGroup(bbLeagues.concat(scLeagues)).units;
   totalEl.innerHTML = `
