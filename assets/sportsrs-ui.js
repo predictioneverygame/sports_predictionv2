@@ -1044,8 +1044,10 @@
       if (!start) return;
       if (!weeks[start]) weeks[start] = Object.create(null);
       var league = String(m.league || '其他賽事');
-      if (!weeks[start][league]) weeks[start][league] = { count: 0, stake: 0, profit: 0, win: 0, loss: 0, push: 0 };
-      var row = weeks[start][league];
+      var sport = matchSportKey(m) || (BASKETBALL_LEAGUE_KEYS.indexOf(league) !== -1 ? 'basketball' : 'soccer');
+      var rowKey = sport + '\u0000' + league;
+      if (!weeks[start][rowKey]) weeks[start][rowKey] = { sport: sport, league: league, count: 0, stake: 0, profit: 0, win: 0, loss: 0, push: 0 };
+      var row = weeks[start][rowKey];
       var profit = calcProfit(m);
       row.count += 1;
       row.stake += stake;
@@ -1080,27 +1082,41 @@
     var endKey = addDaysToKey(startKey, 7);
     periodLabel.textContent = '週期：' + shortWeekDate(startKey) + '（週二）00:00 至 ' + shortWeekDate(endKey) + '（週二）00:00';
     var leagueRows = weeks[startKey];
-    var keys = orderedLeagueKeys(leagueRows);
+    var basketballRows = Object.create(null);
+    var soccerRows = Object.create(null);
+    Object.keys(leagueRows).forEach(function (key) {
+      var row = leagueRows[key];
+      (row.sport === 'basketball' ? basketballRows : soccerRows)[row.league] = row;
+    });
+    var sportGroups = [
+      { label: '籃球聯賽', rows: basketballRows },
+      { label: '足球聯賽', rows: soccerRows }
+    ];
     var totals = { count: 0, stake: 0, profit: 0, win: 0, loss: 0, push: 0 };
 
-    body.innerHTML = keys.map(function (league) {
-      var row = leagueRows[league];
-      totals.count += row.count;
-      totals.stake += row.stake;
-      totals.profit += row.profit;
-      totals.win += row.win;
-      totals.loss += row.loss;
-      totals.push += row.push;
-      var roi = row.stake > 0 ? row.profit / row.stake * 100 : 0;
-      var resultClass = row.profit > 0 ? 'pos' : (row.profit < 0 ? 'neg' : 'zero');
-      return '<tr><td>' + escapeWeeklyText(league) + '</td>'
-        + '<td class="num">' + row.count + '</td>'
-        + '<td class="num">' + Math.round(row.stake).toLocaleString('zh-TW') + ' 元</td>'
-        + '<td class="num pos">' + row.win + '</td>'
-        + '<td class="num neg">' + row.loss + '</td>'
-        + '<td class="num zero">' + row.push + '</td>'
-        + '<td class="num ' + resultClass + '">' + signedWeekValue(row.profit, 0, ' 元') + '</td>'
-        + '<td class="num ' + resultClass + '">' + signedWeekValue(roi, 2, '%') + '</td></tr>';
+    body.innerHTML = sportGroups.map(function (group) {
+      var leagues = orderedLeagueKeys(group.rows);
+      if (!leagues.length) return '';
+      var rowsHtml = leagues.map(function (league) {
+        var row = group.rows[league];
+        totals.count += row.count;
+        totals.stake += row.stake;
+        totals.profit += row.profit;
+        totals.win += row.win;
+        totals.loss += row.loss;
+        totals.push += row.push;
+        var roi = row.stake > 0 ? row.profit / row.stake * 100 : 0;
+        var resultClass = row.profit > 0 ? 'pos' : (row.profit < 0 ? 'neg' : 'zero');
+        return '<tr><td>' + escapeWeeklyText(league) + '</td>'
+          + '<td class="num">' + row.count + '</td>'
+          + '<td class="num">' + Math.round(row.stake).toLocaleString('zh-TW') + ' 元</td>'
+          + '<td class="num pos">' + row.win + '</td>'
+          + '<td class="num neg">' + row.loss + '</td>'
+          + '<td class="num zero">' + row.push + '</td>'
+          + '<td class="num ' + resultClass + '">' + signedWeekValue(row.profit, 0, ' 元') + '</td>'
+          + '<td class="num ' + resultClass + '">' + signedWeekValue(roi, 2, '%') + '</td></tr>';
+      }).join('');
+      return '<tr class="weekly-sport-divider"><th colspan="8">' + group.label + '</th></tr>' + rowsHtml;
     }).join('');
 
     var totalRoi = totals.stake > 0 ? totals.profit / totals.stake * 100 : 0;
