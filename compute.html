@@ -177,6 +177,17 @@ input[type="text"] {
     border:none;
 }
 
+.line-input-row {
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
+    gap:8px;
+}
+
+.line-input-row > select,
+.line-input-row > input {
+    min-width:0;
+}
+
 #total {
     text-align:center;
     margin-top:15px;
@@ -333,7 +344,10 @@ input[type="text"] {
 </select>
 
 <!-- 盤口 -->
-<select id="line"></select>
+<div class="line-input-row">
+  <select id="line"></select>
+  <input id="customBasketballLine" type="text" placeholder="自訂讓分（如：-21.5 或 +22.5）" style="display:none">
+</div>
 <input id="lineText" type="text" placeholder="自行輸入盤口（如：皇馬 -1.5）" style="display:none">
 <input id="uclCustomLine" type="text" placeholder="自訂全場進球區間（如：2-3）" style="display:none">
 
@@ -350,7 +364,10 @@ input[type="text"] {
     <option value="home">主隊</option>
     <option value="away">客隊</option>
   </select>
-  <select id="line2"></select>
+  <div class="line-input-row">
+    <select id="line2"></select>
+    <input id="customBasketballLine2" type="text" placeholder="自訂讓分（如：-21.5 或 +22.5）" style="display:none">
+  </div>
   <input id="uclCustomLine2" type="text" placeholder="自訂全場進球區間（如：2-3）" style="display:none">
   <input id="odds2" type="number" step="0.01" placeholder="第二組賠率">
   <input id="stake2" type="number" placeholder="第二組投注金額" value="20600">
@@ -636,6 +653,15 @@ function toNum(v) {
     return isNaN(n) ? null : n;
 }
 
+function getBasketballLineValue(selectId, customId) {
+    const custom = document.getElementById(customId)?.value.trim();
+    return currentSport === "basketball" && custom ? custom : document.getElementById(selectId).value;
+}
+
+function isValidCustomBasketballLine(value) {
+    return !value || /^[+-]?\d+(?:\.\d{1,2})?$/.test(value);
+}
+
 // ---------- 初始化球隊 ----------
 function renderLeagueOptions() {
     const leagueSelect = document.getElementById("league");
@@ -682,6 +708,8 @@ function renderLineOptions() {
     const lineSelect2 = document.getElementById("line2");
     const uclCustomLine = document.getElementById("uclCustomLine");
     const uclCustomLine2 = document.getElementById("uclCustomLine2");
+    const customBasketballLine = document.getElementById("customBasketballLine");
+    const customBasketballLine2 = document.getElementById("customBasketballLine2");
     const lineSideSelect = document.getElementById("lineSide");
     const lineSideSelect2 = document.getElementById("lineSide2");
     const league = document.getElementById("league").value;
@@ -689,6 +717,8 @@ function renderLineOptions() {
   const ucl = isTeamTotalLeague(league);
 
     if (ucl) {
+        customBasketballLine.style.display = "none";
+        customBasketballLine2.style.display = "none";
         lineSelect.style.display = "";
         lineText.style.display = "none";
         uclCustomLine.style.display = "block";
@@ -706,6 +736,8 @@ function renderLineOptions() {
         document.getElementById("lineSideLabel").style.display = "";
         document.getElementById("uclPeriod").style.display = "";
     } else if (cup) {
+        customBasketballLine.style.display = "none";
+        customBasketballLine2.style.display = "none";
         uclCustomLine.style.display = "none";
         uclCustomLine2.style.display = "none";
         document.getElementById("uclPeriod").style.display = "none";
@@ -716,6 +748,8 @@ function renderLineOptions() {
         lineSideSelect2.style.display = "none";
         document.getElementById("lineSideLabel").style.display = "none";
     } else {
+        customBasketballLine.style.display = currentSport === "basketball" ? "block" : "none";
+        customBasketballLine2.style.display = currentSport === "basketball" ? "block" : "none";
         uclCustomLine.style.display = "none";
         uclCustomLine2.style.display = "none";
         document.getElementById("uclPeriod").style.display = "none";
@@ -2328,10 +2362,12 @@ async function addRecommendation() {
     const freeTeam = isFreeTeamLeague(league);
     const home = freeTeam ? document.getElementById("homeText").value.trim() : document.getElementById("home").value;
     const away = freeTeam ? document.getElementById("awayText").value.trim() : document.getElementById("away").value;
-    const line = cup ? document.getElementById("lineText").value.trim() : document.getElementById("line").value;
+    const customBasketballLine = document.getElementById("customBasketballLine").value.trim();
+    const customBasketballLine2 = document.getElementById("customBasketballLine2").value.trim();
+    const line = cup ? document.getElementById("lineText").value.trim() : getBasketballLineValue("line", "customBasketballLine");
     const lineSide = document.getElementById("lineSide").value;
     const enableSecondBet = !cup && document.getElementById("enableSecondBet").checked;
-    const line2 = document.getElementById("line2").value;
+    const line2 = getBasketballLineValue("line2", "customBasketballLine2");
     const lineSide2 = document.getElementById("lineSide2").value;
     const dateTimeRaw = document.getElementById("matchDateTime").value;
     const parsedDateTime = parseDateTimeInput(dateTimeRaw);
@@ -2342,6 +2378,12 @@ async function addRecommendation() {
 
     if (!parsedDateTime) {
         alert("請先填寫日期時間");
+        return;
+    }
+
+    if (currentSport === "basketball" && (!isValidCustomBasketballLine(customBasketballLine)
+        || enableSecondBet && !isValidCustomBasketballLine(customBasketballLine2))) {
+        alert("自訂讓分請輸入數字，可包含正負號，例如：-21.5 或 +22.5");
         return;
     }
 
@@ -2464,7 +2506,8 @@ async function settleMatchToCloud() {
     const league = document.getElementById("league").value;
     const home = document.getElementById("home").value;
     const away = document.getElementById("away").value;
-    const line = document.getElementById("line").value;
+    const customBasketballLine = document.getElementById("customBasketballLine").value.trim();
+    const line = getBasketballLineValue("line", "customBasketballLine");
     const lineSide = document.getElementById("lineSide").value;
     const dateTimeRaw = document.getElementById("matchDateTime").value;
     const parsedDateTime = parseDateTimeInput(dateTimeRaw);
@@ -2481,6 +2524,11 @@ async function settleMatchToCloud() {
 
     if (!parsedDateTime) {
         alert("請先填寫日期時間");
+        return;
+    }
+
+    if (currentSport === "basketball" && !isValidCustomBasketballLine(customBasketballLine)) {
+        alert("自訂讓分請輸入數字，可包含正負號，例如：-21.5 或 +22.5");
         return;
     }
 
