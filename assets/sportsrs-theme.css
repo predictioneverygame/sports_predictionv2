@@ -498,6 +498,11 @@ nav {
 .weekly-password-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 .weekly-password-actions button { min-height: 38px; padding: 7px 14px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; }
 .weekly-password-actions .btn-secondary { border: 1px solid var(--border-strong); background: var(--card); color: var(--text); }
+.uba-team-roster { margin: 0 0 22px; padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.uba-team-roster h2 { margin: 0 0 12px; font-size: 1rem; color: var(--text); }
+.uba-team-roster ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.uba-team-roster li { padding: 8px 10px; border-radius: 8px; background: var(--bg2); color: var(--text); font-size: .9rem; }
+.uba-team-roster a { color: var(--accent); font-size: .8rem; }
 .league-charts-pick-hint {
   margin: 24px 0 0;
   padding: 20px 18px;

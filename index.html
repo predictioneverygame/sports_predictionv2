@@ -626,7 +626,7 @@ footer a{color:var(--accent);text-decoration:none}
 }
 @media(max-width:900px){.layout{grid-template-columns:1fr}.hero h1{font-size:2rem}.hero-stats{gap:20px}nav{padding:0 10px;gap:6px;overflow-x:auto}.nav-logo{font-size:1rem;letter-spacing:1px;flex-shrink:0}.nav-links{display:flex;flex-wrap:nowrap;overflow-x:auto;white-space:nowrap;gap:2px;padding-bottom:2px}.nav-links li{flex-shrink:0}.nav-links a{padding:6px 10px;font-size:.86rem}.pred-items{grid-template-columns:1fr}.mvp-row{flex-direction:column}.home-main{padding-left:14px;padding-right:14px}.about-grid{grid-template-columns:1fr}.mobile-only-profit{display:block}#profit-summary-card{display:none}}
 </style>
-<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261111c">
+<link rel="stylesheet" href="assets/sportsrs-theme.css?v=20261119a">
 </head>
 <body>
 <nav id="site-nav">
@@ -893,6 +893,8 @@ footer a{color:var(--accent);text-decoration:none}
           <li><a href="/basketball/plg"><span class="lg-name">PLG</span><span class="lg-sub">P. LEAGUE+ · 台灣</span></a></li>
           <li><a href="/basketball/bcl"><span class="lg-name">BCL</span><span class="lg-sub">Asia-East · 亞洲</span></a></li>
           <li><a href="/basketball/easl"><span class="lg-name">東超</span><span class="lg-sub">EASL · 東亞</span></a></li>
+          <li><a href="/basketball/uba"><span class="lg-name">UBA</span><span class="lg-sub">公開男一級 · 大專籃球聯賽</span></a></li>
+          <li><a href="/basketball/uba-women"><span class="lg-name">UBA-女</span><span class="lg-sub">公開女一級 · 大專籃球聯賽</span></a></li>
         </ul>
       </div>
       <div id="section-football" class="leagues-section">
@@ -1129,14 +1131,18 @@ footer a{color:var(--accent);text-decoration:none}
   </section>
 </div>
 
-<script src="assets/sportsrs-ui.js?v=20261111c"></script>
-<script src="assets/sportsrs-router.js?v=20261111a"></script>
+<script src="assets/sportsrs-ui.js?v=20261119a"></script>
+<script src="assets/sportsrs-router.js?v=20261119a"></script>
 <script>
 // ════════════════════════════════════════════
 // DATA — 每場比賽的推薦 + 結果
 // ════════════════════════════════════════════
 const MATCHES = [];
-const BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+const BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超', 'UBA', 'UBA-女'];
+const UBA_TEAMS_BY_LEAGUE = {
+  UBA: ['黎明學院', '輔仁大學', '臺灣藝大', '臺灣師大', '臺灣科大', '義守大學', '國立體大', '健行科大', '高雄師大', '政治大學', '虎尾科大', '台鋼科大', '北市大學', '文化大學', '中原大學', '中信學院'],
+  'UBA-女': ['輔仁大學', '臺灣師大', '臺灣科大', '臺北護大', '臺北商大', '臺北大學', '清華大學', '佛光大學', '北市大學', '世新大學', '文化大學']
+};
 
 function resolveSportFromLeague(league, sport) {
   if (BASKETBALL_LEAGUE_KEYS.indexOf(league) !== -1) return 'basketball';
@@ -2229,6 +2235,8 @@ const LEAGUE_STATS_LABEL = {
   TPBL: 'TPBL',
   PLG: 'PLG',
   東超: '東超',
+  UBA: 'UBA',
+  'UBA-女': 'UBA-女',
   英超: '英超',
   西甲: '西甲',
   德甲: '德甲',
@@ -2244,7 +2252,7 @@ const LEAGUE_STATS_LABEL = {
 };
 
 /** 預測戰績側欄：固定列出與首頁聯賽區相同之聯賽（無結算則 0）；其他賽事動態追加 */
-const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+const PRED_STATS_BB_ORDER = ['SBL', 'TPBL', 'PLG', 'BCL', '東超', 'UBA', 'UBA-女'];
 const PRED_STATS_SC_ORDER = ['英超', '西甲', '德甲', '法甲', '德乙', '美足', '荷蘭甲', '歐冠', '歐國聯賽A'];
 const PRED_STATS_LEAGUE_ORDER = PRED_STATS_BB_ORDER.concat(PRED_STATS_SC_ORDER);
 const SEASON_SPLIT_DATE = '2026-07-17';
@@ -2313,13 +2321,14 @@ function netClass(hit, miss) {
 }
 
 const PRED_CUP_LEAGUES = ['歐冠', '歐國聯賽A', '歐洲超級盃', '聯賽盃'];
-const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲','歐國聯賽A'];
+const PRED_KNOWN_LEAGUES = ['SBL','TPBL','PLG','BCL','東超','UBA','UBA-女','英超','西甲','德甲','法甲','德乙','澳甲','美足','荷蘭甲','歐國聯賽A'];
 const PRED_BANKROLL_UNITS = 20;
 const UNIT_STAKE_CHANGE_DATE = '2026-10-20';
 const UNIT_STAKE_SECOND_CHANGE_DATE = '2026-10-29';
 const UCL_UNIT_STAKE_CHANGE_DATE = '2026-11-02';
 
 function unitStakeForLeague(lg, seasonKey, date) {
+  if (lg === 'UBA' || lg === 'UBA-女') return 20600;
   if (seasonKey === '2526') return 8100;
   var matchDate = String(date || '');
   if ((lg === '歐冠' || lg === 'UCL') && matchDate >= UCL_UNIT_STAKE_CHANGE_DATE) return 20600;
@@ -3158,16 +3167,21 @@ function showLeague(league, opts) {
   const leagueNames = {
     'BCL':'BCL Asia-East', 'SBL':'SBL 超級籃球聯賽',
     'TPBL':'TPBL', 'PLG':'PLG P.LEAGUE+', '東超':'東超 EASL',
+    'UBA':'UBA 公開男一級', 'UBA-女':'UBA 公開女一級',
     '英超':'英超 Premier League', '西甲':'西甲 LaLiga', '德甲':'德甲 Bundesliga', '法甲':'法甲 Ligue 1', '德乙':'德乙 Bundesliga 2',
     '美足':'美足 MLS', '荷蘭甲':'荷蘭甲 Eredivisie',
     '歐冠':'歐冠 Champions League', '歐洲超級盃':'歐洲超級盃', '聯賽盃':'聯賽盃 Leagues Cup'
   };
   document.getElementById('league-header').textContent = leagueNames[league] || league;
   const content = document.getElementById('league-content');
+  var ubaTeams = UBA_TEAMS_BY_LEAGUE[league];
+  var rosterHtml = ubaTeams
+    ? '<section class="uba-team-roster"><h2>115學年度參賽球隊</h2><ul>' + ubaTeams.map(function (team) { return '<li>' + escapeHtml(team) + '</li>'; }).join('') + '</ul><a href="https://uba.tw/115/' + (league === 'UBA' ? '%E5%85%AC%E9%96%8B%E7%94%B7%E4%B8%80%E7%B4%9A/TeamRank' : '%E5%85%AC%E9%96%8B%E5%A5%B3%E4%B8%80%E7%B4%9A/TeamRank') + '" target="_blank" rel="noopener noreferrer">資料來源：UBA 官網 ↗</a></section>'
+    : '';
   if (matches.length === 0) {
-    content.innerHTML = '<div class="empty-state"><p>這個聯賽目前沒有推薦紀錄。</p></div>';
+    content.innerHTML = rosterHtml + '<div class="empty-state"><p>這個聯賽目前沒有推薦紀錄。</p></div>';
   } else {
-    content.innerHTML = matches.map(m => renderMatchCard(m)).join('');
+    content.innerHTML = rosterHtml + matches.map(m => renderMatchCard(m)).join('');
   }
   _applyPage('league');
   if (!opts.fromRouter && window.SportsRSRouter) {

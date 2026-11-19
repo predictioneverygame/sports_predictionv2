@@ -900,7 +900,7 @@
 
   /** 足球正規聯賽＋歐冠、歐國聯；其餘盃賽／單場賽事（歐超盃、聯賽盃、明星賽等）不納入各聯賽績效圖 */
   var SOCCER_LEAGUE_KEYS = ['英超', '西甲', '德甲', '法甲', '德乙', '澳甲', '美足', '荷蘭甲', '歐冠', '歐國聯賽A'];
-  var BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超'];
+  var BASKETBALL_LEAGUE_KEYS = ['SBL', 'TPBL', 'PLG', 'BCL', '東超', 'UBA', 'UBA-女'];
   /* B／C／D 級歐國聯等其他分級也一併納入 */
   var NATIONS_LEAGUE_PATTERN = /^歐國聯/;
 
