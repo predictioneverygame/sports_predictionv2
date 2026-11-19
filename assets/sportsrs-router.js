@@ -11,8 +11,6 @@
     PLG: 'plg',
     BCL: 'bcl',
     '東超': 'easl',
-    UBA: 'uba',
-    'UBA-女': 'uba-women',
     '英超': 'premier-league',
     '西甲': 'la-liga',
     '德甲': 'bundesliga',
@@ -30,7 +28,7 @@
     SLUG_TO_LEAGUE[LEAGUE_SLUGS[name]] = name;
   });
 
-  var BB_LEAGUES = { SBL: 1, TPBL: 1, PLG: 1, BCL: 1, '東超': 1, UBA: 1, 'UBA-女': 1 };
+  var BB_LEAGUES = { SBL: 1, TPBL: 1, PLG: 1, BCL: 1, '東超': 1 };
 
   var PAGE_TITLES = {
     home: 'SportsRS — Professional Sports Analytics',

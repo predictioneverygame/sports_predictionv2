@@ -310,7 +310,7 @@ input[type="text"] {
 </div>
 
 <!-- 聯賽 -->
-<select id="league" onchange="updateTeams();renderLineOptions()"></select>
+<select id="league" onchange="updateTeams();renderLineOptions();syncRecommendationStakeDefaults()"></select>
 <input id="leagueText" type="text" placeholder="賽事名稱（如：歐霸、世俱盃…）" style="display:none">
 
 <!-- 主隊 -->
@@ -474,6 +474,16 @@ const leagues = {
     label: "東超",
     sport: "basketball",
     teams: ["東京阿爾瓦克（Alvark Tokyo）", "高陽索諾天槍（Goyang Sono Skygunners）", "台鋼獵鷹（TSG GhostHawks）", "南戈壁野馬（South Gobi Broncos）", "釜山KCC宙斯盾（Busan KCC Egis）", "澳門濠江（Macau Hou Chon）", "臺北富邦勇士（Taipei Fubon Braves）", "長崎維爾卡（Nagasaki Velca）", "阿布拉織工（Abra Weavers）", "香港東方（Hong Kong Eastern）", "琉球黃金國王（Ryukyu Golden Kings）", "桃園璞園領航猿（Taoyuan Pauian Pilots）"]
+  },
+  UBA: {
+    label: "UBA",
+    sport: "basketball",
+    teams: ["黎明學院", "輔仁大學", "臺灣藝大", "臺灣師大", "臺灣科大", "義守大學", "國立體大", "健行科大", "高雄師大", "政治大學", "虎尾科大", "台鋼科大", "北市大學", "文化大學", "中原大學", "中信學院"]
+  },
+  "UBA-女": {
+    label: "UBA-女",
+    sport: "basketball",
+    teams: ["輔仁大學", "臺灣師大", "臺灣科大", "臺北護大", "臺北商大", "臺北大學", "清華大學", "佛光大學", "北市大學", "世新大學", "文化大學"]
   },
   EPL: {
     label: "英超",
@@ -830,9 +840,11 @@ function syncRecommendationStakeDefaults() {
     const dateInput = document.getElementById("matchDateTime");
     if (!dateInput) return;
     const date = String(dateInput.value || "").slice(0, 10);
-    const isUcl = document.getElementById("league")?.value === "UCL";
+    const selectedLeague = document.getElementById("league")?.value;
+    const isUba = selectedLeague === "UBA" || selectedLeague === "UBA-女";
+    const isUcl = selectedLeague === "UCL";
     const isUclAfterChange = isUcl && date >= "2026-11-02";
-    const nextDefault = isUclAfterChange ? 15600 : (!date || date >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE ? 20600 : (date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600));
+    const nextDefault = isUba ? 20600 : (isUclAfterChange ? 15600 : (!date || date >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE ? 20600 : (date >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600)));
     ["stake", "stake2"].forEach((id) => {
         const input = document.getElementById(id);
         if (!input) return;
@@ -2615,9 +2627,12 @@ function compareBankroll() {
     const taipeiDate = taipeiDateParts.find(part => part.type === "year").value + "-"
         + taipeiDateParts.find(part => part.type === "month").value + "-"
         + taipeiDateParts.find(part => part.type === "day").value;
-    const bankrollUnit = taipeiDate >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE
+    const selectedLeague = document.getElementById("league")?.value;
+    const bankrollUnit = selectedLeague === "UBA" || selectedLeague === "UBA-女"
         ? 20600
-        : (taipeiDate >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600);
+        : (taipeiDate >= CURRENT_SEASON_SECOND_STAKE_CHANGE_DATE
+            ? 20600
+            : (taipeiDate >= CURRENT_SEASON_STAKE_CHANGE_DATE ? 15600 : 10600));
     const units = bankrollUnit > 0 ? profit / bankrollUnit : 0;
     const pct = (units / BANKROLL_UNITS) * 100;
     const pctText = (pct > 0 ? "+" : "") + pct.toFixed(2).replace(/\.00$/, "") + "%";
